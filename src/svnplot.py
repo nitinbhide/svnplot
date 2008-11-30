@@ -23,6 +23,9 @@ Graph types to be supported
 Part of 'svnplot' project
 Available on google code at http://code.google.com/p/svnplot/
 Licensed under the 'New BSD License'
+
+To use copy the file in Python 'site-packages' directory Setup is not available
+yet.
 '''
 
 import matplotlib.pyplot as plt
