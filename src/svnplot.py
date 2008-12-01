@@ -3,14 +3,14 @@ Generate various graphs from the Subversion log data in the sqlite database.
 It assumes that the sqlite file is generated using the 'svnlog2sqlite.py' script.
 
 Graph types to be supported
-1. Activity by hour of day bar graph (commits vs hour of day)
-2. Activity by day of week bar graph (commits vs day of week)
+1. Activity by hour of day bar graph (commits vs hour of day) -- Done
+2. Activity by day of week bar graph (commits vs day of week) -- Done
 3. Author Activity horizontal bar graph (author vs adding+commiting percentage)
 4. Commit activity for each developer - scatter plot (hour of day vs date)
 5. Contributed lines of code line graph (loc vs dates). Using different colour line
-   for each developer
-6. total loc line graph (loc vs dates)
-7. file count vs dates line graph
+   for each developer -- Done
+6. total loc line graph (loc vs dates) -- Done
+7. file count vs dates line graph -- Done
 8. average file size vs date line graph
 9. directory size vs date line graph. Using different coloured lines for each directory
 10. directory size pie chart (latest status)
@@ -61,7 +61,7 @@ class SVNPlot:
            data.append(commitcount)           
            labels.append(calendar.day_abbr[int(dayofweek)])
 
-        ax = self.drawBarGraph(data, labels,0.5)
+        ax = self._drawBarGraph(data, labels,0.5)
         ax.set_ylabel('commits')
         ax.set_xlabel('Day of Week')
         ax.set_title('Activity By Weekday')
@@ -77,7 +77,7 @@ class SVNPlot:
            data.append(commitcount)           
            labels.append(int(hourofday))
 
-        ax = self.drawBarGraph(data, labels,0.5)
+        ax = self._drawBarGraph(data, labels,0.5)
         ax.set_ylabel('commits')
         ax.set_xlabel('Time of Day')
         ax.set_title('Activity By Time of Day')
@@ -99,11 +99,11 @@ class SVNPlot:
             tocalloc = tocalloc + locadded-locdeleted
             loc.append(float(tocalloc))
             
-        ax = self.drawDateLineGraph(dates, loc)
+        ax = self._drawDateLineGraph(dates, loc)
         ax.set_title('LoC')
         ax.set_ylabel('Line Count')
         
-        self.closeDateLineGraph(ax, filename)
+        self._closeDateLineGraph(ax, filename)
 
     def LocGraphAllDev(self, filename, inpath='/%'):
         #Find out the unique developers
@@ -113,15 +113,15 @@ class SVNPlot:
         # get overwritten
         authList = [author for author, in self.cur]
         for author in authList:
-            ax = self.LocGraphLineByDev(author, inpath,  ax)
+            ax = self._drawlocGraphLineByDev(author, inpath,  ax)
             
         ax.legend(authList, loc='Upper Left')
             
         ax.set_title('Contributed LoC by Developer')
         ax.set_ylabel('Line Count')        
-        self.closeDateLineGraph(ax, filename)
+        self._closeDateLineGraph(ax, filename)
         
-    def LocGraphLineByDev(self, devname, inpath='/%', ax=None):
+    def _drawlocGraphLineByDev(self, devname, inpath='/%', ax=None):
         sqlQuery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
                          strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
                          from SVNLog, SVNLogDetail \
@@ -137,15 +137,14 @@ class SVNPlot:
             tocalloc = tocalloc + locadded-locdeleted
             loc.append(float(tocalloc))
             
-        ax = self.drawDateLineGraph(dates, loc, ax)
-        print devname
+        ax = self._drawDateLineGraph(dates, loc, ax)
         return(ax)
         
     def LocGraphByDev(self, filename, devname, inpath='/%'):
-        ax = self.LocGraphLineByDev(devname, inpath)
+        ax = self._drawlocGraphLineByDev(devname, inpath)
         ax.set_title('Contributed LoC by Developer')
         ax.set_ylabel('Line Count')
-        self.closeDateLineGraph(ax, filename)
+        self._closeDateLineGraph(ax, filename)
             
     def FileCountGraph(self, filename, inpath='/%'): 
         self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
@@ -161,13 +160,13 @@ class SVNPlot:
             totalfiles = totalfiles + fadded-fdeleted
             fc.append(float(totalfiles))
         
-        ax = self.drawDateLineGraph(dates, fc)
+        ax = self._drawDateLineGraph(dates, fc)
         ax.set_title('File Count')
         ax.set_ylabel('File Count')
-        self.closeDateLineGraph(ax, filename)
+        self._closeDateLineGraph(ax, filename)
         
         
-    def drawBarGraph(self, data, labels, barwid):
+    def _drawBarGraph(self, data, labels, barwid):
         #create dummy locations based on the number of items in data values
         xlocations = [x*barwid*2+barwid for x in range(len(data))]
         xtickloc = [x+barwid/2.0 for x in xlocations]
@@ -181,7 +180,7 @@ class SVNPlot:
         
         return(ax)
 
-    def closeDateLineGraph(self, ax, filename):
+    def _closeDateLineGraph(self, ax, filename):
         assert(ax != None)
         ax.autoscale_view()
         years    = YearLocator()   # every year
@@ -195,7 +194,7 @@ class SVNPlot:
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
         
-    def drawDateLineGraph(self, dates, values, axs= None):
+    def _drawDateLineGraph(self, dates, values, axs= None):
         if( axs == None):
             fig = plt.figure()            
             axs = fig.add_subplot(111)
