@@ -29,12 +29,15 @@ yet.
 '''
 
 import matplotlib.pyplot as plt
+from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
 import sqlite3
-import calendar
+import calendar, datetime
 
 class SVNPlot:
-    def __init__(self, svndbpath):
-        self.svndbpath = svndbpath        
+    def __init__(self, svndbpath, dpi=100, format='png'):
+        self.svndbpath = svndbpath
+        self.dpi = dpi
+        self.format = format
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
         self.cur = self.dbcon.cursor()        
@@ -50,13 +53,13 @@ class SVNPlot:
            data.append(commitcount)           
            labels.append(calendar.day_abbr[int(dayofweek)])
 
-        ax = self.DrawBarGraph(data, labels,0.5)
+        ax = self.drawBarGraph(data, labels,0.5)
         ax.set_ylabel('commits')
         ax.set_xlabel('Day of Week')
         ax.set_title('Activity By Weekday')
 
         fig = ax.figure                        
-        fig.savefig(filename, dpi=100, format='png')        
+        fig.savefig(filename, dpi=self.dpi, format=self.format)        
 
     def ActivityByTimeOfDay(self, filename):
         self.cur.execute("select strftime('%H', commitdate), count(revno) from SVNLog group by strftime('%H', commitdate)")
@@ -66,15 +69,35 @@ class SVNPlot:
            data.append(commitcount)           
            labels.append(int(hourofday))
 
-        ax = self.DrawBarGraph(data, labels,0.5)
+        ax = self.drawBarGraph(data, labels,0.5)
         ax.set_ylabel('commits')
         ax.set_xlabel('Time of Day')
         ax.set_title('Activity By Time of Day')
 
         fig = ax.figure                        
-        fig.savefig(filename, dpi=100, format='png')        
-
-    def DrawBarGraph(self, data, labels, barwid):
+        fig.savefig(filename, dpi=self.dpi, format=self.format)        
+        
+    def LocGraph(self, filename, inpath='/%'):        
+        self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
+                         strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
+                         group by date(SVNLog.commitdate)" % inpath)
+        dates = []
+        loc = []
+        tocalloc = 0
+        for year, month, day, locadded, locdeleted in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            tocalloc = tocalloc + locadded-locdeleted
+            loc.append(float(tocalloc))
+            
+        ax = self.drawDateLineGraph(dates, loc)
+        ax.set_title('LoC')
+        ax.set_ylabel('Line Count')
+        fig = ax.figure
+        fig.savefig(filename, dpi=self.dpi, format=self.format)        
+                         
+    def drawBarGraph(self, data, labels, barwid):
         #create dummy locations based on the number of items in data values
         xlocations = [x*barwid*2+barwid for x in range(len(data))]
         xtickloc = [x+barwid/2.0 for x in xlocations]
@@ -87,11 +110,28 @@ class SVNPlot:
         ax.bar(xlocations, data, width=barwid)
         
         return(ax)
+    
+    def drawDateLineGraph(self, dates, values):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot_date(dates, values, '-')
         
+        years    = YearLocator()   # every year
+        months   = MonthLocator()  # every month
+        yearsFmt = DateFormatter('%Y')
+        # format the ticks
+        ax.xaxis.set_major_locator(years)
+        ax.xaxis.set_major_formatter(yearsFmt)
+        ax.xaxis.set_minor_locator(months)
+        ax.autoscale_view()
+        ax.grid(True)
+        return(ax)
+
 if(__name__ == "__main__"):
     #testing
     svndbpath = "D:\\nitinb\\SoftwareSources\\SVNPlot\\svnrepo.db"
     graphfile = "D:\\nitinb\\SoftwareSources\\SVNPlot\\graph.png"
     svnplot = SVNPlot(svndbpath)
-    svnplot.ActivityByTimeOfDay(graphfile)
+    #svnplot.ActivityByTimeOfDay(graphfile)
+    svnplot.LocGraph(graphfile)
     
