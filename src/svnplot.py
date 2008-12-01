@@ -114,7 +114,9 @@ class SVNPlot:
         authList = [author for author, in self.cur]
         for author in authList:
             ax = self.LocGraphLineByDev(author, inpath,  ax)
-        
+            
+        ax.legend(authList, loc='Upper Left')
+            
         ax.set_title('Contributed LoC by Developer')
         ax.set_ylabel('Line Count')        
         self.closeDateLineGraph(ax, filename)
