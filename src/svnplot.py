@@ -95,8 +95,28 @@ class SVNPlot:
         ax.set_title('LoC')
         ax.set_ylabel('Line Count')
         fig = ax.figure
-        fig.savefig(filename, dpi=self.dpi, format=self.format)        
-                         
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        
+    def fileCountGraph(self, filename, inpath='/%'): 
+        self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
+                         strftime('%%d', SVNLog.commitdate), sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
+                         group by date(SVNLog.commitdate)" % inpath)
+        dates = []
+        fc = []
+        totalfiles = 0
+        for year, month, day, fadded,fdeleted in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            totalfiles = totalfiles + fadded-fdeleted
+            fc.append(float(totalfiles))
+            
+        ax = self.drawDateLineGraph(dates, fc)
+        ax.set_title('File Count')
+        ax.set_ylabel('File Count')
+        fig = ax.figure
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        
     def drawBarGraph(self, data, labels, barwid):
         #create dummy locations based on the number of items in data values
         xlocations = [x*barwid*2+barwid for x in range(len(data))]
@@ -133,5 +153,6 @@ if(__name__ == "__main__"):
     graphfile = "D:\\nitinb\\SoftwareSources\\SVNPlot\\graph.png"
     svnplot = SVNPlot(svndbpath)
     #svnplot.ActivityByTimeOfDay(graphfile)
-    svnplot.LocGraph(graphfile)
+    #svnplot.LocGraph(graphfile)
+    svnplot.fileCountGraph(graphfile)
     

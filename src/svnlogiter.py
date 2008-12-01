@@ -147,18 +147,27 @@ class SVNRevLog:
         self.logclient = logclient
         self.revlog = self.logclient.getLog(revno, True)
         
-    def changedPathCount(self):
+    def changedFileCount(self):
         '''includes directory and files. Initially I wanted to only add the changed file paths.
         however it is not possible to detect if the changed path is file or directory from the
         svn log output
         '''
-        changedfilecount = 0        
+        filesadded = 0
+        fileschanged = 0
+        filesdeleted = 0
         for change in self.revlog.changed_paths:
             isdir = self.isDirectory(change)
             change['isdir'] = isdir
-            changedfilecount = changedfilecount+1
-            
-        return(changedfilecount)
+            action = change['action']
+            if( isdir == False):
+                if( action == 'M'):
+                    fileschanged = fileschanged +1
+                elif(action == 'A'):
+                    filesadded = filesadded+1
+                elif(action == 'D'):
+                    filesdeleted = filesdeleted+1
+                    
+        return(filesadded, fileschanged, filesdeleted)
         
     def isDirectory(self, change):
         path = change['path']
@@ -228,7 +237,8 @@ class SVNRevLog:
         elif(name == 'revno'):
             return(self.revlog.revision.number)
         elif(name == 'changedpathcount'):
-            return(self.changedPathCount())
+            filesadded, fileschanged, filesdeleted = self.changedFileCount()
+            return(filesadded+fileschanged+filesdeleted)
         return(None)
     
 if(__name__ == "__main__"):
