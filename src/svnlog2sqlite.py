@@ -54,15 +54,24 @@ class SVNLog2Sqlite:
         if( laststoredrev < headrev):
             cur = self.dbcon.cursor()
             svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
+            revcount = 0
             for revlog in svnloglist:
+                revcount = revcount+1
                 cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, changedfilecount) values(?, ?, ?, ?,?)",
-                            (revlog.revno, revlog.date, revlog.author, revlog.message, revlog.changedfilecount))
-            self.dbcon.commit()            
+                            (revlog.revno, revlog.date, revlog.author, revlog.message, revlog.changedpathcount))
+                for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount():
+                    cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted) \
+                                values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
+                    #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
+                #commit after every change
+                self.dbcon.commit()            
+            print "Number of revisions converted : %d" % revcount
             
     def CreateTables(self):
         cur = self.dbcon.cursor()
         cur.execute("create table if not exists SVNLog(revno integer, commitdate timestamp, author text, msg text, changedfilecount integer)")
-        cur.execute("create table if not exists SVNLogDetail(revno integer, changedpath text, changetype text)")
+        cur.execute("create table if not exists SVNLogDetail(revno integer, changedpath text, changetype text,\
+                    linesadded integer, linesdeleted integer)")
         self.dbcon.commit()
 
 
@@ -70,12 +79,16 @@ if( __name__ == "__main__"):
     #testing
     svnrepopath = "file:///F:/SvnRepoTest/"
     sqlitedb = "D:\\nitinb\\SoftwareSources\\SVNPlot\\svnrepo.db"
-    conv = SVNLog2Sqlite(svnrepopath, sqlitedb)
-    conv.convert()
-    dbcon = sqlite3.connect(sqlitedb, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-    cur = dbcon.cursor()
-    cur.execute("select * from SVNLog")
-    for row in cur:
-        print row
-    dbcon.close()
+    try:
+        conv = SVNLog2Sqlite(svnrepopath, sqlitedb)
+        conv.convert()
+        dbcon = sqlite3.connect(sqlitedb, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        cur = dbcon.cursor()
+        cur.execute("select * from SVNLog")
+        #for row in cur:
+        #    print row
+        dbcon.close()
+    except:
+        del conv
+        raise
     
