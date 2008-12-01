@@ -57,8 +57,10 @@ class SVNLog2Sqlite:
             revcount = 0
             for revlog in svnloglist:
                 revcount = revcount+1
-                cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, changedfilecount) values(?, ?, ?, ?,?)",
-                            (revlog.revno, revlog.date, revlog.author, revlog.message, revlog.changedpathcount))
+                addedfiles, changedfiles, deletedfiles = revlog.changedFileCount()
+                cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
+                            values(?, ?, ?, ?,?, ?, ?)",
+                            (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
                 for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount():
                     cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted) \
                                 values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
@@ -69,7 +71,8 @@ class SVNLog2Sqlite:
             
     def CreateTables(self):
         cur = self.dbcon.cursor()
-        cur.execute("create table if not exists SVNLog(revno integer, commitdate timestamp, author text, msg text, changedfilecount integer)")
+        cur.execute("create table if not exists SVNLog(revno integer, commitdate timestamp, author text, msg text, \
+                            addedfiles integer, changedfiles integer, deletedfiles integer)")
         cur.execute("create table if not exists SVNLogDetail(revno integer, changedpath text, changetype text,\
                     linesadded integer, linesdeleted integer)")
         self.dbcon.commit()
