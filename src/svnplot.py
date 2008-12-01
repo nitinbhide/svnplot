@@ -32,6 +32,7 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
 import sqlite3
 import calendar, datetime
+import os.path
 
 class SVNPlot:
     def __init__(self, svndbpath, dpi=100, format='png'):
@@ -44,7 +45,14 @@ class SVNPlot:
 
     def __del__(self):
         self.dbcon.close()
-        
+
+    def AllGraphs(self, path):
+        self.ActivityByWeekday(os.path.join(path, "actbyweekday.png"));
+        self.ActivityByTimeOfDay(os.path.join(path, "actbytimeofday.png"));
+        self.LocGraph(os.path.join(path, "loc.png"));
+        self.FileCountGraph(os.path.join(path, "filecount.png"));
+        self.LocGraphAllDev(os.path.join(path, "locbydev.png"));
+                               
     def ActivityByWeekday(self, filename):
         self.cur.execute("select strftime('%w', commitdate), count(revno) from SVNLog group by strftime('%w', commitdate)")
         labels =[]
@@ -94,10 +102,50 @@ class SVNPlot:
         ax = self.drawDateLineGraph(dates, loc)
         ax.set_title('LoC')
         ax.set_ylabel('Line Count')
-        fig = ax.figure
-        fig.savefig(filename, dpi=self.dpi, format=self.format)
         
-    def fileCountGraph(self, filename, inpath='/%'): 
+        self.closeDateLineGraph(ax, filename)
+
+    def LocGraphAllDev(self, filename, inpath='/%'):
+        #Find out the unique developers
+        self.cur.execute("select author from SVNLog group by author")
+        ax = None
+        #get the auhor list and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
+        # get overwritten
+        authList = [author for author, in self.cur]
+        for author in authList:
+            ax = self.LocGraphLineByDev(author, inpath,  ax)
+        
+        ax.set_title('Contributed LoC by Developer')
+        ax.set_ylabel('Line Count')        
+        self.closeDateLineGraph(ax, filename)
+        
+    def LocGraphLineByDev(self, devname, inpath='/%', ax=None):
+        sqlQuery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
+                         strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' and SVNLog.author='%s' \
+                         group by date(SVNLog.commitdate)" % (inpath, devname)
+        print sqlQuery
+        self.cur.execute(sqlQuery)
+        dates = []
+        loc = []
+        tocalloc = 0
+        for year, month, day, locadded, locdeleted in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            tocalloc = tocalloc + locadded-locdeleted
+            loc.append(float(tocalloc))
+            
+        ax = self.drawDateLineGraph(dates, loc, ax)
+        print devname
+        return(ax)
+        
+    def LocGraphByDev(self, filename, devname, inpath='/%'):
+        ax = self.LocGraphLineByDev(devname, inpath)
+        ax.set_title('Contributed LoC by Developer')
+        ax.set_ylabel('Line Count')
+        self.closeDateLineGraph(ax, filename)
+            
+    def FileCountGraph(self, filename, inpath='/%'): 
         self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
                          strftime('%%d', SVNLog.commitdate), sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
                          from SVNLog, SVNLogDetail \
@@ -110,12 +158,12 @@ class SVNPlot:
             dates.append(datetime.date(int(year), int(month), int(day)))
             totalfiles = totalfiles + fadded-fdeleted
             fc.append(float(totalfiles))
-            
+        
         ax = self.drawDateLineGraph(dates, fc)
         ax.set_title('File Count')
         ax.set_ylabel('File Count')
-        fig = ax.figure
-        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        self.closeDateLineGraph(ax, filename)
+        
         
     def drawBarGraph(self, data, labels, barwid):
         #create dummy locations based on the number of items in data values
@@ -130,22 +178,30 @@ class SVNPlot:
         ax.bar(xlocations, data, width=barwid)
         
         return(ax)
-    
-    def drawDateLineGraph(self, dates, values):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot_date(dates, values, '-')
-        
+
+    def closeDateLineGraph(self, ax, filename):
+        assert(ax != None)
+        ax.autoscale_view()
         years    = YearLocator()   # every year
-        months   = MonthLocator()  # every month
+        months   = MonthLocator(3)  # every 3 month
         yearsFmt = DateFormatter('%Y')
         # format the ticks
         ax.xaxis.set_major_locator(years)
         ax.xaxis.set_major_formatter(yearsFmt)
         ax.xaxis.set_minor_locator(months)
-        ax.autoscale_view()
-        ax.grid(True)
-        return(ax)
+        ax.grid(True)        
+        fig = ax.figure
+        fig.savefig(filename, dpi=self.dpi, format=self.format)        
+        
+    def drawDateLineGraph(self, dates, values, axs= None):
+        if( axs == None):
+            fig = plt.figure()            
+            axs = fig.add_subplot(111)
+            axs.set_color_cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k'])                                 
+            
+        axs.plot_date(dates, values, '-', xdate=True, ydate=False)
+        
+        return(axs)
 
 if(__name__ == "__main__"):
     #testing
@@ -154,5 +210,6 @@ if(__name__ == "__main__"):
     svnplot = SVNPlot(svndbpath)
     #svnplot.ActivityByTimeOfDay(graphfile)
     #svnplot.LocGraph(graphfile)
-    svnplot.fileCountGraph(graphfile)
+    #svnplot.LocGraphByDev(graphfile, 'Nitin')
+    svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\")
     
