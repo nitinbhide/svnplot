@@ -11,7 +11,7 @@ Graph types to be supported
    for each developer -- Done
 6. total loc line graph (loc vs dates) -- Done
 7. file count vs dates line graph -- Done
-8. average file size vs date line graph
+8. average file size vs date line graph -- Done
 9. directory size vs date line graph. Using different coloured lines for each directory
 10. directory size pie chart (latest status)
 11. Loc and Churn graph (loc vs date, churn vs date)- Churn is number of lines touched
@@ -52,6 +52,7 @@ class SVNPlot:
         self.LocGraph(os.path.join(path, "loc.png"));
         self.FileCountGraph(os.path.join(path, "filecount.png"));
         self.LocGraphAllDev(os.path.join(path, "locbydev.png"));
+        self.AvgFileLocGraph(os.path.join(path, "avgloc.png"));
                                
     def ActivityByWeekday(self, filename):
         self.cur.execute("select strftime('%w', commitdate), count(revno) from SVNLog group by strftime('%w', commitdate)")
@@ -121,25 +122,6 @@ class SVNPlot:
         ax.set_ylabel('Line Count')        
         self._closeDateLineGraph(ax, filename)
         
-    def _drawlocGraphLineByDev(self, devname, inpath='/%', ax=None):
-        sqlQuery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
-                         strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' and SVNLog.author='%s' \
-                         group by date(SVNLog.commitdate)" % (inpath, devname)
-        print sqlQuery
-        self.cur.execute(sqlQuery)
-        dates = []
-        loc = []
-        tocalloc = 0
-        for year, month, day, locadded, locdeleted in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            tocalloc = tocalloc + locadded-locdeleted
-            loc.append(float(tocalloc))
-            
-        ax = self._drawDateLineGraph(dates, loc, ax)
-        return(ax)
-        
     def LocGraphByDev(self, filename, devname, inpath='/%'):
         ax = self._drawlocGraphLineByDev(devname, inpath)
         ax.set_title('Contributed LoC by Developer')
@@ -164,8 +146,50 @@ class SVNPlot:
         ax.set_title('File Count')
         ax.set_ylabel('File Count')
         self._closeDateLineGraph(ax, filename)
+
+    def AvgFileLocGraph(self, filename, inpath='/%'): 
+        self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
+                         strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
+                         sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
+                         group by date(SVNLog.commitdate)" % inpath)
+        dates = []
+        avgloclist = []
+        avgloc = 0
+        totalFileCnt = 0
+        totalLoc = 0
+        for year, month, day, locadded, locdeleted, filesadded, filesdeleted in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            totalLoc = totalLoc + locadded-locdeleted
+            totalFileCnt = totalFileCnt + filesadded - filesdeleted
+            avgloclist.append(float(totalLoc)/float(totalFileCnt))
+            
+        ax = self._drawDateLineGraph(dates, avgloclist)
+        ax.set_title('Average LoC of File')
+        ax.set_ylabel('LoC')
         
+        self._closeDateLineGraph(ax, filename)
         
+    def _drawlocGraphLineByDev(self, devname, inpath='/%', ax=None):
+        sqlQuery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
+                         strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' and SVNLog.author='%s' \
+                         group by date(SVNLog.commitdate)" % (inpath, devname)
+        print sqlQuery
+        self.cur.execute(sqlQuery)
+        dates = []
+        loc = []
+        tocalloc = 0
+        for year, month, day, locadded, locdeleted in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            tocalloc = tocalloc + locadded-locdeleted
+            loc.append(float(tocalloc))
+            
+        ax = self._drawDateLineGraph(dates, loc, ax)
+        return(ax)
+    
     def _drawBarGraph(self, data, labels, barwid):
         #create dummy locations based on the number of items in data values
         xlocations = [x*barwid*2+barwid for x in range(len(data))]
@@ -211,6 +235,5 @@ if(__name__ == "__main__"):
     svnplot = SVNPlot(svndbpath)
     #svnplot.ActivityByTimeOfDay(graphfile)
     #svnplot.LocGraph(graphfile)
-    #svnplot.LocGraphByDev(graphfile, 'Nitin')
     svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\")
     
