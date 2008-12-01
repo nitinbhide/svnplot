@@ -39,6 +39,7 @@ class SVNPlot:
         self.svndbpath = svndbpath
         self.dpi = dpi
         self.format = format
+        self.clrlist = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
         self.cur = self.dbcon.cursor()        
@@ -53,6 +54,7 @@ class SVNPlot:
         self.FileCountGraph(os.path.join(path, "filecount.png"));
         self.LocGraphAllDev(os.path.join(path, "locbydev.png"));
         self.AvgFileLocGraph(os.path.join(path, "avgloc.png"));
+        self.AuthorActivityGraph(os.path.join(path, "authactivity.png"));
                                
     def ActivityByWeekday(self, filename):
         self.cur.execute("select strftime('%w', commitdate), count(revno) from SVNLog group by strftime('%w', commitdate)")
@@ -63,7 +65,7 @@ class SVNPlot:
            labels.append(calendar.day_abbr[int(dayofweek)])
 
         ax = self._drawBarGraph(data, labels,0.5)
-        ax.set_ylabel('commits')
+        ax.set_ylabel('Commit Count')
         ax.set_xlabel('Day of Week')
         ax.set_title('Activity By Weekday')
 
@@ -79,7 +81,7 @@ class SVNPlot:
            labels.append(int(hourofday))
 
         ax = self._drawBarGraph(data, labels,0.5)
-        ax.set_ylabel('commits')
+        ax.set_ylabel('Commit Count')
         ax.set_xlabel('Time of Day')
         ax.set_title('Activity By Time of Day')
 
@@ -101,7 +103,7 @@ class SVNPlot:
             loc.append(float(tocalloc))
             
         ax = self._drawDateLineGraph(dates, loc)
-        ax.set_title('LoC')
+        ax.set_title('Lines of Code')
         ax.set_ylabel('Line Count')
         
         self._closeDateLineGraph(ax, filename)
@@ -124,7 +126,7 @@ class SVNPlot:
         
     def LocGraphByDev(self, filename, devname, inpath='/%'):
         ax = self._drawlocGraphLineByDev(devname, inpath)
-        ax.set_title('Contributed LoC by Developer')
+        ax.set_title('Contributed LoC by %s' % devname)
         ax.set_ylabel('Line Count')
         self._closeDateLineGraph(ax, filename)
             
@@ -143,7 +145,7 @@ class SVNPlot:
             fc.append(float(totalfiles))
         
         ax = self._drawDateLineGraph(dates, fc)
-        ax.set_title('File Count')
+        ax.set_title('Number of Files')
         ax.set_ylabel('File Count')
         self._closeDateLineGraph(ax, filename)
 
@@ -166,10 +168,37 @@ class SVNPlot:
             avgloclist.append(float(totalLoc)/float(totalFileCnt))
             
         ax = self._drawDateLineGraph(dates, avgloclist)
-        ax.set_title('Average LoC of File')
-        ax.set_ylabel('LoC')
+        ax.set_title('Average LoC of Files')
+        ax.set_ylabel('Average Line Count')
         
         self._closeDateLineGraph(ax, filename)
+
+    def AuthorActivityGraph(self, filename, inpath='/%'):
+        self.cur.execute("select SVNLog.author, sum(SVNLog.addedfiles), sum(SVNLog.changedfiles), sum(SVNLog.deletedfiles) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
+                         group by SVNLog.author" % inpath)
+
+        authlist = []
+        addfraclist = []
+        changefraclist=[]
+        delfraclist = []
+        
+        for author, filesadded, fileschanged, filesdeleted in self.cur:
+            authlist.append(author)            
+            activitytotal = float(filesadded+fileschanged+filesdeleted)
+            addfraclist.append(float(filesadded)/activitytotal)
+            changefraclist.append(float(fileschanged)/activitytotal)
+            delfraclist.append(float(filesdeleted)/activitytotal)
+
+        dataList = [addfraclist, changefraclist, delfraclist]
+        
+        barwid = 0.5
+        legendlist = ["Addition", "Change", "Deletion"]
+        ax = self._drawStackedHBarGraph(dataList, authlist, legendlist, barwid)
+        ax.set_title('Author Activity')
+        fig = ax.figure
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
         
     def _drawlocGraphLineByDev(self, devname, inpath='/%', ax=None):
         sqlQuery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
@@ -177,7 +206,6 @@ class SVNPlot:
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' and SVNLog.author='%s' \
                          group by date(SVNLog.commitdate)" % (inpath, devname)
-        print sqlQuery
         self.cur.execute(sqlQuery)
         dates = []
         loc = []
@@ -201,9 +229,42 @@ class SVNPlot:
         ax.set_xticks(xtickloc)
         ax.set_xticklabels(labels)
         ax.bar(xlocations, data, width=barwid)
+        ax.autoscale_view()
         
         return(ax)
 
+    def _drawStackedHBarGraph(self, dataList, labels, legendlist, barwid):
+        assert(len(dataList) > 0)
+        numDataItems = len(dataList[0])
+        #create dummy locations based on the number of items in data values
+        ylocations = [y*barwid*2+barwid for y in range(numDataItems)]
+        ytickloc = [y+barwid/2.0 for y in ylocations]
+        ytickloc.append(ytickloc[-1]+barwid)
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_color_cycle(self.clrlist)
+        ax.set_yticks(ytickloc)
+        ax.set_yticklabels(labels)
+
+        clridx = 0
+        maxclridx = len(self.clrlist)
+        ax.barh(ylocations, dataList[0], height=barwid, color=self.clrlist[clridx], label=legendlist[0])
+        leftlist = [0 for x in range(0, numDataItems)]
+        
+        for i in range(1, len(dataList)):
+            clridx=clridx+1
+            if( clridx >= maxclridx):
+                clridx = 0
+            leftlist = [x+y for x,y in zip(leftlist, dataList[i-1])]
+            ax.barh(ylocations, dataList[i], left=leftlist, height=barwid,
+                    color=self.clrlist[clridx], label=legendlist[i])
+            
+        ax.legend(loc='lower left')        
+        ax.autoscale_view()
+        
+        return(ax)
+                        
     def _closeDateLineGraph(self, ax, filename):
         assert(ax != None)
         ax.autoscale_view()
@@ -222,7 +283,7 @@ class SVNPlot:
         if( axs == None):
             fig = plt.figure()            
             axs = fig.add_subplot(111)
-            axs.set_color_cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k'])                                 
+            axs.set_color_cycle(self.clrlist)
             
         axs.plot_date(dates, values, '-', xdate=True, ydate=False)
         
