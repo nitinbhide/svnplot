@@ -5,7 +5,7 @@ It assumes that the sqlite file is generated using the 'svnlog2sqlite.py' script
 Graph types to be supported
 1. Activity by hour of day bar graph (commits vs hour of day) -- Done
 2. Activity by day of week bar graph (commits vs day of week) -- Done
-3. Author Activity horizontal bar graph (author vs adding+commiting percentage)
+3. Author Activity horizontal bar graph (author vs adding+commiting percentage) -- Done
 4. Commit activity for each developer - scatter plot (hour of day vs date)
 5. Contributed lines of code line graph (loc vs dates). Using different colour line
    for each developer -- Done
@@ -65,9 +65,9 @@ class SVNPlot:
            labels.append(calendar.day_abbr[int(dayofweek)])
 
         ax = self._drawBarGraph(data, labels,0.5)
-        ax.set_ylabel('Commit Count')
+        ax.set_ylabel('Commits')
         ax.set_xlabel('Day of Week')
-        ax.set_title('Activity By Weekday')
+        ax.set_title('Activity By Day of Week')
 
         fig = ax.figure                        
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
@@ -81,9 +81,9 @@ class SVNPlot:
            labels.append(int(hourofday))
 
         ax = self._drawBarGraph(data, labels,0.5)
-        ax.set_ylabel('Commit Count')
-        ax.set_xlabel('Time of Day')
-        ax.set_title('Activity By Time of Day')
+        ax.set_ylabel('Commits')
+        ax.set_xlabel('Hour of Day')
+        ax.set_title('Activity By Hour of Day')
 
         fig = ax.figure                        
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
@@ -104,7 +104,7 @@ class SVNPlot:
             
         ax = self._drawDateLineGraph(dates, loc)
         ax.set_title('Lines of Code')
-        ax.set_ylabel('Line Count')
+        ax.set_ylabel('Lines')
         
         self._closeDateLineGraph(ax, filename)
 
@@ -120,8 +120,8 @@ class SVNPlot:
             
         ax.legend(authList, loc='upper left')
             
-        ax.set_title('Contributed LoC by Developer')
-        ax.set_ylabel('Line Count')        
+        ax.set_title('Contributed Lines of Code')
+        ax.set_ylabel('Lines')        
         self._closeDateLineGraph(ax, filename)
         
     def LocGraphByDev(self, filename, devname, inpath='/%'):
@@ -145,8 +145,8 @@ class SVNPlot:
             fc.append(float(totalfiles))
         
         ax = self._drawDateLineGraph(dates, fc)
-        ax.set_title('Number of Files')
-        ax.set_ylabel('File Count')
+        ax.set_title('File Count')
+        ax.set_ylabel('Files')
         self._closeDateLineGraph(ax, filename)
 
     def AvgFileLocGraph(self, filename, inpath='/%'): 
@@ -168,8 +168,8 @@ class SVNPlot:
             avgloclist.append(float(totalLoc)/float(totalFileCnt))
             
         ax = self._drawDateLineGraph(dates, avgloclist)
-        ax.set_title('Average LoC of Files')
-        ax.set_ylabel('Average Line Count')
+        ax.set_title('Average File Size (Lines)')
+        ax.set_ylabel('LoC/Files')
         
         self._closeDateLineGraph(ax, filename)
 
@@ -187,14 +187,14 @@ class SVNPlot:
         for author, filesadded, fileschanged, filesdeleted in self.cur:
             authlist.append(author)            
             activitytotal = float(filesadded+fileschanged+filesdeleted)
-            addfraclist.append(float(filesadded)/activitytotal)
-            changefraclist.append(float(fileschanged)/activitytotal)
-            delfraclist.append(float(filesdeleted)/activitytotal)
+            addfraclist.append(float(filesadded)/activitytotal*100)
+            changefraclist.append(float(fileschanged)/activitytotal*100)
+            delfraclist.append(float(filesdeleted)/activitytotal*100)
 
         dataList = [addfraclist, changefraclist, delfraclist]
         
         barwid = 0.5
-        legendlist = ["Addition", "Change", "Deletion"]
+        legendlist = ["Adding", "Modifying", "Deleting"]
         ax = self._drawStackedHBarGraph(dataList, authlist, legendlist, barwid)
         ax.set_title('Author Activity')
         fig = ax.figure
@@ -275,7 +275,8 @@ class SVNPlot:
         ax.xaxis.set_major_locator(years)
         ax.xaxis.set_major_formatter(yearsFmt)
         ax.xaxis.set_minor_locator(months)
-        ax.grid(True)        
+        ax.grid(True)
+        ax.set_xlabel('Date')
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
         
