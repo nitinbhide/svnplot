@@ -6,7 +6,7 @@ Graph types to be supported
 1. Activity by hour of day bar graph (commits vs hour of day) -- Done
 2. Activity by day of week bar graph (commits vs day of week) -- Done
 3. Author Activity horizontal bar graph (author vs adding+commiting percentage) -- Done
-4. Commit activity for each developer - scatter plot (hour of day vs date)
+4. Commit activity for each developer - scatter plot (hour of day vs date) -- Done
 5. Contributed lines of code line graph (loc vs dates). Using different colour line
    for each developer -- Done
 6. total loc line graph (loc vs dates) -- Done
@@ -55,6 +55,7 @@ class SVNPlot:
         self.LocGraphAllDev(os.path.join(path, "locbydev.png"));
         self.AvgFileLocGraph(os.path.join(path, "avgloc.png"));
         self.AuthorActivityGraph(os.path.join(path, "authactivity.png"));
+        self.CommitActivityGraph(os.path.join(path, "commitactivity.png"));
                                
     def ActivityByWeekday(self, filename):
         self.cur.execute("select strftime('%w', commitdate), count(revno) from SVNLog group by strftime('%w', commitdate)")
@@ -108,13 +109,9 @@ class SVNPlot:
         
         self._closeDateLineGraph(ax, filename)
 
-    def LocGraphAllDev(self, filename, inpath='/%'):
-        #Find out the unique developers
-        self.cur.execute("select author from SVNLog group by author")
+    def LocGraphAllDev(self, filename, inpath='/%'):        
         ax = None
-        #get the auhor list and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
-        # get overwritten
-        authList = [author for author, in self.cur]
+        authList = self._getAuthorList()
         for author in authList:
             ax = self._drawlocGraphLineByDev(author, inpath,  ax)
             
@@ -200,6 +197,48 @@ class SVNPlot:
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
         
+    def CommitActivityGraph(self, filename, inpath='/%'):
+        authList = self._getAuthorList()
+        authCount = len(authList)
+
+        authIdx = 1
+        refaxs = None
+        for author in authList:
+            axs = self._drawCommitActivityGraphByAuthor(authCount, authIdx, author, inpath, refaxs)
+            if( refaxs == None):
+                refaxs = axs
+            authIdx = authIdx+1
+            
+        #Set the x axis label on the last graph
+        axs.set_xlabel('Date')
+        #Turn on the xtick display only on the last graph
+        plt.setp( axs.get_xticklabels(), visible=True)
+        
+        self._closeScatterPlot(refaxs, filename, 'Commit Activity')
+                    
+    def _getAuthorList(self):
+        #Find out the unique developers
+        self.cur.execute("select author from SVNLog group by author")
+        #get the auhor list and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
+        # get overwritten
+        authList = [author for author, in self.cur]
+        return(authList)
+        
+    def _drawCommitActivityGraphByAuthor(self, authIdx, authCount, author, inpath='/%', axs=None):
+        sqlQuery = "select strftime('%%H', commitdate), strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), \
+                         strftime('%%d', SVNLog.commitdate) from SVNLog where author='%s' \
+                            group by date(commitdate)" % author
+        self.cur.execute(sqlQuery)
+
+        dates = []
+        committimelist = []
+        for hr, year, month, day in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            committimelist.append(hr)
+        axs = self._drawScatterPlot(dates, committimelist, authCount, authIdx, author, axs)
+        
+        return(axs)
+            
     def _drawlocGraphLineByDev(self, devname, inpath='/%', ax=None):
         sqlQuery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
                          strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
@@ -264,11 +303,49 @@ class SVNPlot:
         ax.autoscale_view()
         
         return(ax)
-                        
+    
+    def _drawScatterPlot(self,dates, values, plotidx, plotcount, title, refaxs):
+        if( refaxs == None):
+            fig = plt.figure()
+        else:
+            fig = refaxs.figure
+            
+        axs = fig.add_subplot(plotcount, 1, plotidx,sharex=refaxs,sharey=refaxs)
+        axs.grid(True)
+        axs.plot_date(dates, values, marker='o', xdate=True, ydate=False)
+
+        #Pass None has 'handles' since I want to display just the titles
+        axs.legend([None], [title], loc='upper center')
+        plt.setp( axs.get_xticklabels(), visible=False)
+        
+        if( refaxs != None):
+            xmin, xmax = axs.get_xbound()
+            #set the yaxis limits to (0-24) hours
+            corners = (xmin,0),(xmax,24)            
+            refaxs.update_datalim(corners)
+            axs.update_datalim(corners)
+            
+        return(axs)
+    
+    def _closeScatterPlot(self, refaxs, filename,title):
+        years    = YearLocator()   # every year
+        months   = MonthLocator(3)  # every 3 month
+        yearsFmt = DateFormatter('%Y')
+        # format the ticks
+        refaxs.xaxis.set_major_locator(years)
+        refaxs.xaxis.set_major_formatter(yearsFmt)
+        refaxs.xaxis.set_minor_locator(months)
+        refaxs.autoscale_view()
+
+        fig = refaxs.figure
+        fig.suptitle(title)
+        fig.savefig(filename, dpi=self.dpi, format=self.format)        
+
     def _closeDateLineGraph(self, ax, filename):
         assert(ax != None)
         ax.autoscale_view()
         years    = YearLocator()   # every year
+        months   = MonthLocator(3)  # every 3 month
         months   = MonthLocator(3)  # every 3 month
         yearsFmt = DateFormatter('%Y')
         # format the ticks
