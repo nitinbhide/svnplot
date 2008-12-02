@@ -34,6 +34,15 @@ import sqlite3
 import calendar, datetime
 import os.path
 
+def dirname(path, depth):
+    #first split the path and remove the filename
+    pathcomp = os.path.dirname(path).split('/')
+    #now join the split path upto given depth only
+    #since path starts with '/' and slice ignores the endindex, to get the appropriate
+    #depth, slice has to be [0:depth+1]
+    dirpath = '/'.join(pathcomp[0:depth+1])
+    return(dirpath)
+    
 class SVNPlot:
     def __init__(self, svndbpath, dpi=100, format='png'):
         self.svndbpath = svndbpath
@@ -42,6 +51,9 @@ class SVNPlot:
         self.clrlist = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
+        # Create the function "regexp" for the REGEXP operator of SQLite
+        self.dbcon.create_function("dirname", 2, dirname)
+        
         self.cur = self.dbcon.cursor()        
 
     def __del__(self):
@@ -56,6 +68,7 @@ class SVNPlot:
         self.AvgFileLocGraph(os.path.join(path, "avgloc.png"));
         self.AuthorActivityGraph(os.path.join(path, "authactivity.png"));
         self.CommitActivityGraph(os.path.join(path, "commitactivity.png"));
+        self.DirectorySizePieGraph(os.path.join(path, "dirsizepie.png"));
                                
     def ActivityByWeekday(self, filename):
         self.cur.execute("select strftime('%w', commitdate), count(revno) from SVNLog group by strftime('%w', commitdate)")
@@ -215,7 +228,27 @@ class SVNPlot:
         plt.setp( axs.get_xticklabels(), visible=True)
         
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
-                    
+        
+    def DirectorySizePieGraph(self, filename, depth=2, inpath='/%'):
+        sqlQuery = "select dirname(SVNLogDetail.changedpath, %d), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
+                         group by dirname(SVNLogDetail.changedpath, %d)" % (depth, inpath, depth)
+        self.cur.execute(sqlQuery)
+            
+        dirlist = []
+        dirsizelist = []
+        for dirname, linesadded, linesdeleted in self.cur:
+            dsize = linesadded-linesdeleted
+            if( dsize > 0):
+                dirlist.append(dirname)
+                dirsizelist.append(dsize)
+        
+        axs = self._drawPieGraph(dirsizelist, dirlist)
+        axs.set_title('Directory Sizes')        
+        fig = axs.figure
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        
     def _getAuthorList(self):
         #Find out the unique developers
         self.cur.execute("select author from SVNLog group by author")
@@ -339,8 +372,31 @@ class SVNPlot:
 
         fig = refaxs.figure
         fig.suptitle(title)
-        fig.savefig(filename, dpi=self.dpi, format=self.format)        
-
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        
+    def _drawPieGraph(self, slicesizes, slicelabels):
+        fig = plt.figure()
+        axs = fig.add_subplot(111, aspect='equal')        
+        (patches, labeltext, autotexts) = axs.pie(slicesizes, labels=slicelabels, autopct='%1.1f%%')
+        #Turn off the labels displayed on the Piechart. 
+        plt.setp(labeltext, visible=False)
+        plt.setp(autotexts, visible=False)
+        axs.autoscale_view()
+        #Reposition the pie chart so that we can place a legend on the right
+        bbox = axs.get_position()        
+        (x,y, wid, ht) = bbox.bounds
+        wid = wid*0.8
+        bbox.bounds = (0, y, wid, ht)
+        axs.set_position(bbox)
+        #Now create a legend and place it on the right of the box.        
+        legendtext=[]
+        for slabel, ssize in zip(slicelabels, autotexts):
+           legendtext.append("%s : %s" % (slabel, ssize.get_text()))
+        legend = axs.legend(patches, legendtext, loc=(1, y))
+        plt.setp(legend.get_texts(), fontsize='x-small')
+        
+        return(axs)
+        
     def _closeDateLineGraph(self, ax, filename):
         assert(ax != None)
         ax.autoscale_view()
@@ -374,5 +430,6 @@ if(__name__ == "__main__"):
     svnplot = SVNPlot(svndbpath)
     #svnplot.ActivityByTimeOfDay(graphfile)
     #svnplot.LocGraph(graphfile)
+    #svnplot.DirectorySizePieGraph(graphfile)    
     svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\")
     
