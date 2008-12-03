@@ -24,16 +24,36 @@ def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
     return(datetime.datetime(gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec))
 
-def getDiffLineCount(diff_log):
-    matches = re.findall("^\+[^\+]", diff_log, re.M )
-    added = 0
-    if( matches != None):
-        added = len(matches)
-    matches = re.match("^\-[^\-]", diff_log, re.M)
-    deleted = 0
-    if( matches != None):
-        deleted = len(matches)
-    return(added, deleted)
+def getDiffLineCountDict(diff_log):
+    diffio = StringIO.StringIO(diff_log)
+    addlnCount=0
+    dellnCount=0
+    curfile=None
+    diffCountDict = dict()
+    newfilediffstart = 'Index: '
+    for diffline in diffio:
+        #remove the newline characters near the end of line
+        diffline = diffline.rstrip()
+        if(diffline.find(newfilediffstart)==0):
+            #diff for new file has started update the old filename.
+            if(curfile != None):
+                diffCountDict[curfile] = (addlnCount, dellnCount)
+            #reset the linecounts and current filename
+            addlnCount = 0
+            dellnCount = 0
+            #Index line entry doesnot have '/' as start of file path. Hence add the '/'
+            #so that path entries in revision log list match with the names in the 'diff count' dictionary
+            curfile = '/'+diffline[len(newfilediffstart):]
+        elif(diffline.find('---')==0 or diffline.find('+++')==0 or diffline.find('@@')==0 or diffline.find('===')==0):                
+            continue
+        elif(diffline.find('-')==0):
+            dellnCount = dellnCount+1                
+        elif(diffline.find('+')==0):
+             addlnCount = addlnCount+1
+    
+    #update last file stat in the dictionary.
+    diffCountDict[curfile] = (addlnCount, dellnCount)
+    return(diffCountDict)
     
 class SVNLogClient:
     def __init__(self, svnrepourl):
@@ -66,15 +86,24 @@ class SVNLogClient:
              revision_start=rev, revision_end=rev, discover_changed_paths=briefLog)
         return(revlog[0])
 
-    def getRevDiff(self, path, revno):
+    def getRevDiff(self, revno):
+        rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
+        rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+        url = self.svnrepourl
+        diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,recurse=True,
+                                      ignore_ancestry=True,ignore_content_type=False,
+                                       diff_deleted=True)
+        return diff_log
+
+    def getRevFileDiff(self, path, revno):
         rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.svnrepourl + path
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,recurse=True,
                                       ignore_ancestry=False,ignore_content_type=False,
                                        diff_deleted=True)
-        return diff_log
-
+        return(diff_log)
+    
     def getInfo(self, path, revno):
         '''Gets the information about the given path ONLY from the repository.
         Hence recurse flag is set to False.
@@ -196,14 +225,20 @@ class SVNRevLog:
         Returns a list of tuples containing filename, lines added and lines modified
         In case of binary files, lines added and deleted are returned as zero.
         In case of directory also lines added and deleted are returned as zero
-        """        
+        """                        
+        diffCountDict = self._updateDiffCount()
         diffCountList = []
         for change in self.revlog.changed_paths:
-            filename, changetype, linesadded, linesdeleted = self.getDiffLineCountForPath(change)            
-            diffCountList.append((filename, changetype, linesadded, linesdeleted))
-            #print "%d : %s : %s : %d : %d " % (self.revno, filename, change['action'], linesadded, linesdeleted)
+            linesadded = 0
+            linesdeleted = 0
+            filename = change['path']
+            if( diffCountDict.has_key(filename)):
+                linesadded, linesdeleted = diffCountDict[filename]
+                                
+            diffCountList.append((filename, change['action'],linesadded, linesdeleted))
+            #print "%d : %s : %s : %d : %d " % (self.revno, filename, change['action'], linesadded, linesdeleted)        
         return(diffCountList)
-    
+        
     def getDiffLineCountForPath(self, change):
         added = 0
         deleted = 0
@@ -212,8 +247,10 @@ class SVNRevLog:
         changetype = change['action']
         if( changetype != 'A' and changetype != 'D'):
             #file or directory is modified
-            diff_log = self.logclient.getRevDiff(filename, revno)
-            added, deleted = getDiffLineCount(diff_log)
+            diff_log = self.logclient.getRevFileDiff(filename, revno)
+            diffDict = getDiffLineCountDict(diff_log)
+            assert(diffDict.has_key(filename) != False)
+            added, deleted = diffDict[filename]
         elif( self.isDirectory(change) == False):
             #path is added or deleted. First check if the path is a directory. If path is not a directory
             # then process further.
@@ -241,13 +278,22 @@ class SVNRevLog:
             return(filesadded+fileschanged+filesdeleted)
         return(None)
     
+    def _updateDiffCount(self):
+        revno = self.getRevNo()
+        revdiff_log = self.logclient.getRevDiff(revno)
+        return(getDiffLineCountDict(revdiff_log))
+                 
 if(__name__ == "__main__"):
     #Run tests
     svnrepopath = "file:///F:/SvnRepoTest/"
     #svnfilepath = "Astrology/HomeKpswiss/Kpswiss/kps_interface.h"
     svnfilepath = ""
     logclient = SVNLogClient(svnrepopath)
-    diff_log = logclient.getRevDiff(svnfilepath, 6)
-    print getDiffLineCount(diff_log)
+    #diff_log = logclient.getRevDiff(25)
+    #print diff_log
+    revlog = SVNRevLog(logclient, 25)
+    difflist = revlog.getDiffLineCount()
+    print difflist
+    
         
     
