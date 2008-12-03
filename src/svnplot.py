@@ -57,6 +57,7 @@ class SVNPlot:
         self.cur = self.dbcon.cursor()        
 
     def __del__(self):
+        self.cur = None
         self.dbcon.close()
 
     def AllGraphs(self, path):
