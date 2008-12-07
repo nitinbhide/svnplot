@@ -31,10 +31,64 @@ yet.
 import matplotlib.pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
 from matplotlib.font_manager import FontProperties
+from optparse import OptionParser
 import sqlite3
 import calendar, datetime
 import os.path, sys
+import string
 
+HTMLIndexTemplate ='''
+<html>
+<head><title>Subversion Stats Plot for $RepoName</title></head>
+<body>
+<h1 align="center">Subversion Statistics for $RepoName</h1>
+<table border="1" align="center">
+<tr>
+    <td align="center" width="25%"><h3>Lines of Code</h3><br/>
+    <a href="$LoC"><img src="$LoC" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center" width="25%"><h3>Contributed Lines of Code</h3><br/>
+    <a href="$LoCByDev"><img src="$LoCByDev" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center" width="25%"><h3>Average File Size</h3><br/>
+    <a href="$AvgLoC"><img src="$AvgLoC" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center" width="25%"><h3>File Count</h3><br/>
+    <a href="$FileCount"><img src="$FileCount" width="$thumbwid" height="$thumbht"></a>
+    </td>
+</tr>
+<tr>
+    <td align="center" width="25%"><h3>Developer Commit Activity</h3><br/>
+    <a href="$CommitAct"><img src="$CommitAct" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center" width="25%"><h3>Commit Activity By Day of Week </h3><br/>
+    <a href="$ActByWeek"><img src="$ActByWeek" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center" width="25%"><h3>Commit Activity By Hour of Day</h3><br/>
+    <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center" width="25%"><h3>Author Activity</h3><br/>
+    <a href="$AuthActivity"><img src="$AuthActivity" width="$thumbwid" height="$thumbht"></a>
+    </td>
+</tr>
+<tr>
+   <td align="center"><h3>Current Directory Size</h3><br/>
+    <a href="$DirSizePie"><img src="$DirSizePie" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center"><h3>Directory Size</h3><br/>
+    <a href="$DirSizeLine"><img src="$DirSizeLine" width="$thumbwid" height="$thumbht"></a>
+    </td>
+</tr>
+</table>
+</body>
+</html>
+'''
+
+GraphNameDict = dict(ActByWeek="actbyweekday.png", ActByTimeOfDay="actbytimeofday.png",
+                     LoC="loc.png", FileCount="filecount.png", LoCByDev="localldev.png",
+                     AvgLoC="avgloc.png", AuthActivity="authactivity.png",CommitAct="commitactivity.png",
+                     DirSizePie="dirsizepie.png", DirSizeLine="dirsizeline.png")
+                     
 def dirname(path, depth):
     #first split the path and remove the filename
     pathcomp = os.path.dirname(path).split('/')
@@ -49,6 +103,8 @@ class SVNPlot:
         self.svndbpath = svndbpath
         self.dpi = dpi
         self.format = format
+        self.reponame = ""
+        self.verbose = False
         self.clrlist = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
@@ -56,23 +112,47 @@ class SVNPlot:
         self.dbcon.create_function("dirname", 2, dirname)
         
         self.cur = self.dbcon.cursor()        
-
+    
     def __del__(self):
         self.cur = None
         self.dbcon.close()
 
-    def AllGraphs(self, path):
-        self.ActivityByWeekday(os.path.join(path, "actbyweekday.png"));
-        self.ActivityByTimeOfDay(os.path.join(path, "actbytimeofday.png"));
-        self.LocGraph(os.path.join(path, "loc.png"));
-        self.FileCountGraph(os.path.join(path, "filecount.png"));
-        self.LocGraphAllDev(os.path.join(path, "locbydev.png"));
-        self.AvgFileLocGraph(os.path.join(path, "avgloc.png"));
-        self.AuthorActivityGraph(os.path.join(path, "authactivity.png"));
-        self.CommitActivityGraph(os.path.join(path, "commitactivity.png"));
-        self.DirectorySizePieGraph(os.path.join(path, "dirsizepie.png"));
+    def SetRepoName(self, reponame):
+        self.reponame = reponame
+    def SetVerbose(self, verbose):
+        self.verbose = verbose
+
+    def PrintProgress(self, msg):
+        if( self.verbose == True):
+            print msg
+            
+    def AllGraphs(self, dirpath, svnsearchpath='/%', thumbsize=100):        
+        self.ActivityByWeekday(os.path.join(dirpath, GraphNameDict["ActByWeek"]));
+        self.ActivityByTimeOfDay(os.path.join(dirpath, GraphNameDict["ActByTimeOfDay"]));
+        self.LocGraph(os.path.join(dirpath, GraphNameDict["LoC"]),svnsearchpath);
+        self.FileCountGraph(os.path.join(dirpath, GraphNameDict["FileCount"]), svnsearchpath);
+        self.LocGraphAllDev(os.path.join(dirpath, GraphNameDict["LoCByDev"]), svnsearchpath);
+        self.AvgFileLocGraph(os.path.join(dirpath, GraphNameDict["AvgLoC"]), svnsearchpath);
+        self.AuthorActivityGraph(os.path.join(dirpath, GraphNameDict["AuthActivity"]), svnsearchpath);
+        self.CommitActivityGraph(os.path.join(dirpath, GraphNameDict["CommitAct"]), svnsearchpath);
+        depth=2
+        self.DirectorySizePieGraph(os.path.join(dirpath, GraphNameDict["DirSizePie"]), inpath=svnsearchpath);
+        self.DirectorySizeLineGraph(os.path.join(dirpath, GraphNameDict["DirSizeLine"]), inpath=svnsearchpath);
+
+        graphParamDict = dict(GraphNameDict)
+        graphParamDict["thumbwid"]=str(thumbsize)
+        graphParamDict["thumbht"]=str(thumbsize)
+        graphParamDict["RepoName"]=self.reponame
+        
+        htmlidxTmpl = string.Template(HTMLIndexTemplate)        
+        htmlidxname = os.path.join(dirpath, "index.htm")
+        htmlfile = file(htmlidxname, "w")
+        htmlfile.write(htmlidxTmpl.safe_substitute(graphParamDict))
+        htmlfile.close()
                                
     def ActivityByWeekday(self, filename):
+        self.PrintProgress("Calculating Activity by day of week graph")
+        
         self.cur.execute("select strftime('%w', commitdate), count(revno) from SVNLog group by strftime('%w', commitdate)")
         labels =[]
         data = []
@@ -89,6 +169,8 @@ class SVNPlot:
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
 
     def ActivityByTimeOfDay(self, filename):
+        self.PrintProgress("Calculating Activity by time of day graph")
+        
         self.cur.execute("select strftime('%H', commitdate), count(revno) from SVNLog group by strftime('%H', commitdate)")
         labels =[]
         data = []
@@ -104,7 +186,8 @@ class SVNPlot:
         fig = ax.figure                        
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
         
-    def LocGraph(self, filename, inpath='/%'):        
+    def LocGraph(self, filename, inpath='/%'):
+        self.PrintProgress("Calculating LoC graph")
         self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
                          strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
                          from SVNLog, SVNLogDetail \
@@ -124,7 +207,8 @@ class SVNPlot:
         
         self._closeDateLineGraph(ax, filename)
 
-    def LocGraphAllDev(self, filename, inpath='/%'):        
+    def LocGraphAllDev(self, filename, inpath='/%'):
+        self.PrintProgress("Calculating Developer Contribution graph")
         ax = None
         authList = self._getAuthorList()
         for author in authList:
@@ -142,7 +226,9 @@ class SVNPlot:
         ax.set_ylabel('Line Count')
         self._closeDateLineGraph(ax, filename)
             
-    def FileCountGraph(self, filename, inpath='/%'): 
+    def FileCountGraph(self, filename, inpath='/%'):
+        self.PrintProgress("Calculating File Count graph")
+        
         self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
                          strftime('%%d', SVNLog.commitdate), sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
                          from SVNLog, SVNLogDetail \
@@ -161,7 +247,9 @@ class SVNPlot:
         ax.set_ylabel('Files')
         self._closeDateLineGraph(ax, filename)
 
-    def AvgFileLocGraph(self, filename, inpath='/%'): 
+    def AvgFileLocGraph(self, filename, inpath='/%'):
+        self.PrintProgress("Calculating Average File Size graph")
+        
         self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
                          strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
                          sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
@@ -186,6 +274,8 @@ class SVNPlot:
         self._closeDateLineGraph(ax, filename)
 
     def AuthorActivityGraph(self, filename, inpath='/%'):
+        self.PrintProgress("Calculating Author Activity graph")
+        
         self.cur.execute("select SVNLog.author, sum(SVNLog.addedfiles), sum(SVNLog.changedfiles), sum(SVNLog.deletedfiles) \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
@@ -213,6 +303,8 @@ class SVNPlot:
         fig.savefig(filename, dpi=self.dpi, format=self.format)
         
     def CommitActivityGraph(self, filename, inpath='/%'):
+        self.PrintProgress("Calculating Commit activity graph")
+        
         authList = self._getAuthorList()
         authCount = len(authList)
 
@@ -231,8 +323,10 @@ class SVNPlot:
         
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
         
-    def DirectorySizePieGraph(self, filename, depth=2, inpath='/%'):        
-        sqlQuery = "select dirname(SVNLogDetail.changedpath, %d), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
+    def DirectorySizePieGraph(self, filename, depth=2, inpath='/%'):
+        self.PrintProgress("Calculating current Directory size pie graph")
+        
+        sqlQuery = "select dirname(SVNLogDetail.changedpath, %d), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
                     from SVNLog, SVNLogDetail \
                     where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
                     group by dirname(SVNLogDetail.changedpath, %d)" % (depth, inpath, depth)
@@ -252,6 +346,8 @@ class SVNPlot:
         fig.savefig(filename, dpi=self.dpi, format=self.format)
             
     def DirectorySizeLineGraph(self, filename, depth=2, inpath='/%'):
+        self.PrintProgress("Calculating Directory size line graph")
+        
         sqlQuery = "select dirname(changedpath, %d) from SVNLogDetail where changedpath like '%s' \
                          group by dirname(changedpath, %d)" % (depth, inpath, depth)
         self.cur.execute(sqlQuery)
@@ -262,7 +358,7 @@ class SVNPlot:
             ax = self._drawDirectorySizeLineGraphByDir(dirname, ax)
             
         fontprop = FontProperties(size='x-small')
-        legend = ax.legend(dirlist, loc='upper right', prop=fontprop, ncol=4)
+        legend = ax.legend(dirlist, loc='upper right', prop=fontprop)
             
         ax.set_title('Directory Size (Lines of Code)')
         ax.set_ylabel('Lines')        
@@ -463,23 +559,53 @@ class SVNPlot:
         return(axs)
 
 def RunMain():
-    if( len(sys.argv) < 3):
-        print "Usage : svnplot.py <sqlitedbpath> <graphdirpath>"
+    usage = "usage: %prog [options] <svnsqlitedbpath> <graphdir>"
+    parser = OptionParser(usage)
+
+    parser.add_option("-n", "--name", dest="reponame",
+                      help="repository name")
+    parser.add_option("-s","--search", dest="searchpath", default="/",
+                      help="search path in the repository (e.g. /trunk)")
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="display verbose progress")
+    parser.add_option("-r", "--dpi", dest="dpi", default=100, type="int",
+                      help="set the dpi of output png images")
+    parser.add_option("-t", "--thumbsize", dest="thumbsize", default=100, type="int",
+                      help="set the widht and heigth of thumbnail display (pixels)")
+    (options, args) = parser.parse_args()
+    
+    if( len(args) < 2):
+        print "Invalid number of arguments"
     else:        
-        svndbpath = sys.argv[1]
-        graphdir  = sys.argv[2]
-        svnplot = SVNPlot(svndbpath)
-        svnplot.AllGraphs(graphdir)
+        svndbpath = args[0]
+        graphdir  = args[1]
+        
+        if( options.searchpath.endswith('%') == False):
+            options.searchpath +='%'
+            
+        if( options.verbose == True):
+            print "Calculating subversion stat graphs"
+            print "Subversion log database : %s" % svndbpath
+            print "Graphs will generated in : %s" % graphdir
+            print "Repository Name : %s" % options.reponame
+            print "Search path inside repository : %s" % options.searchpath
+            print "Graph thumbnail size : %s" % options.thumbsize
+            
+        svnplot = SVNPlot(svndbpath, dpi=options.dpi)
+        svnplot.SetVerbose(options.verbose)
+        svnplot.SetRepoName(options.reponame)
+        svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
 
 def RunTest():
-        #testing
+    #testing
     svndbpath = "D:\\nitinb\\SoftwareSources\\SVNPlot\\svnrepo.db"
     graphfile = "D:\\nitinb\\SoftwareSources\\SVNPlot\\graph.png"
     svnplot = SVNPlot(svndbpath)
     #svnplot.ActivityByTimeOfDay(graphfile)
     #svnplot.LocGraph(graphfile)
-    svnplot.DirectorySizeLineGraph(graphfile, 2)    
-    #svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\")
+    #svnplot.DirectorySizeLineGraph(graphfile, 2)    
+    svnplot.AllGraphs("Nitin", "D:\\nitinb\\SoftwareSources\\SVNPlot\\", )
     
 if(__name__ == "__main__"):
     RunMain()
