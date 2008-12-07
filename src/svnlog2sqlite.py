@@ -16,6 +16,7 @@ yet.
 import svnlogiter
 import datetime
 import sqlite3
+import sys
 
 class SVNLog2Sqlite:
     def __init__(self, svnrepopath, sqlitedbpath):
@@ -77,15 +78,13 @@ class SVNLog2Sqlite:
                     linesadded integer, linesdeleted integer)")
         self.dbcon.commit()
 
-
-if( __name__ == "__main__"):
-    #testing
-    svnrepopath = "file:///F:/SvnRepoTest/"
-    sqlitedb = "D:\\nitinb\\SoftwareSources\\SVNPlot\\svnrepo.db"
+def RunTest():
     try:
-        conv = SVNLog2Sqlite(svnrepopath, sqlitedb)
+        svnrepopath = "file:///F:/SvnRepoTest/"
+        sqlitedbpath = "D:\\nitinb\\SoftwareSources\\SVNPlot\\svnrepo.db"    
+        conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath)
         conv.convert()
-        dbcon = sqlite3.connect(sqlitedb, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        dbcon = sqlite3.connect(sqlitedbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         cur = dbcon.cursor()
         cur.execute("select * from SVNLog")
         #for row in cur:
@@ -94,4 +93,21 @@ if( __name__ == "__main__"):
     except:
         del conv
         raise
+    
+def RunMain():
+    if( len(sys.argv) < 3):
+        print "Usage : svnlog2sqlite.py <svnrepo url> <sqlitedbpath>"
+    else:
+        try:
+            svnrepopath = sys.argv[1]
+            svndbpath = sys.argv[2]
+            conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath)
+            conv.convert()
+        except:
+            del conv
+            raise
+        
+if( __name__ == "__main__"):
+    RunMain()
+    
     
