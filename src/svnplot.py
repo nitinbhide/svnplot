@@ -13,7 +13,7 @@ Graph types to be supported
 7. file count vs dates line graph -- Done
 8. average file size vs date line graph -- Done
 9. directory size vs date line graph. Using different coloured lines for each directory
-10. directory size pie chart (latest status)
+10. directory size pie chart (latest status) -- Done
 11. Loc and Churn graph (loc vs date, churn vs date)- Churn is number of lines touched
 	(i.e. lines added + lines deleted + lines modified)
 12. Repository heatmap (treemap)
@@ -30,9 +30,10 @@ yet.
 
 import matplotlib.pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
+from matplotlib.font_manager import FontProperties
 import sqlite3
 import calendar, datetime
-import os.path
+import os.path, sys
 
 def dirname(path, depth):
     #first split the path and remove the filename
@@ -230,15 +231,15 @@ class SVNPlot:
         
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
         
-    def DirectorySizePieGraph(self, filename, depth=2, inpath='/%'):
-        sqlQuery = "select dirname(SVNLogDetail.changedpath, %d), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
-                         group by dirname(SVNLogDetail.changedpath, %d)" % (depth, inpath, depth)
+    def DirectorySizePieGraph(self, filename, depth=2, inpath='/%'):        
+        sqlQuery = "select dirname(SVNLogDetail.changedpath, %d), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
+                    from SVNLog, SVNLogDetail \
+                    where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
+                    group by dirname(SVNLogDetail.changedpath, %d)" % (depth, inpath, depth)
         self.cur.execute(sqlQuery)
             
         dirlist = []
-        dirsizelist = []
+        dirsizelist = []        
         for dirname, linesadded, linesdeleted in self.cur:
             dsize = linesadded-linesdeleted
             if( dsize > 0):
@@ -249,6 +250,42 @@ class SVNPlot:
         axs.set_title('Directory Sizes')        
         fig = axs.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
+            
+    def DirectorySizeLineGraph(self, filename, depth=2, inpath='/%'):
+        sqlQuery = "select dirname(changedpath, %d) from SVNLogDetail where changedpath like '%s' \
+                         group by dirname(changedpath, %d)" % (depth, inpath, depth)
+        self.cur.execute(sqlQuery)
+        
+        dirlist = [dirname for dirname, in self.cur]
+        ax = None
+        for dirname in dirlist:
+            ax = self._drawDirectorySizeLineGraphByDir(dirname, ax)
+            
+        fontprop = FontProperties(size='x-small')
+        legend = ax.legend(dirlist, loc='upper right', prop=fontprop, ncol=4)
+            
+        ax.set_title('Directory Size (Lines of Code)')
+        ax.set_ylabel('Lines')        
+        self._closeDateLineGraph(ax, filename)
+        
+    def _drawDirectorySizeLineGraphByDir(self, dirname, ax):
+        sqlQuery = "select sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
+                    strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), strftime('%%d', SVNLog.commitdate) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s%%' \
+                         group by date(SVNLog.commitdate)" % (dirname)
+
+        self.cur.execute(sqlQuery)
+        dates = []
+        dirsizelist = []
+        dirsize = 0
+        for locadded, locdeleted, year, month, day in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            dirsize= dirsize+locadded-locdeleted
+            dirsizelist.append(max(0, float(dirsize)))
+
+        ax = self._drawDateLineGraph(dates, dirsizelist, ax)
+        return(ax)
         
     def _getAuthorList(self):
         #Find out the unique developers
@@ -393,8 +430,9 @@ class SVNPlot:
         legendtext=[]
         for slabel, ssize in zip(slicelabels, autotexts):
            legendtext.append("%s : %s" % (slabel, ssize.get_text()))
-        legend = axs.legend(patches, legendtext, loc=(1, y))
-        plt.setp(legend.get_texts(), fontsize='x-small')
+
+        fontprop = FontProperties(size='x-small')           
+        legend = axs.legend(patches, legendtext, loc=(1, y), prop=fontprop)
         
         return(axs)
         
@@ -424,13 +462,25 @@ class SVNPlot:
         
         return(axs)
 
-if(__name__ == "__main__"):
-    #testing
+def RunMain():
+    if( len(sys.argv) < 3):
+        print "Usage : svnplot.py <sqlitedbpath> <graphdirpath>"
+    else:        
+        svndbpath = sys.argv[1]
+        graphdir  = sys.argv[2]
+        svnplot = SVNPlot(svndbpath)
+        svnplot.AllGraphs(graphdir)
+
+def RunTest():
+        #testing
     svndbpath = "D:\\nitinb\\SoftwareSources\\SVNPlot\\svnrepo.db"
     graphfile = "D:\\nitinb\\SoftwareSources\\SVNPlot\\graph.png"
     svnplot = SVNPlot(svndbpath)
     #svnplot.ActivityByTimeOfDay(graphfile)
     #svnplot.LocGraph(graphfile)
-    #svnplot.DirectorySizePieGraph(graphfile)    
-    svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\")
+    svnplot.DirectorySizeLineGraph(graphfile, 2)    
+    #svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\")
     
+if(__name__ == "__main__"):
+    RunMain()
+    #RunTest()
