@@ -127,8 +127,8 @@ class SVNPlot:
             print msg
             
     def AllGraphs(self, dirpath, svnsearchpath='/%', thumbsize=100):        
-        self.ActivityByWeekday(os.path.join(dirpath, GraphNameDict["ActByWeek"]));
-        self.ActivityByTimeOfDay(os.path.join(dirpath, GraphNameDict["ActByTimeOfDay"]));
+        self.ActivityByWeekday(os.path.join(dirpath, GraphNameDict["ActByWeek"]), svnsearchpath);
+        self.ActivityByTimeOfDay(os.path.join(dirpath, GraphNameDict["ActByTimeOfDay"]), svnsearchpath);
         self.LocGraph(os.path.join(dirpath, GraphNameDict["LoC"]),svnsearchpath);
         self.FileCountGraph(os.path.join(dirpath, GraphNameDict["FileCount"]), svnsearchpath);
         self.LocGraphAllDev(os.path.join(dirpath, GraphNameDict["LoCByDev"]), svnsearchpath);
@@ -150,10 +150,12 @@ class SVNPlot:
         htmlfile.write(htmlidxTmpl.safe_substitute(graphParamDict))
         htmlfile.close()
                                
-    def ActivityByWeekday(self, filename):
+    def ActivityByWeekday(self, filename, inpath="/%"):
         self.PrintProgress("Calculating Activity by day of week graph")
-        
-        self.cur.execute("select strftime('%w', commitdate), count(revno) from SVNLog group by strftime('%w', commitdate)")
+           
+        self.cur.execute("select strftime('%w', SVNLog.commitdate), count(SVNLog.revno) from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
+                         group by strftime('%w', SVNLog.commitdate)")
         labels =[]
         data = []
         for dayofweek, commitcount in self.cur:
@@ -168,10 +170,12 @@ class SVNPlot:
         fig = ax.figure                        
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
 
-    def ActivityByTimeOfDay(self, filename):
+    def ActivityByTimeOfDay(self, filename, inpath="/%"):
         self.PrintProgress("Calculating Activity by time of day graph")
         
-        self.cur.execute("select strftime('%H', commitdate), count(revno) from SVNLog group by strftime('%H', commitdate)")
+        self.cur.execute("select strftime('%H', SVNLog.commitdate), count(SVNLog.revno) from SVNLog, SVNLogDetail \
+                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
+                          group by strftime('%H', SVNLog.commitdate)")
         labels =[]
         data = []
         for hourofday, commitcount in self.cur:
@@ -604,9 +608,10 @@ def RunTest():
     svnplot = SVNPlot(svndbpath)
     #svnplot.ActivityByTimeOfDay(graphfile)
     #svnplot.LocGraph(graphfile)
-    #svnplot.DirectorySizeLineGraph(graphfile, 2)    
-    svnplot.AllGraphs("Nitin", "D:\\nitinb\\SoftwareSources\\SVNPlot\\", )
+    #svnplot.DirectorySizeLineGraph(graphfile, 2)
+    svnplot.SetRepoName("Nitin")
+    svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\", "/Sources%", 100)
     
 if(__name__ == "__main__"):
-    RunMain()
-    #RunTest()
+    #RunMain()
+    RunTest()
