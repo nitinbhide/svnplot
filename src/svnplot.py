@@ -613,5 +613,5 @@ def RunTest():
     svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\", "/Sources%", 100)
     
 if(__name__ == "__main__"):
-    #RunMain()
-    RunTest()
+    RunMain()
+    #RunTest()
