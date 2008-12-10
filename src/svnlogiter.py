@@ -18,7 +18,7 @@ import pysvn
 import datetime, time
 import os, re, string
 import StringIO
-
+import urllib
 
 def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -76,20 +76,22 @@ class SVNLogClient:
         
     def getHeadRevNo(self):
         headrev = pysvn.Revision( pysvn.opt_revision_kind.head )
-        revlog = self.svnclient.log( self.svnrepourl,
+        url = self.getUrl('')
+        revlog = self.svnclient.log( url,
              revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
         return(revlog[0].revision.number)
 
     def getLog(self, revno, briefLog=False):
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-        revlog = self.svnclient.log( self.svnrepourl,
+        url = self.getUrl('')
+        revlog = self.svnclient.log( url,
              revision_start=rev, revision_end=rev, discover_changed_paths=briefLog)
         return(revlog[0])
 
     def getRevDiff(self, revno):
         rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-        url = self.svnrepourl
+        url = self.getUrl('')
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,recurse=True,
                                       ignore_ancestry=True,ignore_content_type=False,
                                        diff_deleted=True)
@@ -98,7 +100,7 @@ class SVNLogClient:
     def getRevFileDiff(self, path, revno):
         rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-        url = self.svnrepourl + path
+        url = self.getUrl(path)
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,recurse=True,
                                       ignore_ancestry=False,ignore_content_type=False,
                                        diff_deleted=True)
@@ -109,7 +111,7 @@ class SVNLogClient:
         Hence recurse flag is set to False.
         '''
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-        url = self.svnrepourl + path
+        url = self.getUrl(path)
         entry_list = self.svnclient.info2( url,
                revision=rev,recurse=False)
         return(entry_list)
@@ -121,7 +123,7 @@ class SVNLogClient:
         Subversion assumes it is text. Otherwise it is treated as binary file.
         '''
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-        url = self.svnrepourl + filepath
+        url = self.getUrl(path)
         (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
         binary = False
         if( 'svn:mime-type' in propdict):
@@ -136,13 +138,17 @@ class SVNLogClient:
         linecount = 0
         if( self.isBinaryFile(filepath, revno) == False):
             rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-            url = self.svnrepourl + filepath
+            url = self.getUrl(path)
             contents = self.svnclient.cat(url, revision = rev)
             matches = re.findall("$", contents, re.M )
             if( matches != None):
                 linecount = len(matches)
         
         return(linecount)
+
+    def getUrl(self, path):
+        url = self.svnrepourl + urllib.pathname2url(path)
+        return(url)
         
     def __iter__(self):
         return(SVNRevLogIter(self, 1, self.getHeadRevNo()))
