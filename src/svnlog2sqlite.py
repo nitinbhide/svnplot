@@ -67,8 +67,9 @@ class SVNLog2Sqlite:
                                 values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
                     #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                 #commit after every change
-                self.dbcon.commit()            
                 print "Number of revisions converted : %d" % revcount
+            self.dbcon.commit()            
+            cur.close()
             
     def CreateTables(self):
         cur = self.dbcon.cursor()
@@ -109,5 +110,6 @@ def RunMain():
         
 if( __name__ == "__main__"):
     RunMain()
+    #RunTest()
     
     
