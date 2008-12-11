@@ -99,9 +99,9 @@ def RunMain():
     if( len(sys.argv) < 3):
         print "Usage : svnlog2sqlite.py <svnrepo url> <sqlitedbpath>"
     else:
+        svnrepopath = sys.argv[1]
+        sqlitedbpath = sys.argv[2]        
         try:
-            svnrepopath = sys.argv[1]
-            svndbpath = sys.argv[2]
             conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath)
             conv.convert()
         except:
