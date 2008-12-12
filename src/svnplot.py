@@ -316,14 +316,28 @@ class SVNPlot:
         refaxs = None
         for author in authList:
             axs = self._drawCommitActivityGraphByAuthor(authCount, authIdx, author, inpath, refaxs)
+            authIdx = authIdx+1
+            #first axes is used as reference axes. Since the reference axis limits are shared by
+            #all axes, every autoscale_view call on the new 'axs' will update the limits on the
+            #reference axes. Hence I am storing xmin,xmax limits and calculating the minimum/maximum
+            # limits for reference axis everytime. 
             if( refaxs == None):
                 refaxs = axs
-            authIdx = authIdx+1
+                refxmin, refxmax = refaxs.get_xbound()
+              
+            xmin, xmax = axs.get_xbound()
+            refxmin = min(xmin, refxmin)
+            refxmax = max(xmax, refxmax)
             
         #Set the x axis label on the last graph
         axs.set_xlabel('Date')
         #Turn on the xtick display only on the last graph
         plt.setp( axs.get_xticklabels(), visible=True)
+        #Calculated xlimts are 'forced' on the reference axis. This will automatically change limits
+        # for all axes.
+        refaxs.set_xbound(refxmin, refxmax)
+        #Y axis is always set to 0 to 24 hrs
+        refaxs.set_ybound(0, 24)            
         
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
         
@@ -484,18 +498,12 @@ class SVNPlot:
         axs = fig.add_subplot(plotcount, 1, plotidx,sharex=refaxs,sharey=refaxs)
         axs.grid(True)
         axs.plot_date(dates, values, marker='o', xdate=True, ydate=False)
-
+        axs.autoscale_view()
+        
         #Pass None has 'handles' since I want to display just the titles
         axs.legend([None], [title], loc='upper center')
         plt.setp( axs.get_xticklabels(), visible=False)
-        
-        if( refaxs != None):
-            xmin, xmax = axs.get_xbound()
-            #set the yaxis limits to (0-24) hours
-            corners = (xmin,0),(xmax,24)            
-            refaxs.update_datalim(corners)
-            axs.update_datalim(corners)
-            
+                    
         return(axs)
     
     def _closeScatterPlot(self, refaxs, filename,title):
@@ -506,7 +514,8 @@ class SVNPlot:
         refaxs.xaxis.set_major_locator(years)
         refaxs.xaxis.set_major_formatter(yearsFmt)
         refaxs.xaxis.set_minor_locator(months)
-        refaxs.autoscale_view()
+        #Donot autoscale
+        #refaxs.autoscale_view()
 
         fig = refaxs.figure
         fig.suptitle(title)
