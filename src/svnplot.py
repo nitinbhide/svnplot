@@ -581,25 +581,35 @@ def RunMain():
     
     if( len(args) < 2):
         print "Invalid number of arguments"
+        print "Usage : svnplot.py [options] <svnsqlitedbpath> <graphdir>"
     else:        
         svndbpath = args[0]
         graphdir  = args[1]
         
-        if( options.searchpath.endswith('%') == False):
-            options.searchpath +='%'
-            
-        if( options.verbose == True):
-            print "Calculating subversion stat graphs"
-            print "Subversion log database : %s" % svndbpath
-            print "Graphs will generated in : %s" % graphdir
-            print "Repository Name : %s" % options.reponame
-            print "Search path inside repository : %s" % options.searchpath
-            print "Graph thumbnail size : %s" % options.thumbsize
-            
-        svnplot = SVNPlot(svndbpath, dpi=options.dpi)
-        svnplot.SetVerbose(options.verbose)
-        svnplot.SetRepoName(options.reponame)
-        svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
+        if(os.path.isfile(svndbpath) == False):
+            print "%s does not exist. Please run svnlog2sqlite.py first"  % svndbpath
+        
+        if(os.path.isdir(graphdir) == False):
+            if(os.path.isfile(graphdir)):
+                print "%s is a file, not a directory. Please point to a directory"  % graphdir
+            else:
+                print "%s does not exist. Please create."  % graphdir
+        else:
+            if( options.searchpath.endswith('%') == False):
+                options.searchpath +='%'
+                
+            if( options.verbose == True):
+                print "Calculating subversion stat graphs"
+                print "Subversion log database : %s" % svndbpath
+                print "Graphs will generated in : %s" % graphdir
+                print "Repository Name : %s" % options.reponame
+                print "Search path inside repository : %s" % options.searchpath
+                print "Graph thumbnail size : %s" % options.thumbsize
+                
+            svnplot = SVNPlot(svndbpath, dpi=options.dpi)
+            svnplot.SetVerbose(options.verbose)
+            svnplot.SetRepoName(options.reponame)
+            svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
 
 def RunTest():
     #testing
