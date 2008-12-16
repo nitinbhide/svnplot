@@ -419,7 +419,7 @@ class SVNPlot:
         committimelist = []
         for hr, year, month, day in self.cur:
             dates.append(datetime.date(int(year), int(month), int(day)))
-            committimelist.append(hr)
+            committimelist.append(int(hr))
         axs = self._drawScatterPlot(dates, committimelist, authCount, authIdx, author, axs)
         
         return(axs)
