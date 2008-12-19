@@ -30,6 +30,7 @@ yet.
 
 import matplotlib.pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
+from matplotlib.ticker import FixedLocator
 from matplotlib.font_manager import FontProperties
 from optparse import OptionParser
 import sqlite3
@@ -337,8 +338,9 @@ class SVNPlot:
         # for all axes.
         refaxs.set_xbound(refxmin, refxmax)
         #Y axis is always set to 0 to 24 hrs
-        refaxs.set_ybound(0, 24)            
-        
+        refaxs.set_ybound(0, 24)
+        hrLocator= FixedLocator([0,6,12,18,24])
+        refaxs.yaxis.set_major_locator(hrLocator)        
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
         
     def DirectorySizePieGraph(self, filename, depth=2, inpath='/%'):
@@ -549,7 +551,6 @@ class SVNPlot:
         assert(ax != None)
         ax.autoscale_view()
         years    = YearLocator()   # every year
-        months   = MonthLocator(3)  # every 3 month
         months   = MonthLocator(3)  # every 3 month
         yearsFmt = DateFormatter('%Y')
         # format the ticks
