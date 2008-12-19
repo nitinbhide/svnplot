@@ -497,11 +497,11 @@ class SVNPlot:
             
         axs = fig.add_subplot(plotcount, 1, plotidx,sharex=refaxs,sharey=refaxs)
         axs.grid(True)
-        axs.plot_date(dates, values, marker='o', xdate=True, ydate=False)
+        axs.plot_date(dates, values, marker='.', xdate=True, ydate=False)
         axs.autoscale_view()
         
         #Pass None has 'handles' since I want to display just the titles
-        axs.legend([None], [title], loc='upper center')
+        axs.set_title(title, fontsize='small')
         plt.setp( axs.get_xticklabels(), visible=False)
                     
         return(axs)
@@ -590,35 +590,25 @@ def RunMain():
     
     if( len(args) < 2):
         print "Invalid number of arguments"
-        print "Usage : svnplot.py [options] <svnsqlitedbpath> <graphdir>"
     else:        
         svndbpath = args[0]
         graphdir  = args[1]
         
-        if(os.path.isfile(svndbpath) == False):
-            print "%s does not exist. Please run svnlog2sqlite.py first"  % svndbpath
-        
-        if(os.path.isdir(graphdir) == False):
-            if(os.path.isfile(graphdir)):
-                print "%s is a file, not a directory. Please point to a directory"  % graphdir
-            else:
-                print "%s does not exist. Please create."  % graphdir
-        else:
-            if( options.searchpath.endswith('%') == False):
-                options.searchpath +='%'
-                
-            if( options.verbose == True):
-                print "Calculating subversion stat graphs"
-                print "Subversion log database : %s" % svndbpath
-                print "Graphs will generated in : %s" % graphdir
-                print "Repository Name : %s" % options.reponame
-                print "Search path inside repository : %s" % options.searchpath
-                print "Graph thumbnail size : %s" % options.thumbsize
-                
-            svnplot = SVNPlot(svndbpath, dpi=options.dpi)
-            svnplot.SetVerbose(options.verbose)
-            svnplot.SetRepoName(options.reponame)
-            svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
+        if( options.searchpath.endswith('%') == False):
+            options.searchpath +='%'
+            
+        if( options.verbose == True):
+            print "Calculating subversion stat graphs"
+            print "Subversion log database : %s" % svndbpath
+            print "Graphs will generated in : %s" % graphdir
+            print "Repository Name : %s" % options.reponame
+            print "Search path inside repository : %s" % options.searchpath
+            print "Graph thumbnail size : %s" % options.thumbsize
+            
+        svnplot = SVNPlot(svndbpath, dpi=options.dpi)
+        svnplot.SetVerbose(options.verbose)
+        svnplot.SetRepoName(options.reponame)
+        svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
 
 def RunTest():
     #testing
@@ -632,5 +622,5 @@ def RunTest():
     svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\", "/Sources%", 100)
     
 if(__name__ == "__main__"):
-    RunMain()
-    #RunTest()
+    #RunMain()
+    RunTest()
