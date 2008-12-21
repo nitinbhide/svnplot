@@ -107,6 +107,7 @@ class SVNPlot:
         self.reponame = ""
         self.verbose = False
         self.clrlist = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+        self.commitGraphHtPerAuthor = 2 #In inches
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
         # Create the function "regexp" for the REGEXP operator of SQLite
@@ -115,12 +116,13 @@ class SVNPlot:
         self.cur = self.dbcon.cursor()        
     
     def __del__(self):
-        self.cur = None
+        self.cur.close()
         self.dbcon.close()
 
     def SetRepoName(self, reponame):
         self.reponame = reponame
-    def SetVerbose(self, verbose):
+        
+    def SetVerbose(self, verbose):       
         self.verbose = verbose
 
     def PrintProgress(self, msg):
@@ -333,14 +335,15 @@ class SVNPlot:
         #Set the x axis label on the last graph
         axs.set_xlabel('Date')
         #Turn on the xtick display only on the last graph
-        plt.setp( axs.get_xticklabels(), visible=True)
+        plt.setp( axs.get_xticklabels(), visible=True, fontsize='small')
         #Calculated xlimts are 'forced' on the reference axis. This will automatically change limits
         # for all axes.
         refaxs.set_xbound(refxmin, refxmax)
         #Y axis is always set to 0 to 24 hrs
         refaxs.set_ybound(0, 24)
         hrLocator= FixedLocator([0,6,12,18,24])
-        refaxs.yaxis.set_major_locator(hrLocator)        
+        refaxs.yaxis.set_major_locator(hrLocator)            
+        
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
         
     def DirectorySizePieGraph(self, filename, depth=2, inpath='/%'):
@@ -422,7 +425,9 @@ class SVNPlot:
         for hr, year, month, day in self.cur:
             dates.append(datetime.date(int(year), int(month), int(day)))
             committimelist.append(int(hr))
-        axs = self._drawScatterPlot(dates, committimelist, authCount, authIdx, author, axs)
+        #Plot title
+        plotTitle = "Author : %s" % author
+        axs = self._drawScatterPlot(dates, committimelist, authCount, authIdx, plotTitle, axs)
         
         return(axs)
             
@@ -494,6 +499,9 @@ class SVNPlot:
     def _drawScatterPlot(self,dates, values, plotidx, plotcount, title, refaxs):
         if( refaxs == None):
             fig = plt.figure()
+            #1 inch height for each author graph. So recalculate with height. Else y-scale get mixed.
+            fig.set_figheight(self.commitGraphHtPerAuthor*plotcount)
+            fig.subplots_adjust(top=0.85, left=0.05, right=0.95)
         else:
             fig = refaxs.figure
             
@@ -503,7 +511,7 @@ class SVNPlot:
         axs.autoscale_view()
         
         #Pass None has 'handles' since I want to display just the titles
-        axs.set_title(title, fontsize='small')
+        axs.set_title(title, fontsize='small',fontstyle='italic')
         plt.setp( axs.get_xticklabels(), visible=False)
                     
         return(axs)
@@ -516,10 +524,14 @@ class SVNPlot:
         refaxs.xaxis.set_major_locator(years)
         refaxs.xaxis.set_major_formatter(yearsFmt)
         refaxs.xaxis.set_minor_locator(months)
-        #Donot autoscale
+        #Do not autoscale. It will reset the limits on the x and y axis
         #refaxs.autoscale_view()
 
         fig = refaxs.figure
+        #Update the font size for all subplots y-axis
+        for axs in fig.get_axes():
+            plt.setp( axs.get_yticklabels(), fontsize='x-small')
+                
         fig.suptitle(title)
         fig.savefig(filename, dpi=self.dpi, format=self.format)
         
