@@ -302,7 +302,7 @@ class SVNPlot:
 
         dataList = [addfraclist, changefraclist, delfraclist]
         
-        barwid = 0.5
+        barwid = 0.2
         legendlist = ["Adding", "Modifying", "Deleting"]
         ax = self._drawStackedHBarGraph(dataList, authlist, legendlist, barwid)
         ax.set_title('Author Activity')
@@ -468,7 +468,9 @@ class SVNPlot:
         assert(len(dataList) > 0)
         numDataItems = len(dataList[0])
         #create dummy locations based on the number of items in data values
+        ymin = 0.0        
         ylocations = [y*barwid*2+barwid for y in range(numDataItems)]
+        ymax = ylocations[-1]+2.0*barwid
         ytickloc = [y+barwid/2.0 for y in ylocations]
         ytickloc.append(ytickloc[-1]+barwid)
         
@@ -477,7 +479,7 @@ class SVNPlot:
         ax.set_color_cycle(self.clrlist)
         ax.set_yticks(ytickloc)
         ax.set_yticklabels(labels)
-
+        
         clridx = 0
         maxclridx = len(self.clrlist)
         ax.barh(ylocations, dataList[0], height=barwid, color=self.clrlist[clridx], label=legendlist[0])
@@ -492,7 +494,7 @@ class SVNPlot:
                     color=self.clrlist[clridx], label=legendlist[i])
             
         ax.legend(loc='lower left')        
-        ax.autoscale_view()
+        ax.set_ybound(ymin, ymax)
         
         return(ax)
     
@@ -632,7 +634,7 @@ def RunTest():
     #svnplot.LocGraph(graphfile)
     #svnplot.DirectorySizeLineGraph(graphfile, 2)
     svnplot.SetRepoName("Nitin")
-    svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\", "/Sources%", 100)
+    svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\", "/%", 100)
     
 if(__name__ == "__main__"):
     RunMain()
