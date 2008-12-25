@@ -92,6 +92,7 @@ def RunTest():
         #    print row
         dbcon.close()
     except:
+#           If conv is not deleted in case of exception, the Database remains locked.
         del conv
         raise
     
@@ -105,6 +106,7 @@ def RunMain():
             conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath)
             conv.convert()
         except:
+#           If conv is not deleted in case of exception, the Database remains locked.
             del conv
             raise
         
