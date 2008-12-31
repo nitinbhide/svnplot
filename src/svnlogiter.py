@@ -237,7 +237,6 @@ class SVNRevLog:
     def __init__(self, logclient, revno):
         self.logclient = logclient
         self.revlog = self.logclient.getLog(revno, True)
-        print self.revlog
         
     def changedFileCount(self):
         '''includes directory and files. Initially I wanted to only add the changed file paths.
