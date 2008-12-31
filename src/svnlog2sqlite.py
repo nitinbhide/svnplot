@@ -54,22 +54,24 @@ class SVNLog2Sqlite:
     def ConvertRevs(self, laststoredrev, headrev):
         if( laststoredrev < headrev):
             cur = self.dbcon.cursor()
-            svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
-            revcount = 0
-            for revlog in svnloglist:
-                revcount = revcount+1
-                addedfiles, changedfiles, deletedfiles = revlog.changedFileCount()
-                cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
-                            values(?, ?, ?, ?,?, ?, ?)",
-                            (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
-                for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount():
-                    cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted) \
-                                values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
-                    #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
-                #commit after every change
-                print "Number of revisions converted : %d" % revcount
-            self.dbcon.commit()            
-            cur.close()
+            try:
+                svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
+                revcount = 0
+                for revlog in svnloglist:
+                    revcount = revcount+1
+                    addedfiles, changedfiles, deletedfiles = revlog.changedFileCount()
+                    cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
+                                values(?, ?, ?, ?,?, ?, ?)",
+                                (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
+                    for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount():
+                        cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted) \
+                                    values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
+                        #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
+                    #commit after every change
+                    print "Number of revisions converted : %d" % revcount
+            finally:                        
+                self.dbcon.commit()            
+                cur.close()
             
     def CreateTables(self):
         cur = self.dbcon.cursor()
