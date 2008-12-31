@@ -59,8 +59,12 @@ class SVNLogClient:
     def __init__(self, svnrepourl):
         self.svnrepourl = svnrepourl
         self.svnclient = pysvn.Client()
-        #Get temp directory
         self.tmppath = None
+        self._updateTempPath()
+        self.maxTryCount = 3
+        
+    def _updateTempPath(self):
+        #Get temp directory
         if os.environ.has_key('TEMP'):
             self.tmppath = os.environ['TEMP']
         elif os.environ.has_key('TMPDIR'):
@@ -73,37 +77,68 @@ class SVNLogClient:
             self.tmppath= '/tmp'
         elif os.path.exists('c:\\temp'):
             self.tmppath = 'c:\\temp'
-        
+            
     def getHeadRevNo(self):
-        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )
+        revno = 0
+        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )            
         url = self.getUrl('')
-        revlog = self.svnclient.log( url,
-             revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
-        return(revlog[0].revision.number)
+                
+        for trycount in range(1, self.maxTryCount):
+            try:
+                revlog = self.svnclient.log( url,
+                     revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
+                #got the revision log. Now break out the multi-try for loop
+                revno = revlog[0].revision.number
+                break
+            except:
+                continue
+            
+        return(revno)
 
     def getLog(self, revno, briefLog=False):
+        log=None
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl('')
-        revlog = self.svnclient.log( url,
-             revision_start=rev, revision_end=rev, discover_changed_paths=briefLog)
-        return(revlog[0])
+                
+        for trycount in range(1, self.maxTryCount):
+            try:
+                revlog = self.svnclient.log( url,
+                     revision_start=rev, revision_end=rev, discover_changed_paths=briefLog)
+                log = revlog[0]
+                break
+            except:
+                continue
+        return(log)
 
     def getRevDiff(self, revno):
         rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl('')
-        diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,recurse=True,
-                                      ignore_ancestry=True,ignore_content_type=False,
+        diff_log = None
+        for trycount in range(1, self.maxTryCount):
+            try:
+                diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
+                                recurse=True,ignore_ancestry=True,ignore_content_type=False,
                                        diff_deleted=True)
+                break
+            except:
+                continue
         return diff_log
 
     def getRevFileDiff(self, path, revno):
         rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
-        diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,recurse=True,
-                                      ignore_ancestry=False,ignore_content_type=False,
+        diff_log = None
+        for trycount in range(1, self.maxTryCount):
+            try:
+                diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
+                            recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                        diff_deleted=True)
+                break
+            except:
+                continue
+            
         return(diff_log)
     
     def getInfo(self, path, revno):
@@ -112,8 +147,13 @@ class SVNLogClient:
         '''
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
-        entry_list = self.svnclient.info2( url,
-               revision=rev,recurse=False)
+        entry_list = None
+        for trycount in range(1, self.maxTryCount):
+            try:
+                entry_list = self.svnclient.info2( url,revision=rev,recurse=False)
+                break
+            except:
+                continue
         return(entry_list)
 
     def isBinaryFile(self, filepath, revno):
@@ -124,25 +164,41 @@ class SVNLogClient:
         '''
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
-        (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
-        binary = False
-        if( 'svn:mime-type' in propdict):
-            mimetype = propdict['svn:mime-type']
-            if( mimetype.find('text') < 0):
-                #mime type is not a 'text' mime type.
-                binary = True
+        binary = None
+        for trycount in range(1, self.maxTryCount):
+            try:
+                (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
+                binary = False
+                if( 'svn:mime-type' in propdict):
+                    mimetype = propdict['svn:mime-type']
+                    if( mimetype.find('text') < 0):
+                        #mime type is not a 'text' mime type.
+                        binary = True
+                break
+            except:
+                continue
         
         return(binary)
+
+    def _getLineCount(self, filepath, revno):
+        linecount = 0
+        for trycount in range(1, self.maxTryCount):
+            try:
+                rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+                url = self.getUrl(path)
+                contents = self.svnclient.cat(url, revision = rev)
+                matches = re.findall("$", contents, re.M )
+                if( matches != None):
+                    linecount = len(matches)
+                break
+            except:
+                continue
+        return(linecount)
     
     def getLineCount(self, filepath, revno):
         linecount = 0
         if( self.isBinaryFile(filepath, revno) == False):
-            rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-            url = self.getUrl(path)
-            contents = self.svnclient.cat(url, revision = rev)
-            matches = re.findall("$", contents, re.M )
-            if( matches != None):
-                linecount = len(matches)
+            linecount = self._getLineCount(filepath, revno)
         
         return(linecount)
 
@@ -173,7 +229,7 @@ class SVNRevLogIter:
         if( self.currev> self.endrev):
             raise StopIteration
 
-        revlog = SVNRevLog(self.logclient, self.currev)
+        revlog = SVNRevLog(self.logclient, self.currev)        
         self.currev = self.currev+1
         return(revlog)
         
@@ -181,6 +237,7 @@ class SVNRevLog:
     def __init__(self, logclient, revno):
         self.logclient = logclient
         self.revlog = self.logclient.getLog(revno, True)
+        print self.revlog
         
     def changedFileCount(self):
         '''includes directory and files. Initially I wanted to only add the changed file paths.
@@ -272,7 +329,15 @@ class SVNRevLog:
     
     def __getattr__(self, name):
         if(name == 'author'):
-            return(self.revlog.author)
+            author = ''
+            #in case the author information is not available, then revlog object doesnot
+            # contain 'author' attribute. This case needs to be handled. I am returning
+            # empty string as author name.
+            try:
+                author =self.revlog.author
+            except:
+                pass
+            return(author)
         elif(name == 'message'):
             return(self.revlog.message )
         elif(name == 'date'):
