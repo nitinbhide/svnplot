@@ -68,7 +68,9 @@ class SVNLog2Sqlite:
                                     values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                     #commit after every change
-                    print "Number of revisions converted : %d" % revcount
+                    print "Number revisions converted : %d (Rev no : %d" % (revcount, revlog.revno)
+            except:
+                raise
             finally:                        
                 self.dbcon.commit()            
                 cur.close()
@@ -94,7 +96,6 @@ def RunTest():
         #    print row
         dbcon.close()
     except:
-#           If conv is not deleted in case of exception, the Database remains locked.
         del conv
         raise
     
@@ -108,7 +109,6 @@ def RunMain():
             conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath)
             conv.convert()
         except:
-#           If conv is not deleted in case of exception, the Database remains locked.
             del conv
             raise
         
