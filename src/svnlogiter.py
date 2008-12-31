@@ -83,7 +83,7 @@ class SVNLogClient:
         headrev = pysvn.Revision( pysvn.opt_revision_kind.head )            
         url = self.getUrl('')
                 
-        for trycount in range(1, self.maxTryCount):
+        for trycount in range(0, self.maxTryCount):
             try:
                 revlog = self.svnclient.log( url,
                      revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
@@ -100,7 +100,7 @@ class SVNLogClient:
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl('')
                 
-        for trycount in range(1, self.maxTryCount):
+        for trycount in range(0, self.maxTryCount):
             try:
                 revlog = self.svnclient.log( url,
                      revision_start=rev, revision_end=rev, discover_changed_paths=briefLog)
@@ -115,7 +115,7 @@ class SVNLogClient:
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl('')
         diff_log = None
-        for trycount in range(1, self.maxTryCount):
+        for trycount in range(0, self.maxTryCount):
             try:
                 diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                                 recurse=True,ignore_ancestry=True,ignore_content_type=False,
@@ -130,7 +130,7 @@ class SVNLogClient:
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
         diff_log = None
-        for trycount in range(1, self.maxTryCount):
+        for trycount in range(0, self.maxTryCount):
             try:
                 diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                             recurse=True, ignore_ancestry=False,ignore_content_type=False,
@@ -148,7 +148,7 @@ class SVNLogClient:
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
         entry_list = None
-        for trycount in range(1, self.maxTryCount):
+        for trycount in range(0, self.maxTryCount):
             try:
                 entry_list = self.svnclient.info2( url,revision=rev,recurse=False)
                 break
@@ -165,7 +165,7 @@ class SVNLogClient:
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
         binary = None
-        for trycount in range(1, self.maxTryCount):
+        for trycount in range(0, self.maxTryCount):
             try:
                 (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
                 binary = False
@@ -182,7 +182,7 @@ class SVNLogClient:
 
     def _getLineCount(self, filepath, revno):
         linecount = 0
-        for trycount in range(1, self.maxTryCount):
+        for trycount in range(0, self.maxTryCount):
             try:
                 rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
                 url = self.getUrl(path)
