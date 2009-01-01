@@ -24,13 +24,21 @@ class SVNLog2Sqlite:
         self.dbpath =sqlitedbpath
         self.dbcon =None
         
-    def convert(self):
+    def convert(self, maxtrycount=3):
         #First check if this a full conversion or a partial conversion
         self.initdb()
-        self.CreateTables()        
-        laststoredrev = self.getLastStoredRev()
-        headrev = self.svnclient.getHeadRevNo()
-        self.ConvertRevs(laststoredrev, headrev)
+        self.CreateTables()
+        for trycount in range(0, maxtrycount):
+            try:
+                laststoredrev = self.getLastStoredRev()
+                headrev = self.svnclient.getHeadRevNo()    
+                self.ConvertRevs(laststoredrev, headrev)
+            except Exception, expinst:
+                print "Error %s" % expinst
+                print "Trying again (%d)" % (trycount+1)
+            finally:                        
+                self.dbcon.commit()
+                
         self.closedb()
         
     def initdb(self):
@@ -51,29 +59,24 @@ class SVNLog2Sqlite:
             lastStoreRev = int(row[0])        
         return(lastStoreRev)
                
-    def ConvertRevs(self, laststoredrev, headrev):
+    def ConvertRevs(self, laststoredrev, headrev, maxtrycount=3):
         if( laststoredrev < headrev):
             cur = self.dbcon.cursor()
-            try:
-                svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
-                revcount = 0
-                for revlog in svnloglist:
-                    revcount = revcount+1
-                    addedfiles, changedfiles, deletedfiles = revlog.changedFileCount()
-                    cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
-                                values(?, ?, ?, ?,?, ?, ?)",
-                                (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
-                    for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount():
-                        cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted) \
-                                    values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
-                        #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
-                    #commit after every change
-                    print "Number revisions converted : %d (Rev no : %d" % (revcount, revlog.revno)
-            except:
-                raise
-            finally:                        
-                self.dbcon.commit()            
-                cur.close()
+            svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
+            revcount = 0
+            for revlog in svnloglist:
+                revcount = revcount+1
+                addedfiles, changedfiles, deletedfiles = revlog.changedFileCount()
+                cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
+                            values(?, ?, ?, ?,?, ?, ?)",
+                            (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
+                for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount():
+                    cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted) \
+                                values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
+                    #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
+                #commit after every change
+                print "Number revisions converted : %d (Rev no : %d)" % (revcount, revlog.revno)                        
+            cur.close()
             
     def CreateTables(self):
         cur = self.dbcon.cursor()
