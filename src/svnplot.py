@@ -272,7 +272,10 @@ class SVNPlot:
             dates.append(datetime.date(int(year), int(month), int(day)))
             totalLoc = totalLoc + locadded-locdeleted
             totalFileCnt = totalFileCnt + filesadded - filesdeleted
-            avgloclist.append(float(totalLoc)/float(totalFileCnt))
+            avgloc = 0.0
+            if( totalFileCnt > 0.0):
+               avgloc = float(totalLoc)/float(totalFileCnt)
+            avgloclist.append(avgloc)
             
         ax = self._drawDateLineGraph(dates, avgloclist)
         ax.set_title('Average File Size (Lines)')
@@ -296,9 +299,15 @@ class SVNPlot:
         for author, filesadded, fileschanged, filesdeleted in self.cur:
             authlist.append(author)            
             activitytotal = float(filesadded+fileschanged+filesdeleted)
-            addfraclist.append(float(filesadded)/activitytotal*100)
-            changefraclist.append(float(fileschanged)/activitytotal*100)
-            delfraclist.append(float(filesdeleted)/activitytotal*100)
+            
+            if( activitytotal > 0.0):
+               addfraclist.append(float(filesadded)/activitytotal*100)
+               changefraclist.append(float(fileschanged)/activitytotal*100)
+               delfraclist.append(float(filesdeleted)/activitytotal*100)
+            else:
+               addfraclist.append(0.0)
+               changefraclist.append(0.0)
+               delfraclist.append(0.0)
 
         dataList = [addfraclist, changefraclist, delfraclist]
         
@@ -627,14 +636,14 @@ def RunMain():
 
 def RunTest():
     #testing
-    svndbpath = "D:\\nitinb\\SoftwareSources\\SVNPlot\\svnrepo.db"
-    graphfile = "D:\\nitinb\\SoftwareSources\\SVNPlot\\graph.png"
+    svndbpath = "F:\\nitinb\\SoftwareSources\\SVNPlot\\rietveldrepo.db"
+    graphfile = "F:\\nitinb\\SoftwareSources\\SVNPlot\\graph.png"
     svnplot = SVNPlot(svndbpath)
     #svnplot.ActivityByTimeOfDay(graphfile)
     #svnplot.LocGraph(graphfile)
     #svnplot.DirectorySizeLineGraph(graphfile, 2)
     svnplot.SetRepoName("Nitin")
-    svnplot.AllGraphs("D:\\nitinb\\SoftwareSources\\SVNPlot\\", "/%", 100)
+    svnplot.AllGraphs("F:\\nitinb\\SoftwareSources\\SVNPlot\\", "/%", 100)
     
 if(__name__ == "__main__"):
     RunMain()
