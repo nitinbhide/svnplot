@@ -456,16 +456,15 @@ class SVNPlot:
     
     def _drawBarGraph(self, data, labels, barwid):
         #create dummy locations based on the number of items in data values
-        xlocations = [x*barwid*2+barwid for x in range(len(data))]
+        xlocations = [x*2*barwid+barwid for x in range(len(data))]
         xtickloc = [x+barwid/2.0 for x in xlocations]
         xtickloc.append(xtickloc[-1]+barwid)
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
+        ax.bar(xlocations, data, width=barwid)
         ax.set_xticks(xtickloc)
         ax.set_xticklabels(labels)
-        ax.bar(xlocations, data, width=barwid)
-        ax.autoscale_view()
         
         return(ax)
 
