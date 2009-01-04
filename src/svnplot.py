@@ -33,7 +33,7 @@ __date__     = '$Date:$'
 
 import matplotlib.pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
-from matplotlib.ticker import FixedLocator
+from matplotlib.ticker import FixedLocator, FormatStrFormatter
 from matplotlib.font_manager import FontProperties
 from optparse import OptionParser
 import sqlite3
@@ -318,6 +318,8 @@ class SVNPlot:
         legendlist = ["Adding", "Modifying", "Deleting"]
         ax = self._drawStackedHBarGraph(dataList, authlist, legendlist, barwid)
         ax.set_xbound(0, 100)
+        xfmt = FormatStrFormatter('%d%%')
+        ax.xaxis.set_major_formatter(xfmt)
         ax.set_title('Author Activity')
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
