@@ -28,6 +28,9 @@ To use copy the file in Python 'site-packages' directory Setup is not available
 yet.
 '''
 
+__revision__ = '$Revision:$'
+__date__     = '$Date:$'
+
 import matplotlib.pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
 from matplotlib.ticker import FixedLocator
@@ -536,12 +539,7 @@ class SVNPlot:
         for axs in fig.get_axes():
             plt.setp( axs.get_yticklabels(), fontsize='x-small')
                 
-        fig.suptitle(title)
-
-        refxmin, refxmax = refaxs.get_xbound()
-        print "refxmin=", refxmin
-        print "refxmax=", refxmax
-        
+        fig.suptitle(title)        
         fig.savefig(filename, dpi=self.dpi, format=self.format)
         
     def _drawPieGraph(self, slicesizes, slicelabels):
