@@ -335,19 +335,12 @@ class SVNPlot:
             # limits for reference axis everytime. 
             if( refaxs == None):
                 refaxs = axs
-                refxmin, refxmax = refaxs.get_xbound()
-              
-            xmin, xmax = axs.get_xbound()
-            refxmin = min(xmin, refxmin)
-            refxmax = max(xmax, refxmax)
-            
+
         #Set the x axis label on the last graph
         axs.set_xlabel('Date')
         #Turn on the xtick display only on the last graph
         plt.setp( axs.get_xticklabels(), visible=True, fontsize='small')
-        #Calculated xlimts are 'forced' on the reference axis. This will automatically change limits
-        # for all axes.
-        refaxs.set_xbound(refxmin, refxmax)
+        
         #Y axis is always set to 0 to 24 hrs
         refaxs.set_ybound(0, 24)
         hrLocator= FixedLocator([0,6,12,18,24])
@@ -544,6 +537,11 @@ class SVNPlot:
             plt.setp( axs.get_yticklabels(), fontsize='x-small')
                 
         fig.suptitle(title)
+
+        refxmin, refxmax = refaxs.get_xbound()
+        print "refxmin=", refxmin
+        print "refxmax=", refxmax
+        
         fig.savefig(filename, dpi=self.dpi, format=self.format)
         
     def _drawPieGraph(self, slicesizes, slicelabels):
