@@ -420,7 +420,13 @@ class SVNPlot:
         #get the auhor list and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
         # get overwritten
         authList = [author for author, in self.cur]
-        return(authList)
+        #if there is an empty string in author list, replace it by "unknown"
+        authListFinal = []
+        for author in authList:
+            if( author == ""):
+                author='unknown'
+            authListFinal.append(author)
+        return(authListFinal)
         
     def _drawCommitActivityGraphByAuthor(self, authIdx, authCount, author, inpath='/%', axs=None):
         sqlQuery = "select strftime('%%H', commitdate), strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), \
