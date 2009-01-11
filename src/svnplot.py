@@ -223,9 +223,12 @@ class SVNPlot:
         authList = self._getAuthorList()
         for author in authList:
             ax = self._drawlocGraphLineByDev(author, inpath,  ax)
-            
-        ax.legend(authList, loc='upper left')
-            
+
+        #Add the list of authors as figure legend.
+        #axes legend is added 'inside' the axes and overlaps the labels or the graph
+        #lines depending on the location 
+        self._addFigureLegend(ax, authList)
+        
         ax.set_title('Contributed Lines of Code')
         ax.set_ylabel('Lines')        
         self._closeDateLineGraph(ax, filename)
@@ -387,9 +390,8 @@ class SVNPlot:
         ax = None
         for dirname in dirlist:
             ax = self._drawDirectorySizeLineGraphByDir(dirname, ax)
-            
-        fontprop = FontProperties(size='x-small')
-        legend = ax.legend(dirlist, loc='upper right', prop=fontprop)
+
+        self._addFigureLegend(ax, dirlist, loc="center right", ncol=1)
             
         ax.set_title('Directory Size (Lines of Code)')
         ax.set_ylabel('Lines')        
@@ -427,7 +429,16 @@ class SVNPlot:
                 author='unknown'
             authListFinal.append(author)
         return(authListFinal)
-        
+
+    def _getLegendFont(self):
+        legendfont = FontProperties(size='x-small')
+        return(legendfont)
+
+    def _addFigureLegend(self, ax, labels, loc="lower center", ncol=4):
+        fig = ax.figure
+        legendfont = self._getLegendFont()
+        fig.legend(ax.get_lines(), labels, loc=loc, ncol=ncol, prop=legendfont)
+                
     def _drawCommitActivityGraphByAuthor(self, authIdx, authCount, author, inpath='/%', axs=None):
         sqlQuery = "select strftime('%%H', commitdate), strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), \
                          strftime('%%d', SVNLog.commitdate) from SVNLog where author='%s' \
