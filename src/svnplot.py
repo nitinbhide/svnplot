@@ -320,9 +320,13 @@ class SVNPlot:
         barwid = 0.2
         legendlist = ["Adding", "Modifying", "Deleting"]
         ax = self._drawStackedHBarGraph(dataList, authlist, legendlist, barwid)
+        #set the x-axis format.                
         ax.set_xbound(0, 100)
         xfmt = FormatStrFormatter('%d%%')
         ax.xaxis.set_major_formatter(xfmt)
+        #set the y-axis format
+        plt.setp( ax.get_yticklabels(), visible=True, fontsize='small')
+        
         ax.set_title('Author Activity')
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
@@ -580,7 +584,7 @@ class SVNPlot:
         for slabel, ssize in zip(slicelabels, autotexts):
            legendtext.append("%s : %s" % (slabel, ssize.get_text()))
 
-        fontprop = FontProperties(size='x-small')           
+        fontprop = self._getLegendFont()
         legend = axs.legend(patches, legendtext, loc=(1, y), prop=fontprop)
         
         return(axs)
