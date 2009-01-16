@@ -357,7 +357,7 @@ class SVNPlot:
         #Y axis is always set to 0 to 24 hrs
         refaxs.set_ybound(0, 24)
         hrLocator= FixedLocator([0,6,12,18,24])
-        refaxs.yaxis.set_major_locator(hrLocator)            
+        refaxs.yaxis.set_major_locator(hrLocator)
         
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
         
@@ -547,13 +547,7 @@ class SVNPlot:
         return(axs)
     
     def _closeScatterPlot(self, refaxs, filename,title):
-        years    = YearLocator()   # every year
-        months   = MonthLocator(3)  # every 3 month
-        yearsFmt = DateFormatter('%Y')
-        # format the ticks
-        refaxs.xaxis.set_major_locator(years)
-        refaxs.xaxis.set_major_formatter(yearsFmt)
-        refaxs.xaxis.set_minor_locator(months)
+        self._setXAxisDateFormatter(refaxs)
         #Do not autoscale. It will reset the limits on the x and y axis
         #refaxs.autoscale_view()
 
@@ -588,10 +582,8 @@ class SVNPlot:
         legend = axs.legend(patches, legendtext, loc=(1, y), prop=fontprop)
         
         return(axs)
-        
-    def _closeDateLineGraph(self, ax, filename):
-        assert(ax != None)
-        ax.autoscale_view()
+
+    def _setXAxisDateFormatter(self, ax):
         years    = YearLocator()   # every year
         months   = MonthLocator(interval=3)  # every 3 month
         yearsFmt = DateFormatter('%Y')
@@ -601,6 +593,11 @@ class SVNPlot:
         ax.xaxis.set_major_formatter(yearsFmt)
         ax.xaxis.set_minor_locator(months)
         ax.xaxis.set_minor_formatter(monthsFmt)
+        
+    def _closeDateLineGraph(self, ax, filename):
+        assert(ax != None)
+        ax.autoscale_view()
+        self._setXAxisDateFormatter(ax)
         ax.grid(True)
         ax.set_xlabel('Date')
         fig = ax.figure
