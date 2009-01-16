@@ -593,12 +593,14 @@ class SVNPlot:
         assert(ax != None)
         ax.autoscale_view()
         years    = YearLocator()   # every year
-        months   = MonthLocator(3)  # every 3 month
+        months   = MonthLocator(interval=3)  # every 3 month
         yearsFmt = DateFormatter('%Y')
+        monthsFmt = DateFormatter('%b')
         # format the ticks
         ax.xaxis.set_major_locator(years)
         ax.xaxis.set_major_formatter(yearsFmt)
         ax.xaxis.set_minor_locator(months)
+        ax.xaxis.set_minor_formatter(monthsFmt)
         ax.grid(True)
         ax.set_xlabel('Date')
         fig = ax.figure
