@@ -441,7 +441,14 @@ class SVNPlot:
     def _addFigureLegend(self, ax, labels, loc="lower center", ncol=4):
         fig = ax.figure
         legendfont = self._getLegendFont()
-        fig.legend(ax.get_lines(), labels, loc=loc, ncol=ncol, prop=legendfont)
+        assert(len(labels) > 0)
+        lnhandles =ax.get_lines()
+        assert(len(lnhandles) > 0)
+        #Fix for a bug in matplotlib 0.98.5.2. If the len(labels) < ncol,
+        # then i get an error "range() step argument must not be zero" on line 542 in legend.py
+        if( len(labels) < ncol):
+           ncol = len(labels)
+        fig.legend(lnhandles, labels, loc=loc, ncol=ncol, prop=legendfont)
                 
     def _drawCommitActivityGraphByAuthor(self, authIdx, authCount, author, inpath='/%', axs=None):
         sqlQuery = "select strftime('%%H', commitdate), strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), \
@@ -654,3 +661,4 @@ def RunMain():
     
 if(__name__ == "__main__"):
     RunMain()
+    
