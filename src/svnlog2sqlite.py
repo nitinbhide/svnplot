@@ -84,6 +84,8 @@ class SVNLog2Sqlite:
                             addedfiles integer, changedfiles integer, deletedfiles integer)")
         cur.execute("create table if not exists SVNLogDetail(revno integer, changedpath text, changetype text,\
                     linesadded integer, linesdeleted integer)")
+        cur.execute("CREATE  INDEX if not exists svnlogrevnoidx ON SVNLog (revno ASC)")
+        cur.execute("CREATE  INDEX if not exists svnlogdtlrevnoidx ON SVNLogDetail (revno ASC)")
         self.dbcon.commit()
     
 def RunMain():
