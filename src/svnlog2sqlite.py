@@ -85,22 +85,6 @@ class SVNLog2Sqlite:
         cur.execute("create table if not exists SVNLogDetail(revno integer, changedpath text, changetype text,\
                     linesadded integer, linesdeleted integer)")
         self.dbcon.commit()
-
-def RunTest():
-    try:
-        svnrepopath = "file:///F:/SvnRepoTest/"
-        sqlitedbpath = "D:\\nitinb\\SoftwareSources\\SVNPlot\\svnrepo.db"    
-        conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath)
-        conv.convert()
-        dbcon = sqlite3.connect(sqlitedbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        cur = dbcon.cursor()
-        cur.execute("select * from SVNLog")
-        #for row in cur:
-        #    print row
-        dbcon.close()
-    except:
-        del conv
-        raise
     
 def RunMain():
     if( len(sys.argv) < 3):
@@ -117,6 +101,5 @@ def RunMain():
         
 if( __name__ == "__main__"):
     RunMain()
-    #RunTest()
     
     

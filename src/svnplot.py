@@ -651,18 +651,6 @@ def RunMain():
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
         svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
-
-def RunTest():
-    #testing
-    svndbpath = "F:\\nitinb\\SoftwareSources\\SVNPlot\\rietveldrepo.db"
-    graphfile = "F:\\nitinb\\SoftwareSources\\SVNPlot\\graph.png"
-    svnplot = SVNPlot(svndbpath)
-    #svnplot.ActivityByTimeOfDay(graphfile)
-    #svnplot.LocGraph(graphfile)
-    #svnplot.DirectorySizeLineGraph(graphfile, 2)
-    svnplot.SetRepoName("Nitin")
-    svnplot.AllGraphs("F:\\nitinb\\SoftwareSources\\SVNPlot\\", "/%", 100)
     
 if(__name__ == "__main__"):
     RunMain()
-    #RunTest()
