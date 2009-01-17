@@ -353,17 +353,3 @@ class SVNRevLog:
         revdiff_log = self.logclient.getRevDiff(revno)
         return(getDiffLineCountDict(revdiff_log))
                  
-if(__name__ == "__main__"):
-    #Run tests
-    svnrepopath = "file:///F:/SvnRepoTest/"
-    #svnfilepath = "Astrology/HomeKpswiss/Kpswiss/kps_interface.h"
-    svnfilepath = ""
-    logclient = SVNLogClient(svnrepopath)
-    #diff_log = logclient.getRevDiff(25)
-    #print diff_log
-    revlog = SVNRevLog(logclient, 25)
-    difflist = revlog.getDiffLineCount()
-    print difflist
-    
-        
-    
