@@ -64,9 +64,10 @@ class SVNLog2Sqlite:
             cur = self.dbcon.cursor()
             svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
             revcount = 0
+            bChkIfDir = bUpdLineCount
             for revlog in svnloglist:
                 revcount = revcount+1
-                addedfiles, changedfiles, deletedfiles = revlog.changedFileCount()
+                addedfiles, changedfiles, deletedfiles = revlog.changedFileCount(bChkIfDir)
                 cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
                             values(?, ?, ?, ?,?, ?, ?)",
                             (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
