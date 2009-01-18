@@ -95,7 +95,7 @@ class SVNLogClient:
             
         return(revno)
 
-    def getLog(self, revno, briefLog=False):
+    def getLog(self, revno, detailedLog=False):
         log=None
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl('')
@@ -103,13 +103,29 @@ class SVNLogClient:
         for trycount in range(0, self.maxTryCount):
             try:
                 revlog = self.svnclient.log( url,
-                     revision_start=rev, revision_end=rev, discover_changed_paths=briefLog)
+                     revision_start=rev, revision_end=rev, discover_changed_paths=detailedLog)
                 log = revlog[0]
                 break
             except:
                 continue
         return(log)
 
+    def getLogs(self, startrevno, endrevno, detailedLog=False):
+        revlog =None
+        startrev = pysvn.Revision(pysvn.opt_revision_kind.number, startrevno)
+        endrev = pysvn.Revision(pysvn.opt_revision_kind.number, endrevno)
+        url = self.getUrl('')
+                
+        for trycount in range(0, self.maxTryCount):
+            try:
+                revlog = self.svnclient.log( url,
+                     revision_start=startrev, revision_end=endrev, discover_changed_paths=detailedLog)
+                break
+            except Exception, expinst:
+                #print "Exception : %s" % expinst
+                continue
+        return(revlog)
+    
     def getRevDiff(self, revno):
         rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
@@ -215,6 +231,7 @@ class SVNRevLogIter:
         self.startrev = startRevNo
         self.endrev = endRevNo
         self.currev = 0
+        self.revlogcache = None
         
     def __iter__(self):
         return(self)
@@ -229,25 +246,77 @@ class SVNRevLogIter:
         if( self.currev> self.endrev):
             raise StopIteration
 
-        revlog = SVNRevLog(self.logclient, self.currev)        
+        if( self.revlogcache== None):
+            self.revlogcache = SVNRevLogCache(self.logclient, self.startrev, self.endrev)
+        
+        revlog = self.revlogcache.getLog(self.currev)        
         self.currev = self.currev+1
         return(revlog)
-        
-class SVNRevLog:
-    def __init__(self, logclient, revno):
+
+class SVNRevLogCache:
+    def __init__(self, logclient, startRev, endRev, cachesize=50):
         self.logclient = logclient
-        self.revlog = self.logclient.getLog(revno, True)
+        self.startrevno = startRev
+        self.cachesize = cachesize
+        self.endrevno = endRev
+        self.revlogcache = []
+
+    def __getNextStart(self):
+        nextstart = self.startrevno+len(self.revlogcache)
+        return(nextstart)
+
+    def __getNextEnd(self):
+        nextstart = self.__getNextStart()
+        nextend = min(nextstart+self.cachesize-1, self.endrevno)
+        return(nextend)
+    
+    def __updateCache(self):
+        nextstart = self.__getNextStart()
+        nextend = self.__getNextEnd()
+        self.revlogcache = self.logclient.getLogs(nextstart, nextend, True)        
+        self.startrevno = nextstart
         
-    def changedFileCount(self):
+    def __isUpdateRequired(self, revno):
+        updateNeeded = False
+        if( revno >= self.__getNextStart()):
+            updateNeeded = True
+        return(updateNeeded)
+            
+    def getLog(self, revno):
+        if(self.__isUpdateRequired(revno) ==True):
+            self.__updateCache()
+        idx = revno-self.startrevno
+        assert(idx >= 0 and idx < len(self.revlogcache))
+        revlog = SVNRevLog(self.logclient, self.revlogcache[idx])
+        return(revlog)        
+    
+class SVNRevLog:
+    def __init__(self, logclient, revnolog):
+        self.logclient = logclient
+        if( isinstance(revnolog, pysvn.PysvnLog) == False):
+            self.revlog = self.logclient.getLog(revnolog, True)
+        else:
+            self.revlog = revnolog
+        assert(self.revlog == None or isinstance(revnolog, pysvn.PysvnLog)==True)
+        
+    def changedFileCount(self, bChkIfDir):
         '''includes directory and files. Initially I wanted to only add the changed file paths.
         however it is not possible to detect if the changed path is file or directory from the
         svn log output
+        bChkIfDir -- If this flag is false, then treat all changed paths as files.
+           since isDirectory function calls the svn client 'info' command, treating all changed
+           paths as files will avoid calls to isDirectory function and speed up changed file count
+           computations
         '''
         filesadded = 0
         fileschanged = 0
         filesdeleted = 0
+        assert(len(self.revlog.changed_paths) > 0)
+        
         for change in self.revlog.changed_paths:
-            isdir = self.isDirectory(change)
+            isdir = False
+            if( bChkIfDir == True):
+                isdir = self.isDirectory(change)
             change['isdir'] = isdir
             action = change['action']
             if( isdir == False):
@@ -347,7 +416,7 @@ class SVNRevLog:
         elif(name == 'revno'):
             return(self.revlog.revision.number)
         elif(name == 'changedpathcount'):
-            filesadded, fileschanged, filesdeleted = self.changedFileCount()
+            filesadded, fileschanged, filesdeleted = self.changedFileCount(True)
             return(filesadded+fileschanged+filesdeleted)
         return(None)
     
