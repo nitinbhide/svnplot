@@ -282,13 +282,16 @@ class SVNRevLog:
             
         return(isDir)
         
-    def getDiffLineCount(self):
+    def getDiffLineCount(self, bUpdLineCount=True):
         """
         Returns a list of tuples containing filename, lines added and lines modified
         In case of binary files, lines added and deleted are returned as zero.
         In case of directory also lines added and deleted are returned as zero
         """                        
-        diffCountDict = self._updateDiffCount()
+        diffCountDict = dict()
+        if( bUpdLineCount == True):
+            diffCountDict = self._updateDiffCount()
+            
         diffCountList = []
         for change in self.revlog.changed_paths:
             linesadded = 0
