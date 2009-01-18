@@ -351,8 +351,10 @@ class SVNPlot:
 
         #Set the x axis label on the last graph
         axs.set_xlabel('Date')
+        
         #Turn on the xtick display only on the last graph
-        plt.setp( axs.get_xticklabels(), visible=True, fontsize='small')
+        plt.setp( axs.get_xmajorticklabels(), visible=True)
+        plt.setp( axs.get_xminorticklabels(), visible=True)
         
         #Y axis is always set to 0 to 24 hrs
         refaxs.set_ybound(0, 24)
@@ -548,14 +550,16 @@ class SVNPlot:
         axs.plot_date(dates, values, marker='.', xdate=True, ydate=False)
         axs.autoscale_view()
         
-        #Pass None has 'handles' since I want to display just the titles
+        #Pass None as 'handles' since I want to display just the titles
         axs.set_title(title, fontsize='small',fontstyle='italic')
-        plt.setp( axs.get_xticklabels(), visible=False)
+        
+        self._setXAxisDateFormatter(axs)        
+        plt.setp( axs.get_xmajorticklabels(), visible=False)
+        plt.setp( axs.get_xminorticklabels(), visible=False)
                     
         return(axs)
     
     def _closeScatterPlot(self, refaxs, filename,title):
-        self._setXAxisDateFormatter(refaxs)
         #Do not autoscale. It will reset the limits on the x and y axis
         #refaxs.autoscale_view()
 
@@ -592,15 +596,17 @@ class SVNPlot:
         return(axs)
 
     def _setXAxisDateFormatter(self, ax):
-        years    = YearLocator()   # every year
-        months   = MonthLocator(interval=3)  # every 3 month
-        yearsFmt = DateFormatter('%Y')
-        monthsFmt = DateFormatter('%b')
+##        years    = YearLocator()   # every year
+##        months   = MonthLocator(interval=3)  # every 3 month
+##        yearsFmt = DateFormatter('%Y')
+##        monthsFmt = DateFormatter('%b')
         # format the ticks
-        ax.xaxis.set_major_locator(years)
-        ax.xaxis.set_major_formatter(yearsFmt)
-        ax.xaxis.set_minor_locator(months)
-        ax.xaxis.set_minor_formatter(monthsFmt)
+##        ax.xaxis.set_major_locator(years)
+##        ax.xaxis.set_major_formatter(yearsFmt)
+##        ax.xaxis.set_minor_locator(months)
+##        ax.xaxis.set_minor_formatter(monthsFmt)
+        plt.setp( ax.get_xmajorticklabels(), fontsize='small')
+        plt.setp( ax.get_xminorticklabels(), fontsize='x-small')
         
     def _closeDateLineGraph(self, ax, filename):
         assert(ax != None)
