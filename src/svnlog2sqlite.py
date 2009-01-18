@@ -24,7 +24,7 @@ class SVNLog2Sqlite:
         self.dbpath =sqlitedbpath
         self.dbcon =None
         
-    def convert(self, maxtrycount=3):
+    def convert(self, bUpdLineCount=True, maxtrycount=3):
         #First check if this a full conversion or a partial conversion
         self.initdb()
         self.CreateTables()
@@ -32,7 +32,7 @@ class SVNLog2Sqlite:
             try:
                 laststoredrev = self.getLastStoredRev()
                 headrev = self.svnclient.getHeadRevNo()    
-                self.ConvertRevs(laststoredrev, headrev)
+                self.ConvertRevs(laststoredrev, headrev, bUpdLineCount, maxtrycount)
             except Exception, expinst:
                 print "Error %s" % expinst
                 print "Trying again (%d)" % (trycount+1)
@@ -59,8 +59,8 @@ class SVNLog2Sqlite:
             lastStoreRev = int(row[0])        
         return(lastStoreRev)
                
-    def ConvertRevs(self, laststoredrev, headrev, maxtrycount=3):
-        if( laststoredrev < headrev):
+    def ConvertRevs(self, laststoredrev, headrev, bUpdLineCount, maxtrycount=3):
+        if( laststoredrev < headrev):            
             cur = self.dbcon.cursor()
             svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
             revcount = 0
@@ -70,7 +70,7 @@ class SVNLog2Sqlite:
                 cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
                             values(?, ?, ?, ?,?, ?, ?)",
                             (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
-                for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount():
+                for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):
                     cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted) \
                                 values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
                     #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
