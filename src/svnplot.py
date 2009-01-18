@@ -377,11 +377,12 @@ class SVNPlot:
             if( dsize > 0):
                 dirlist.append(dirname)
                 dirsizelist.append(dsize)
-        
-        axs = self._drawPieGraph(dirsizelist, dirlist)
-        axs.set_title('Directory Sizes')        
-        fig = axs.figure
-        fig.savefig(filename, dpi=self.dpi, format=self.format)
+                
+        if( len(dirsizelist) > 0):
+           axs = self._drawPieGraph(dirsizelist, dirlist)
+           axs.set_title('Directory Sizes')        
+           fig = axs.figure
+           fig.savefig(filename, dpi=self.dpi, format=self.format)
             
     def DirectorySizeLineGraph(self, filename, depth=2, inpath='/%'):
         self.PrintProgress("Calculating Directory size line graph")
