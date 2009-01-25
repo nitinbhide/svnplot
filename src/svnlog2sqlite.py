@@ -68,6 +68,10 @@ class SVNLog2Sqlite:
             revcount = 0
             bChkIfDir = bUpdLineCount
             for revlog in svnloglist:
+                logging.debug("converting revision %d" % revlog.revno)
+                #logging.debug("Revision author:%s" % revlog.author)
+                #logging.debug("Revision date:%s" % revlog.date)
+                #logging.debug("Revision msg:%s" % revlog.message)
                 revcount = revcount+1
                 addedfiles, changedfiles, deletedfiles = revlog.changedFileCount(bChkIfDir)
                 cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
