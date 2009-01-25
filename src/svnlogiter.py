@@ -86,13 +86,15 @@ class SVNLogClient:
                 
         for trycount in range(0, self.maxTryCount):
             try:
+                logging.debug("Trying (%d) to get head revision" % trycount)
                 revlog = self.svnclient.log( url,
                      revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
                 #got the revision log. Now break out the multi-try for loop
                 revno = revlog[0].revision.number
+                logging.debug("Found head revision %d" % revno)
                 break
             except Exception, expinst:
-                logging.debug("Error %s" % expinst)
+                logging.error("Error %s" % expinst)
                 continue
             
         return(revno)
@@ -104,12 +106,13 @@ class SVNLogClient:
                 
         for trycount in range(0, self.maxTryCount):
             try:
+                logging.debug("Trying (%d) to get revision log" % trycount)
                 revlog = self.svnclient.log( url,
                      revision_start=rev, revision_end=rev, discover_changed_paths=detailedLog)
                 log = revlog[0]
                 break
             except Exception, expinst:
-                logging.debug("Error %s" % expinst)
+                logging.error("Error %s" % expinst)
                 continue
         return(log)
 
@@ -121,12 +124,13 @@ class SVNLogClient:
                 
         for trycount in range(0, self.maxTryCount):
             try:
+                logging.debug("Trying (%d) to get revision logs [%d:%d]" % (trycount,startrevno, endrevno))
                 revlog = self.svnclient.log( url,
-                     revision_start=startrev, revision_end=endrev, discover_changed_paths=detailedLog)
+                     revision_start=startrev, revision_end=endrev, discover_changed_paths=detailedLog)                
                 break
             except Exception, expinst:
-                logging.debug("Error %s" % expinst)
-                continue
+                logging.error("Error %s" % expinst)
+                continue        
         return(revlog)
     
     def getRevDiff(self, revno):
@@ -136,12 +140,13 @@ class SVNLogClient:
         diff_log = None
         for trycount in range(0, self.maxTryCount):
             try:
+                logging.debug("Trying (%d) to get revision diffs" % trycount)
                 diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                                 recurse=True,ignore_ancestry=True,ignore_content_type=False,
                                        diff_deleted=True)
                 break
-            except Exception, expinst:
-                logging.debug("Error %s" % expinst)
+            except Exception, expinst:                
+                logging.error("Error %s" % expinst)
                 continue
         return diff_log
 
@@ -152,12 +157,13 @@ class SVNLogClient:
         diff_log = None
         for trycount in range(0, self.maxTryCount):
             try:
+                logging.debug("Trying (%d) to get filelevel revision diffs" % trycount)
                 diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                             recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                        diff_deleted=True)
                 break
             except Exception, expinst:
-                logging.debug("Error %s" % expinst)
+                logging.error("Error %s" % expinst)
                 continue
             
         return(diff_log)
@@ -171,10 +177,11 @@ class SVNLogClient:
         entry_list = None
         for trycount in range(0, self.maxTryCount):
             try:
+                logging.debug("Trying (%d) to get file information" % trycount)
                 entry_list = self.svnclient.info2( url,revision=rev,recurse=False)
                 break
             except Exception, expinst:
-                logging.debug("Error %s" % expinst)
+                logging.error("Error %s" % expinst)
                 continue
         return(entry_list)
 
@@ -198,7 +205,7 @@ class SVNLogClient:
                         binary = True
                 break
             except Exception, expinst:
-                print "Error %s" % expinst
+                logging.error("Error %s" % expinst)
                 continue
         
         return(binary)
@@ -207,6 +214,7 @@ class SVNLogClient:
         linecount = 0
         for trycount in range(0, self.maxTryCount):
             try:
+                logging.debug("Trying (%d) to get linecount information" % trycount)
                 rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
                 url = self.getUrl(path)
                 contents = self.svnclient.cat(url, revision = rev)
@@ -215,7 +223,7 @@ class SVNLogClient:
                     linecount = len(matches)
                 break
             except Exception, expinst:
-                logging.debug("Error %s" % expinst)
+                logging.error("Error %s" % expinst)
                 continue
         return(linecount)
     
@@ -319,7 +327,7 @@ class SVNRevLog:
         filesadded = 0
         fileschanged = 0
         filesdeleted = 0
-        assert(len(self.revlog.changed_paths) > 0)
+        logging.debug("Changed path count : %d" % len(self.revlog.changed_paths))
         
         for change in self.revlog.changed_paths:
             isdir = False
@@ -334,7 +342,6 @@ class SVNRevLog:
                     filesadded = filesadded+1
                 elif(action == 'D'):
                     filesdeleted = filesdeleted+1
-                    
         return(filesadded, fileschanged, filesdeleted)
         
     def isDirectory(self, change):
