@@ -17,6 +17,7 @@ import svnlogiter
 import datetime
 import sqlite3
 import sys
+import logging
 
 class SVNLog2Sqlite:
     def __init__(self, svnrepopath, sqlitedbpath):
@@ -34,7 +35,8 @@ class SVNLog2Sqlite:
                 headrev = self.svnclient.getHeadRevNo()    
                 self.ConvertRevs(laststoredrev, headrev, bUpdLineCount, maxtrycount)
             except Exception, expinst:
-                print "Error %s" % expinst
+                logging.error("Error %s" % expinst)
+                print "Error %s" % expinst                
                 print "Trying again (%d)" % (trycount+1)
             finally:                        
                 self.dbcon.commit()

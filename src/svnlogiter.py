@@ -19,6 +19,7 @@ import datetime, time
 import os, re, string
 import StringIO
 import urllib
+import logging
 
 def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -90,7 +91,8 @@ class SVNLogClient:
                 #got the revision log. Now break out the multi-try for loop
                 revno = revlog[0].revision.number
                 break
-            except:
+            except Exception, expinst:
+                logging.debug("Error %s" % expinst)
                 continue
             
         return(revno)
@@ -106,7 +108,8 @@ class SVNLogClient:
                      revision_start=rev, revision_end=rev, discover_changed_paths=detailedLog)
                 log = revlog[0]
                 break
-            except:
+            except Exception, expinst:
+                logging.debug("Error %s" % expinst)
                 continue
         return(log)
 
@@ -122,7 +125,7 @@ class SVNLogClient:
                      revision_start=startrev, revision_end=endrev, discover_changed_paths=detailedLog)
                 break
             except Exception, expinst:
-                #print "Exception : %s" % expinst
+                logging.debug("Error %s" % expinst)
                 continue
         return(revlog)
     
@@ -137,7 +140,8 @@ class SVNLogClient:
                                 recurse=True,ignore_ancestry=True,ignore_content_type=False,
                                        diff_deleted=True)
                 break
-            except:
+            except Exception, expinst:
+                logging.debug("Error %s" % expinst)
                 continue
         return diff_log
 
@@ -152,7 +156,8 @@ class SVNLogClient:
                             recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                        diff_deleted=True)
                 break
-            except:
+            except Exception, expinst:
+                logging.debug("Error %s" % expinst)
                 continue
             
         return(diff_log)
@@ -168,7 +173,8 @@ class SVNLogClient:
             try:
                 entry_list = self.svnclient.info2( url,revision=rev,recurse=False)
                 break
-            except:
+            except Exception, expinst:
+                logging.debug("Error %s" % expinst)
                 continue
         return(entry_list)
 
@@ -191,7 +197,8 @@ class SVNLogClient:
                         #mime type is not a 'text' mime type.
                         binary = True
                 break
-            except:
+            except Exception, expinst:
+                print "Error %s" % expinst
                 continue
         
         return(binary)
@@ -207,7 +214,8 @@ class SVNLogClient:
                 if( matches != None):
                     linecount = len(matches)
                 break
-            except:
+            except Exception, expinst:
+                logging.debug("Error %s" % expinst)
                 continue
         return(linecount)
     
