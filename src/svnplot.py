@@ -213,7 +213,6 @@ class SVNPlot:
     def LocGraph(self, filename):
         self._printProgress("Calculating LoC graph")
         ax = self._drawLocGraph()
-        
         ax.set_ylabel('Lines')        
         ax.set_title('Lines of Code')
         self._closeDateLineGraph(ax, filename)
@@ -246,6 +245,7 @@ class SVNPlot:
         ax = self._drawDailyChurnGraph(ax)
         ax.set_title('LoC and Churn')
         ax.set_ylabel('Line Count')
+        #ax.legend(loc='center right')
         self._closeDateLineGraph(ax, filename)
         
     def FileCountGraph(self, filename):
@@ -448,8 +448,9 @@ class SVNPlot:
         for year, month, day, churn in self.cur:
             dates.append(datetime.date(int(year), int(month), int(day)))
             loc.append(float(churn))
-            
-        ax = self._drawDateLineGraph(dates, loc, ax)
+        
+        lines = ax.vlines(dates, [0.1], loc, color='r', label='Churn')
+        
         return(ax)
             
     def _drawDirectorySizeLineGraphByDir(self, dirname, ax):
