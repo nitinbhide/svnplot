@@ -88,10 +88,10 @@ HTMLIndexTemplate ='''
 </html>
 '''
 
-GraphNameDict = dict(ActByWeek="actbyweekday.png", ActByTimeOfDay="actbytimeofday.png",
-                     LoC="loc.png", LoCChurn="churnloc.png", FileCount="filecount.png", LoCByDev="localldev.png",
-                     AvgLoC="avgloc.png", AuthActivity="authactivity.png",CommitAct="commitactivity.png",
-                     DirSizePie="dirsizepie.png", DirSizeLine="dirsizeline.png")
+GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday",
+                     LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
+                     AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
+                     DirSizePie="dirsizepie", DirSizeLine="dirsizeline")
                      
 def dirname(path, depth):
     #first split the path and remove the filename
@@ -146,20 +146,21 @@ class SVNPlot:
             
     def AllGraphs(self, dirpath, svnsearchpath='/%', thumbsize=100):
         self.SetSearchPath(svnsearchpath) 
-        self.ActivityByWeekday(os.path.join(dirpath, GraphNameDict["ActByWeek"]));
-        self.ActivityByTimeOfDay(os.path.join(dirpath, GraphNameDict["ActByTimeOfDay"]));
-        self.LocGraph(os.path.join(dirpath, GraphNameDict["LoC"]));
-        self.LocChurnGraph(os.path.join(dirpath, GraphNameDict["LoCChurn"]));
-        self.FileCountGraph(os.path.join(dirpath, GraphNameDict["FileCount"]));
-        self.LocGraphAllDev(os.path.join(dirpath, GraphNameDict["LoCByDev"]));
-        self.AvgFileLocGraph(os.path.join(dirpath, GraphNameDict["AvgLoC"]));
-        self.AuthorActivityGraph(os.path.join(dirpath, GraphNameDict["AuthActivity"]));
-        self.CommitActivityGraph(os.path.join(dirpath, GraphNameDict["CommitAct"]));
+        self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"));
+        self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"));
+        self.LocGraph(self._getGraphFileName(dirpath, "LoC"));
+        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"));
+        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"));
+        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"));
+        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"));
+        self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"));
+        self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"));
         depth=2
-        self.DirectorySizePieGraph(os.path.join(dirpath, GraphNameDict["DirSizePie"]));
-        self.DirectorySizeLineGraph(os.path.join(dirpath, GraphNameDict["DirSizeLine"]));
+        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), depth);
+        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),depth);
 
-        graphParamDict = dict(GraphNameDict)
+        graphParamDict = self._getGraphParamDict( thumbsize)
+        dict(GraphNameDict)
         graphParamDict["thumbwid"]=str(thumbsize)
         graphParamDict["thumbht"]=str(thumbsize)
         graphParamDict["RepoName"]=self.reponame
@@ -489,6 +490,22 @@ class SVNPlot:
     def _getLegendFont(self):
         legendfont = FontProperties(size='x-small')
         return(legendfont)
+
+    def _getGraphFileName(self, dirpath, graphname):
+        filename = os.path.join(dirpath, GraphNameDict[graphname])
+        #now add the extension based on the format
+        filename = "%s.%s" % (filename, self.format)
+        return(filename)
+    
+    def _getGraphParamDict(self, thumbsize):
+        graphParamDict = dict()
+        for graphname in GraphNameDict.keys():
+            graphParamDict[graphname] = self._getGraphFileName(".", graphname)
+            
+        graphParamDict["thumbwid"]=str(thumbsize)
+        graphParamDict["thumbht"]=str(thumbsize)
+        graphParamDict["RepoName"]=self.reponame
+        return(graphParamDict)
 
     def _addFigureLegend(self, ax, labels, loc="lower center", ncol=4):
         fig = ax.figure
