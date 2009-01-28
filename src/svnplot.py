@@ -89,7 +89,7 @@ HTMLIndexTemplate ='''
 '''
 
 GraphNameDict = dict(ActByWeek="actbyweekday.png", ActByTimeOfDay="actbytimeofday.png",
-                     LoC="loc.png", FileCount="filecount.png", LoCByDev="localldev.png",
+                     LoC="loc.png", LoCChurn="churnloc.png", FileCount="filecount.png", LoCByDev="localldev.png",
                      AvgLoC="avgloc.png", AuthActivity="authactivity.png",CommitAct="commitactivity.png",
                      DirSizePie="dirsizepie.png", DirSizeLine="dirsizeline.png")
                      
@@ -149,6 +149,7 @@ class SVNPlot:
         self.ActivityByWeekday(os.path.join(dirpath, GraphNameDict["ActByWeek"]));
         self.ActivityByTimeOfDay(os.path.join(dirpath, GraphNameDict["ActByTimeOfDay"]));
         self.LocGraph(os.path.join(dirpath, GraphNameDict["LoC"]));
+        self.LocChurnGraph(os.path.join(dirpath, GraphNameDict["LoCChurn"]));
         self.FileCountGraph(os.path.join(dirpath, GraphNameDict["FileCount"]));
         self.LocGraphAllDev(os.path.join(dirpath, GraphNameDict["LoCByDev"]));
         self.AvgFileLocGraph(os.path.join(dirpath, GraphNameDict["AvgLoC"]));
@@ -211,23 +212,10 @@ class SVNPlot:
         
     def LocGraph(self, filename):
         self._printProgress("Calculating LoC graph")
-        self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
-                         strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
-                         group by date(SVNLog.commitdate)" % self.searchpath)
-        dates = []
-        loc = []
-        tocalloc = 0
-        for year, month, day, locadded, locdeleted in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            tocalloc = tocalloc + locadded-locdeleted
-            loc.append(float(tocalloc))
-            
-        ax = self._drawDateLineGraph(dates, loc)
-        ax.set_title('Lines of Code')
-        ax.set_ylabel('Lines')
+        ax = self._drawLocGraph()
         
+        ax.set_ylabel('Lines')        
+        ax.set_title('Lines of Code')
         self._closeDateLineGraph(ax, filename)
 
     def LocGraphAllDev(self, filename):
@@ -251,7 +239,15 @@ class SVNPlot:
         ax.set_title('Contributed LoC by %s' % devname)
         ax.set_ylabel('Line Count')
         self._closeDateLineGraph(ax, filename)
-                    
+
+    def LocChurnGraph(self, filename):
+        self._printProgress("Calculating LoC and Churn graph")
+        ax = self._drawLocGraph()
+        ax = self._drawDailyChurnGraph(ax)
+        ax.set_title('LoC and Churn')
+        ax.set_ylabel('Line Count')
+        self._closeDateLineGraph(ax, filename)
+        
     def FileCountGraph(self, filename):
         self._printProgress("Calculating File Count graph")
         
@@ -422,7 +418,40 @@ class SVNPlot:
         ax.set_title('Directory Size (Lines of Code)')
         ax.set_ylabel('Lines')        
         self._closeDateLineGraph(ax, filename)
+
+    def _drawLocGraph(self):
+        self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
+                         strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
+                         group by date(SVNLog.commitdate)" % self.searchpath)
+        dates = []
+        loc = []
+        tocalloc = 0
+        for year, month, day, locadded, locdeleted in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            tocalloc = tocalloc + locadded-locdeleted
+            loc.append(float(tocalloc))
+            
+        ax = self._drawDateLineGraph(dates, loc)
+        return(ax)
     
+    def _drawDailyChurnGraph(self, ax):
+        self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
+                         strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded+SVNLogDetail.linesdeleted) as churn\
+                         from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
+                         group by date(SVNLog.commitdate)" % self.searchpath)
+        dates = []
+        loc = []
+        tocalloc = 0
+        for year, month, day, churn in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            loc.append(float(churn))
+            
+        ax = self._drawDateLineGraph(dates, loc, ax)
+        return(ax)
+            
     def _drawDirectorySizeLineGraphByDir(self, dirname, ax):
         sqlQuery = "select sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
                     strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), strftime('%%d', SVNLog.commitdate) \
