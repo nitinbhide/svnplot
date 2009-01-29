@@ -1,0 +1,89 @@
+html, body {
+	width:100%;
+	height:100%;
+	background-color:#222;
+	text-align:center;
+	overflow:hidden;
+	font-size:10px;
+	font-family:Verdana, Geneva, Arial, Helvetica, sans-serif;
+}
+
+h2 {
+	color : white;
+	font-weight: bold;
+}
+
+#treemap {
+	position:relative;
+	width:900px;
+	height:500px;
+	margin:auto;
+	background-color:#1D1D20;
+}
+
+#treemap div {
+	position:absolute;
+	overflow:hidden;
+}
+
+#treemap .content {
+	background-color:#333;
+	border:0px solid #111;
+}
+
+#treemap .head {
+	height:12px;
+	color:white;
+	background-color:#444;
+}
+
+#treemap .head.in-path {
+	background-color:#655;
+}
+
+#treemap .body {
+	background-color:black;
+}
+
+#treemap .leaf {
+	color:white;
+	background-color:#111;
+	display:table-cell;
+	vertical-align:middle;
+}
+
+#treemap .over-leaf {
+	border:1px solid #9FD4FF;
+}
+
+#treemap .over-content {
+	background-color: #9FD4FF;
+}
+
+#treemap .over-head { /* ...boy i'm funny */
+	background-color:#A4D9FF;
+	color:black;
+}
+
+/*TOOLTIPS*/
+.tool-tip {
+	color: #fff;
+	width: 139px;
+	z-index: 13000;
+	background-color: black;
+}
+
+.tip-title {
+	font-weight: bold;
+	font-size: 11px;
+	margin: 0;
+	color: #9FD4FF;
+	padding: 8px 8px 4px;
+	background-color: black;
+}
+
+.tip-text {
+	font-size: 11px;
+	padding: 4px 8px 8px;
+	background-color: black;
+}
