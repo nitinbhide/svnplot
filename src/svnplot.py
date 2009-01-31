@@ -51,7 +51,7 @@ HTMLIndexTemplate ='''
     </style>
 </head>
 <body>
-<table border="1" align="center" frame="box">
+<table align="center" frame="box">
 <caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
 <tr>
 <th colspan=4 align="center"><h3>Lines of Code Graphs</h3></th>
