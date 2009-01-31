@@ -32,9 +32,6 @@ __revision__ = '$Revision:$'
 __date__     = '$Date:$'
 
 import matplotlib.pyplot as plt
-#from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
-#from matplotlib.ticker import FixedLocator, FormatStrFormatter
-#from matplotlib.font_manager import FontProperties
 from optparse import OptionParser
 import sqlite3
 import calendar, datetime
