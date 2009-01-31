@@ -17,6 +17,7 @@ Graph types to be supported
 11. Loc and Churn graph (loc vs date, churn vs date)- Churn is number of lines touched
 	(i.e. lines added + lines deleted + lines modified)
 12. Repository heatmap (treemap)
+13. Bug Commit Trend graph - Number of commits with words like 'bug' or 'fix' in the message
 
 --- Nitin Bhide (nitinbhide@gmail.com)
 
@@ -41,45 +42,70 @@ from svnplotbase import *
 
 HTMLIndexTemplate ='''
 <html>
-<head><title>Subversion Stats Plot for $RepoName</title></head>
+<head><title>Subversion Stats Plot for $RepoName</title>
+    <style type="text/css">
+    th {background-color: #F5F5F5; text-align:center}
+    td {background-color: #FFFFF0}
+    h3 {background-color: transparent;margin:2}
+    h4 {background-color: transparent;margin:1}    
+    </style>
+</head>
 <body>
-<h1 align="center">Subversion Statistics for $RepoName</h1>
-<table border="1" align="center">
+<table border="1" align="center" frame="box">
+<caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
 <tr>
-    <td align="center" width="25%"><h3>Lines of Code</h3><br/>
+<th colspan=4 align="center"><h3>Lines of Code Graphs</h3></th>
+</tr>
+<tr>
+    <td align="center" width="25%"><h4>Lines of Code</h4><br/>
     <a href="$LoC"><img src="$LoC" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h3>Contributed Lines of Code</h3><br/>
+    <td align="center" width="25%"><h4>Contributed Lines of Code</h4><br/>
     <a href="$LoCByDev"><img src="$LoCByDev" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h3>Average File Size</h3><br/>
+    <td align="center" width="25%"><h4>Average File Size</h4><br/>
     <a href="$AvgLoC"><img src="$AvgLoC" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h3>File Count</h3><br/>
+    <td align="center" width="25%"><h4>File Count</h4><br/>
     <a href="$FileCount"><img src="$FileCount" width="$thumbwid" height="$thumbht"></a>
     </td>
 </tr>
 <tr>
-    <td align="center" width="25%"><h3>Developer Commit Activity</h3><br/>
-    <a href="$CommitAct"><img src="$CommitAct" width="$thumbwid" height="$thumbht"></a>
+<th colspan=4 align="center"><h3>Directory Size Graphs</h3></th>
+</tr>
+<tr>
+   <td align="center"><h4>Current Directory Size</h4><br/>
+    <a href="$DirSizePie"><img src="$DirSizePie" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h3>Commit Activity By Day of Week </h3><br/>
-    <a href="$ActByWeek"><img src="$ActByWeek" width="$thumbwid" height="$thumbht"></a>
-    </td>
-    <td align="center" width="25%"><h3>Commit Activity By Hour of Day</h3><br/>
-    <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay" width="$thumbwid" height="$thumbht"></a>
-    </td>
-    <td align="center" width="25%"><h3>Author Activity</h3><br/>
-    <a href="$AuthActivity"><img src="$AuthActivity" width="$thumbwid" height="$thumbht"></a>
+    <td align="center"><h4>Directory Size</h4><br/>
+    <a href="$DirSizeLine"><img src="$DirSizeLine" width="$thumbwid" height="$thumbht"></a>
     </td>
 </tr>
 <tr>
-   <td align="center"><h3>Current Directory Size</h3><br/>
-    <a href="$DirSizePie"><img src="$DirSizePie" width="$thumbwid" height="$thumbht"></a>
+<th colspan=4 align="center"><h3>Commit Activity Graphs</h3></th>
+</tr>
+<tr>
+    <td align="center" width="25%"><h4>Commit Activity By Day of Week </h4><br/>
+    <a href="$ActByWeek"><img src="$ActByWeek" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center"><h3>Directory Size</h3><br/>
-    <a href="$DirSizeLine"><img src="$DirSizeLine" width="$thumbwid" height="$thumbht"></a>
+    <td align="center" width="25%"><h4>Commit Activity By Hour of Day</h4><br/>
+    <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay" width="$thumbwid" height="$thumbht"></a>
     </td>
+    <td align="center" width="25%"><h4>Author Activity</h4><br/>
+    <a href="$AuthActivity"><img src="$AuthActivity" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center" width="25%"><h4>Developer Commit Activity</h4><br/>
+    <a href="$CommitAct"><img src="$CommitAct" width="$thumbwid" height="$thumbht"></a>
+    </td>    
+</tr>
+<tr>
+<th colspan=4 align="center"><h3>Bug Pronness Graphs</h3></th>
+</tr>
+<tr>
+   <td span=4 align="center">
+       <h4>Bug fix Commits</h4><br/>
+       <a href="$BugfixCommitsTrend"><img src="$BugfixCommitsTrend" width="$thumbwid" height="$thumbht"></a>        
+   </td>   
 </tr>
 </table>
 </body>
@@ -89,12 +115,14 @@ HTMLIndexTemplate ='''
 GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
-                     DirSizePie="dirsizepie", DirSizeLine="dirsizeline")
+                     DirSizePie="dirsizepie", DirSizeLine="dirsizeline",
+                     BugfixCommitsTrend="bugfixcommits")
                          
 class SVNPlot(SVNPlotBase):
     def __init__(self, svndbpath, dpi=100, format='png'):
         SVNPlotBase.__init__(self, svndbpath, dpi,format)
         self.commitGraphHtPerAuthor = 2 #In inches
+        self.bugfixkeywords = ['bug', 'fix']
                 
     def AllGraphs(self, dirpath, svnsearchpath='/%', thumbsize=100):
         self.SetSearchPath(svnsearchpath) 
@@ -107,10 +135,12 @@ class SVNPlot(SVNPlotBase):
         self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"));
         self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"));
         self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"));
+        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"));
+
         depth=2
         self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), depth);
         self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),depth);
-
+        
         graphParamDict = self._getGraphParamDict( thumbsize)
         dict(GraphNameDict)
         graphParamDict["thumbwid"]=str(thumbsize)
@@ -371,7 +401,34 @@ class SVNPlot(SVNPlotBase):
         ax.set_title('Directory Size (Lines of Code)')
         ax.set_ylabel('Lines')        
         self._closeDateLineGraph(ax, filename)
-
+        
+    def BugfixCommitsTrend(self, filename):
+        self._printProgress("Calculating Bug fix commit trend")
+        
+        sqlquery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), \
+                         strftime('%%d', SVNLog.commitdate), count(*) as commitcount \
+                         from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
+                         and %s group by date(SVNLog.commitdate)" % (self.searchpath, self._bugFixKeywordsInMsgSql())
+        
+        self.cur.execute(sqlquery)
+        dates = []
+        fc = []
+        commitchurn = []
+        totalcommits = 0
+        for year, month, day, commitcount in self.cur:
+            dates.append(datetime.date(int(year), int(month), int(day)))
+            commitchurn.append(float(commitcount))
+            totalcommits = totalcommits+commitcount
+            fc.append(float(totalcommits))
+            
+        ax = None
+        ax = self._drawDateLineGraph(dates, fc,ax)        
+        ax = self._drawDateLineGraph(dates, commitchurn, ax)
+        ax.set_title('Bugfix Commits Trend')
+        ax.set_ylabel('Commits Count')
+        ax.legend(("Total commits", "commits churn"), prop=self._getLegendFont())
+        self._closeDateLineGraph(ax, filename)
+        
     def _drawLocGraph(self):
         self.cur.execute("select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate),\
                          strftime('%%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
@@ -475,6 +532,18 @@ class SVNPlot(SVNPlotBase):
             
         ax = self._drawDateLineGraph(dates, loc, ax)
         return(ax)
+    
+    def _bugFixKeywordsInMsgSql(self):
+        sqlstr = "( "
+        first = True
+        for keyword in self.bugfixkeywords:
+            if( first == False):
+                sqlstr = sqlstr + ' or '
+            sqlstr=sqlstr + "svnlog.msg like '%%%s%%'" % keyword
+            first = False
+        sqlstr = sqlstr + " )"
+        return(sqlstr)
+    
         
 def RunMain():
     usage = "usage: %prog [options] <svnsqlitedbpath> <graphdir>"
