@@ -90,25 +90,11 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline")
-                     
-def dirname(path, depth):
-    #first split the path and remove the filename
-    pathcomp = os.path.dirname(path).split('/')
-    #now join the split path upto given depth only
-    #since path starts with '/' and slice ignores the endindex, to get the appropriate
-    #depth, slice has to be [0:depth+1]
-    dirpath = '/'.join(pathcomp[0:depth+1])
-    return(dirpath)
-    
+                         
 class SVNPlot(SVNPlotBase):
     def __init__(self, svndbpath, dpi=100, format='png'):
         SVNPlotBase.__init__(self, svndbpath, dpi,format)
         self.commitGraphHtPerAuthor = 2 #In inches
-        self.searchpath = '/%'
-        self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        #self.dbcon.row_factory = sqlite3.Row
-        # Create the function "regexp" for the REGEXP operator of SQLite
-        self.dbcon.create_function("dirname", 2, dirname)        
                 
     def AllGraphs(self, dirpath, svnsearchpath='/%', thumbsize=100):
         self.SetSearchPath(svnsearchpath) 
