@@ -184,6 +184,27 @@ class SVNLogClient:
                 logging.error("Error %s" % expinst)
                 continue
         return(entry_list)
+    
+    def getDiffLineCountForPath(self, revno, filepath, changetype):
+        added = 0
+        deleted = 0
+        if( changetype != 'A' and changetype != 'D'):
+            #file or directory is modified
+            print 'change type %s' % changetype
+            diff_log = self.getRevFileDiff(filepath, revno)
+            print diff_log
+            diffDict = getDiffLineCountDict(diff_log)
+            assert(diffDict.has_key(filepath) != False)
+            added, deleted = diffDict[filepath]
+        elif( self.isDirectory(revno, filepath, changetype) == False):
+            #path is added or deleted. First check if the path is a directory. If path is not a directory
+            # then process further.
+            if( changetype == 'A'):
+                added = self.getLineCount(filepath, revno)
+            elif( changetype == 'D'):
+                deleted = self.getLineCount(filepath, revno-1)
+            
+        return(added, deleted)
 
     def isBinaryFile(self, filepath, revno):
         '''
@@ -209,7 +230,20 @@ class SVNLogClient:
                 continue
         
         return(binary)
+    
+    def isDirectory(self, revno, changepath, changetype):
+        #if the file/dir is deleted in the current revision. Then the status needs to be checked for
+        # one revision before that        
+        if( changetype == 'D'):            
+            revno = revno-1
+        entry = self.getInfo(changepath, revno)
+        filename, info_dict = entry[0]
 
+        isDir = False            
+        if( info_dict.kind == pysvn.node_kind.dir):
+            isDir = True
+        return(isDir)
+        
     def _getLineCount(self, filepath, revno):
         linecount = 0
         for trycount in range(0, self.maxTryCount):
@@ -352,15 +386,7 @@ class SVNRevLog:
         #see if directory check is alredy done on this path. If not, then check with the repository        
         if( 'isdir' not in change):
             revno = self.getRevNo()
-            #if the file/dir is deleted in the current revision. Then the status needs to be checked for
-            # one revision before that
-            if( action == 'D'):            
-                revno = revno-1
-            entry = self.logclient.getInfo(path, revno)
-            filename, info_dict = entry[0]
-            
-            if( info_dict.kind == pysvn.node_kind.dir):
-                isDir = True
+            isDir = self.logclient.isDirectory(revno, path, action)            
         else:
             isDir = change['isdir']
             

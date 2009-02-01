@@ -45,7 +45,7 @@ class SVNLog2Sqlite:
         
     def initdb(self):
         self.dbcon = sqlite3.connect(self.dbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        self.dbcon.row_factory = sqlite3.Row
+        #self.dbcon.row_factory = sqlite3.Row
 
     def closedb(self):
         self.dbcon.commit()
@@ -87,6 +87,35 @@ class SVNLog2Sqlite:
                 #commit after every change
                 print "Number revisions converted : %d (Rev no : %d)" % (revcount, revlog.revno)                        
             cur.close()
+
+    def UpdateLineCountData(self):
+        self.initdb()
+        #try:        
+        self.__updateLineCountData()
+##        except Exception, expinst:            
+##            logging.error("Error %s" % expinst)
+##            print "Error %s" % expinst            
+        self.closedb()
+        
+    def __updateLineCountData(self):
+        '''Update the line count data in SVNLogDetail where lc_update flag is 'N'.
+        This function is to be used with incremental update of only 'line count' data.
+        '''
+        #first create temporary table from SVNLogDetail where only the lc_updated status is 'N'
+        updcur = self.dbcon.cursor()
+        cur = self.dbcon.cursor()
+        cur.execute("CREATE TEMP TABLE IF NOT EXISTS LCUpdateStatus \
+                    as select revno, changedpath, changetype from SVNLogDetail where lc_updated='N'")
+        cur.execute("select revno, changedpath, changetype from LCUpdateStatus")
+        
+        for revno, changedpath, changetype in cur:
+            linesadded, linesdeleted = self.svnclient.getDiffLineCountForPath(revno, changedpath, changetype)
+##            updcur.execute("Update SVNLogDetail Set linesadded=%d, linesdeleted=%d, lc_updated='Y' \
+##                    where revno=%d and changedpath='%s'")
+##        
+        updcur.close()           
+        cur.close()
+        self.dbcon.commit()
         
     def CreateTables(self):
         cur = self.dbcon.cursor()
