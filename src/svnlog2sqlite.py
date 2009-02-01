@@ -67,34 +67,45 @@ class SVNLog2Sqlite:
             svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
             revcount = 0
             bChkIfDir = bUpdLineCount
+            lc_updated = 'N'
+            if( bUpdLineCount == True):
+                lc_updated = 'Y'
             for revlog in svnloglist:
                 logging.debug("converting revision %d" % revlog.revno)
-                #logging.debug("Revision author:%s" % revlog.author)
-                #logging.debug("Revision date:%s" % revlog.date)
-                #logging.debug("Revision msg:%s" % revlog.message)
+##                logging.debug("Revision author:%s" % revlog.author)
+##                logging.debug("Revision date:%s" % revlog.date)
+##                logging.debug("Revision msg:%s" % revlog.message)
                 revcount = revcount+1
                 addedfiles, changedfiles, deletedfiles = revlog.changedFileCount(bChkIfDir)
                 cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
                             values(?, ?, ?, ?,?, ?, ?)",
                             (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
-                for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):
-                    cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted) \
-                                values(?, ?, ?, ?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted))
+                for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):                    
+                    cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted, lc_updated) \
+                                values(?, ?, ?, ?,?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted, lc_updated))
                     #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                 #commit after every change
                 print "Number revisions converted : %d (Rev no : %d)" % (revcount, revlog.revno)                        
             cur.close()
-            
+        
     def CreateTables(self):
         cur = self.dbcon.cursor()
         cur.execute("create table if not exists SVNLog(revno integer, commitdate timestamp, author text, msg text, \
                             addedfiles integer, changedfiles integer, deletedfiles integer)")
         cur.execute("create table if not exists SVNLogDetail(revno integer, changedpath text, changetype text,\
-                    linesadded integer, linesdeleted integer)")
+                    linesadded integer, linesdeleted integer, lc_updated char)")
+        #lc_updated - Y means line count data is updated.
+        #lc_updated - N means line count data is not updated. This flag can be used to update
+        #line count data later        
         cur.execute("CREATE  INDEX if not exists svnlogrevnoidx ON SVNLog (revno ASC)")
         cur.execute("CREATE  INDEX if not exists svnlogdtlrevnoidx ON SVNLogDetail (revno ASC)")
         self.dbcon.commit()
-    
+        
+        #Table structure is changed slightly. I have added a new column in SVNLogDetail table.
+        #Use the following sql to alter the old tables
+        #ALTER TABLE SVNLogDetail ADD COLUMN lc_updated char
+        #update SVNLogDetail set lc_updated ='Y' ## Use 'Y' or 'N' as appropriate.
+
 def RunMain():
     if( len(sys.argv) < 3):
         print "Usage : svnlog2sqlite.py <svnrepo url> <sqlitedbpath>"
