@@ -32,6 +32,7 @@ def getDiffLineCountDict(diff_log):
     curfile=None
     diffCountDict = dict()
     newfilediffstart = 'Index: '
+    newfilepropdiffstart = 'Property changes on: '
     for diffline in diffio:
         #remove the newline characters near the end of line
         diffline = diffline.rstrip()
@@ -45,6 +46,11 @@ def getDiffLineCountDict(diff_log):
             #Index line entry doesnot have '/' as start of file path. Hence add the '/'
             #so that path entries in revision log list match with the names in the 'diff count' dictionary
             curfile = '/'+diffline[len(newfilediffstart):]
+        elif(diffline.find(newfilepropdiffstart)==0):
+            #property modification diff has started. Ignore it.
+            if(curfile != None):
+                diffCountDict[curfile] = (addlnCount, dellnCount)
+            curfile = None
         elif(diffline.find('---')==0 or diffline.find('+++')==0 or diffline.find('@@')==0 or diffline.find('===')==0):                
             continue
         elif(diffline.find('-')==0):
@@ -53,7 +59,8 @@ def getDiffLineCountDict(diff_log):
              addlnCount = addlnCount+1
     
     #update last file stat in the dictionary.
-    diffCountDict[curfile] = (addlnCount, dellnCount)
+    if( curfile != None):
+        diffCountDict[curfile] = (addlnCount, dellnCount)
     return(diffCountDict)
     
 class SVNLogClient:
@@ -194,8 +201,9 @@ class SVNLogClient:
             diff_log = self.getRevFileDiff(filepath, revno)
             print diff_log
             diffDict = getDiffLineCountDict(diff_log)
-            assert(diffDict.has_key(filepath) != False)
-            added, deleted = diffDict[filepath]
+            #The dictionary may not have the filepath key if only properties are modfiied.
+            if(diffDict.has_key(filepath) == True):
+                added, deleted = diffDict[filepath]
         elif( self.isDirectory(revno, filepath, changetype) == False):
             #path is added or deleted. First check if the path is a directory. If path is not a directory
             # then process further.
@@ -213,7 +221,7 @@ class SVNLogClient:
         Subversion assumes it is text. Otherwise it is treated as binary file.
         '''
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-        url = self.getUrl(path)
+        url = self.getUrl(filepath)
         binary = None
         for trycount in range(0, self.maxTryCount):
             try:
@@ -424,8 +432,9 @@ class SVNRevLog:
             #file or directory is modified
             diff_log = self.logclient.getRevFileDiff(filename, revno)
             diffDict = getDiffLineCountDict(diff_log)
-            assert(diffDict.has_key(filename) != False)
-            added, deleted = diffDict[filename]
+            #The dictionary may not have the filename key if only properties are modfiied.
+            if(diffDict.has_key(filename) == True):
+                added, deleted = diffDict[filename]
         elif( self.isDirectory(change) == False):
             #path is added or deleted. First check if the path is a directory. If path is not a directory
             # then process further.
