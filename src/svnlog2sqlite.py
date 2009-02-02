@@ -113,6 +113,7 @@ class SVNLog2Sqlite:
         for revno, changedpath, changetype in cur:
             linesadded =0
             linesdeleted = 0
+            print "getting diff count for %d:%s" % (revno, changedpath)
             linesadded, linesdeleted = self.svnclient.getDiffLineCountForPath(revno, changedpath, changetype)
             sqlquery = "Update SVNLogDetail Set linesadded=%d, linesdeleted=%d, lc_updated='Y' \
                     where revno=%d and changedpath='%s'" %(linesadded,linesdeleted, revno,changedpath)
