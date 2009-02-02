@@ -1,0 +1,42 @@
+text/calendar
+text/css			css
+text/directory
+text/enriched
+text/html			html htm
+text/javascript js
+text/plain			asc txt cc c cpp cxx h hpp hxx java jsp asp php py rb 
+#c/c++ extensions
+text/plain cc c cpp cxx h hpp hxx 
+#java extensions
+text/plain java jsp
+#other programming language extensions
+text/plain php py rb
+#visual studio related mimetypes
+text/plain asp vcproj sln dsw dsp rc vb
+text/prs.lines.tag
+text/rfc822-headers
+text/richtext			rtx
+text/rtf			rtf
+text/sgml			sgml sgm
+text/tab-separated-values	tsv
+text/t140
+text/uri-list
+text/vnd.DMClientScript
+text/vnd.IPTC.NITF
+text/vnd.IPTC.NewsML
+text/vnd.abc
+text/vnd.curl
+text/vnd.flatland.3dml
+text/vnd.fly
+text/vnd.fmi.flexstor
+text/vnd.in3d.3dml
+text/vnd.in3d.spot
+text/vnd.latex-z
+text/vnd.motorola.reflex
+text/vnd.ms-mediapackage
+text/vnd.wap.si
+text/vnd.wap.sl
+text/vnd.wap.wml		wml
+text/vnd.wap.wmlscript		wmls
+text/x-setext			etx
+text/xml			xml xsl
