@@ -195,6 +195,7 @@ class SVNLogClient:
     def getDiffLineCountForPath(self, revno, filepath, changetype):
         added = 0
         deleted = 0
+        #print "getting diff count for %d:%s" % (revno, filepath)
         if( changetype != 'A' and changetype != 'D'):
             #file or directory is modified
             print 'change type %s' % changetype
@@ -226,12 +227,12 @@ class SVNLogClient:
         for trycount in range(0, self.maxTryCount):
             try:
                 (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
-                binary = False
+                binary = False #if explicit mime-type is not found always treat the file as 'text'                
                 if( 'svn:mime-type' in propdict):
-                    mimetype = propdict['svn:mime-type']
-                    if( mimetype.find('text') < 0):
-                        #mime type is not a 'text' mime type.
-                        binary = True
+                    fmimetype = propdict['svn:mime-type']
+                    if( fmimetype.find('text') < 0):
+                       #mime type is not a 'text' mime type.
+                       binary = True
                 break
             except Exception, expinst:
                 logging.error("Error %s" % expinst)
@@ -256,13 +257,14 @@ class SVNLogClient:
         linecount = 0
         for trycount in range(0, self.maxTryCount):
             try:
-                logging.debug("Trying (%d) to get linecount information" % trycount)
+                logging.debug("Trying (%d) to get linecount for %s" % (trycount, filepath))
                 rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
                 url = self.getUrl(path)
                 contents = self.svnclient.cat(url, revision = rev)
                 matches = re.findall("$", contents, re.M )
                 if( matches != None):
                     linecount = len(matches)
+                logging.debug("%s linecount : %d" % (filepath, linecount))
                 break
             except Exception, expinst:
                 logging.error("Error %s" % expinst)
