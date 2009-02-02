@@ -102,18 +102,22 @@ class SVNLog2Sqlite:
         This function is to be used with incremental update of only 'line count' data.
         '''
         #first create temporary table from SVNLogDetail where only the lc_updated status is 'N'
-        updcur = self.dbcon.cursor()
-        cur = self.dbcon.cursor()
+        #Set the autocommit on so that update cursor inside the another cursor loop works.
+        self.dbcon.isolation_level = None
+        cur = self.dbcon.cursor()        
         cur.execute("CREATE TEMP TABLE IF NOT EXISTS LCUpdateStatus \
                     as select revno, changedpath, changetype from SVNLogDetail where lc_updated='N'")
+        self.dbcon.commit()
         cur.execute("select revno, changedpath, changetype from LCUpdateStatus")
-        
+                
         for revno, changedpath, changetype in cur:
+            linesadded =0
+            linesdeleted = 0
             linesadded, linesdeleted = self.svnclient.getDiffLineCountForPath(revno, changedpath, changetype)
-##            updcur.execute("Update SVNLogDetail Set linesadded=%d, linesdeleted=%d, lc_updated='Y' \
-##                    where revno=%d and changedpath='%s'")
-##        
-        updcur.close()           
+            sqlquery = "Update SVNLogDetail Set linesadded=%d, linesdeleted=%d, lc_updated='Y' \
+                    where revno=%d and changedpath='%s'" %(linesadded,linesdeleted, revno,changedpath)
+            self.dbcon.execute(sqlquery)            
+        
         cur.close()
         self.dbcon.commit()
         
