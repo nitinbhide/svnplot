@@ -90,11 +90,11 @@ class SVNLog2Sqlite:
 
     def UpdateLineCountData(self):
         self.initdb()
-        #try:        
-        self.__updateLineCountData()
-##        except Exception, expinst:            
-##            logging.error("Error %s" % expinst)
-##            print "Error %s" % expinst            
+        try:        
+            self.__updateLineCountData()
+        except Exception, expinst:            
+            logging.error("Error %s" % expinst)
+            print "Error %s" % expinst            
         self.closedb()
         
     def __updateLineCountData(self):
