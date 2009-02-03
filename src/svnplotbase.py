@@ -150,8 +150,12 @@ class SVNPlotBase:
         if( refaxs == None):
             fig = plt.figure()
             #1 inch height for each author graph. So recalculate with height. Else y-scale get mixed.
-            fig.set_figheight(self.commitGraphHtPerAuthor*plotcount)
-            fig.subplots_adjust(top=0.85, left=0.05, right=0.95)
+            figHt = float(self.commitGraphHtPerAuthor*plotcount)
+            fig.set_figheight(figHt)
+            #since figureheight is in inches, set around maximum of 0.75 inches margin on top.
+            topmarginfrac = min(0.15, 0.85/figHt)
+            print "top margin is %f" %topmarginfrac
+            fig.subplots_adjust(bottom=topmarginfrac, top=1.0-topmarginfrac, left=0.05, right=0.95)
         else:
             fig = refaxs.figure
             
