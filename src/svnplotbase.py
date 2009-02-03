@@ -12,6 +12,7 @@ from matplotlib.font_manager import FontProperties
 import sqlite3
 import os.path, sys
 import string
+import operator
                      
 def dirname(path, depth):
     #first split the path and remove the filename
@@ -62,12 +63,17 @@ class SVNPlotBase:
         if( self.verbose == True):
             print msg
                                                 
-    def _getAuthorList(self):
-        #Find out the unique developers
-        self.cur.execute("select author from SVNLog group by author")
-        #get the auhor list and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
+    def _getAuthorList(self, numAuthors=None):
+        #Find out the unique developers and their number of commit sorted in 'descending' order
+        self.cur.execute("select author, count(*) as commitcount from SVNLog group by author order by commitcount desc")
+        
+        #get the auhor list (ignore commitcount) and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
         # get overwritten
-        authList = [author for author, in self.cur]
+        authList = [author for author,commitcount in self.cur]
+        #Keep only top 'numAuthors'
+        if( numAuthors != None):
+            authList = authList[:numAuthors]
+        
         #if there is an empty string in author list, replace it by "unknown"
         authListFinal = []
         for author in authList:
