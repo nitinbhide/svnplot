@@ -406,7 +406,7 @@ class SVNPlot(SVNPlotBase):
         self._printProgress("Calculating Bug fix commit trend")
         
         sqlquery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), \
-                         strftime('%%d', SVNLog.commitdate), count(*) as commitcount \
+                         strftime('%%d', SVNLog.commitdate), count(*) as commitfilecount \
                          from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
                          and %s group by date(SVNLog.commitdate)" % (self.searchpath, self._bugFixKeywordsInMsgSql())
         
@@ -415,18 +415,18 @@ class SVNPlot(SVNPlotBase):
         fc = []
         commitchurn = []
         totalcommits = 0
-        for year, month, day, commitcount in self.cur:
+        for year, month, day, commitfilecount in self.cur:
             dates.append(datetime.date(int(year), int(month), int(day)))
-            commitchurn.append(float(commitcount))
-            totalcommits = totalcommits+commitcount
+            commitchurn.append(float(commitfilecount))
+            totalcommits = totalcommits+commitfilecount
             fc.append(float(totalcommits))
             
         ax = None
         ax = self._drawDateLineGraph(dates, fc,ax)        
         ax = self._drawDateLineGraph(dates, commitchurn, ax)
         ax.set_title('Bugfix Commits Trend')
-        ax.set_ylabel('Commits Count')
-        ax.legend(("Total commits", "commits churn"), prop=self._getLegendFont())
+        ax.set_ylabel('Commited Files Count')
+        ax.legend(("Total Commited Files", "Committed Files Churn"), prop=self._getLegendFont())
         self._closeDateLineGraph(ax, filename)
         
     def _drawLocGraph(self):
