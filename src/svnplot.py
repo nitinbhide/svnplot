@@ -123,6 +123,7 @@ class SVNPlot(SVNPlotBase):
         SVNPlotBase.__init__(self, svndbpath, dpi,format)
         self.commitGraphHtPerAuthor = 2 #In inches
         self.bugfixkeywords = ['bug', 'fix']
+        self.authorsToDisplay = 10
                 
     def AllGraphs(self, dirpath, svnsearchpath='/%', thumbsize=100):
         self.SetSearchPath(svnsearchpath) 
@@ -203,7 +204,7 @@ class SVNPlot(SVNPlotBase):
     def LocGraphAllDev(self, filename):
         self._printProgress("Calculating Developer Contribution graph")
         ax = None
-        authList = self._getAuthorList()
+        authList = self._getAuthorList(self.authorsToDisplay)
         for author in authList:
             ax = self._drawlocGraphLineByDev(author, ax)
 
@@ -284,17 +285,18 @@ class SVNPlot(SVNPlotBase):
     def AuthorActivityGraph(self, filename):
         self._printProgress("Calculating Author Activity graph")
         
-        self.cur.execute("select SVNLog.author, sum(SVNLog.addedfiles), sum(SVNLog.changedfiles), sum(SVNLog.deletedfiles) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s'\
-                         group by SVNLog.author" % self.searchpath)
+        self.cur.execute("select SVNLog.author, sum(SVNLog.addedfiles), sum(SVNLog.changedfiles), \
+                         sum(SVNLog.deletedfiles), count(SVNLog.revno) as commitcount from SVNLog, SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
+                         group by SVNLog.author order by commitcount DESC LIMIT 0, %d"
+                         % (self.searchpath, self.authorsToDisplay))
 
         authlist = []
         addfraclist = []
         changefraclist=[]
         delfraclist = []
         
-        for author, filesadded, fileschanged, filesdeleted in self.cur:
+        for author, filesadded, fileschanged, filesdeleted,commitcount in self.cur:
             authlist.append(author)            
             activitytotal = float(filesadded+fileschanged+filesdeleted)
             
@@ -317,7 +319,7 @@ class SVNPlot(SVNPlotBase):
         xfmt = FormatStrFormatter('%d%%')
         ax.xaxis.set_major_formatter(xfmt)
         #set the y-axis format
-        plt.setp( ax.get_yticklabels(), visible=True, fontsize='small')
+        plt.setp( ax.get_yticklabels(), visible=True, fontsize='x-small')
         
         ax.set_title('Author Activity')
         fig = ax.figure
@@ -326,9 +328,9 @@ class SVNPlot(SVNPlotBase):
     def CommitActivityGraph(self, filename):
         self._printProgress("Calculating Commit activity graph")
         
-        authList = self._getAuthorList()
+        authList = self._getAuthorList(self.authorsToDisplay)
         authCount = len(authList)
-
+        
         authIdx = 1
         refaxs = None
         for author in authList:
