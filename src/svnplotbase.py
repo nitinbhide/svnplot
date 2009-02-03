@@ -13,7 +13,8 @@ import sqlite3
 import os.path, sys
 import string
 import operator
-                     
+import logging
+
 def dirname(path, depth):
     #first split the path and remove the filename
     pathcomp = os.path.dirname(path).split('/')
@@ -148,13 +149,14 @@ class SVNPlotBase:
     
     def _drawScatterPlot(self,dates, values, plotidx, plotcount, title, refaxs):
         if( refaxs == None):
+            logging.debug("initializing scatter plot")
             fig = plt.figure()
             #1 inch height for each author graph. So recalculate with height. Else y-scale get mixed.
             figHt = float(self.commitGraphHtPerAuthor*plotcount)
             fig.set_figheight(figHt)
             #since figureheight is in inches, set around maximum of 0.75 inches margin on top.
             topmarginfrac = min(0.15, 0.85/figHt)
-            print "top margin is %f" %topmarginfrac
+            logging.debug("top/bottom margin fraction is %f" % topmarginfrac)
             fig.subplots_adjust(bottom=topmarginfrac, top=1.0-topmarginfrac, left=0.05, right=0.95)
         else:
             fig = refaxs.figure
