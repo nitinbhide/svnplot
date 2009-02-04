@@ -104,6 +104,14 @@ class SVNPlotBase:
             authListFinal.append(author)
         return(authListFinal)
 
+    def _getAuthorLabel(self, author):
+        '''
+        sometimes are author names are email ids. Hence labels have higher width. So split the
+        author names on '@' symbol        
+        '''
+        auth = author.replace('@', '@\n')
+        return(auth)
+    
     def _getLegendFont(self):
         legendfont = FontProperties(size='x-small')
         return(legendfont)

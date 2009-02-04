@@ -233,8 +233,10 @@ class SVNPlot(SVNPlotBase):
 
         #Add the list of authors as figure legend.
         #axes legend is added 'inside' the axes and overlaps the labels or the graph
-        #lines depending on the location 
-        self._addFigureLegend(ax, authList)
+        #lines depending on the location
+        authLabelList = [self._getAuthorLabel(auth) for auth in authList]
+            
+        self._addFigureLegend(ax, authLabelList)
         
         ax.set_title('Contributed Lines of Code')
         ax.set_ylabel('Lines')        
@@ -344,7 +346,7 @@ class SVNPlot(SVNPlotBase):
         delfraclist = []
         
         for author, filesadded, fileschanged, filesdeleted,commitcount in self.cur:
-            authlist.append(author)            
+            authlist.append(self._getAuthorLabel(author))
             activitytotal = float(filesadded+fileschanged+filesdeleted)
             
             if( activitytotal > 0.0):
