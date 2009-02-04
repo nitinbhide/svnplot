@@ -54,7 +54,7 @@ HTMLIndexTemplate ='''
 <table align="center" frame="box">
 <caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
 <tr>
-<th colspan=4 align="center"><h3>Lines of Code Graphs</h3></th>
+<th colspan=2 align="center"><h3>Lines of Code Graphs</h3></th>
 </tr>
 <tr>
     <td align="center" width="25%"><h4>Lines of Code</h4><br/>
@@ -63,15 +63,25 @@ HTMLIndexTemplate ='''
     <td align="center" width="25%"><h4>Contributed Lines of Code</h4><br/>
     <a href="$LoCByDev"><img src="$LoCByDev" width="$thumbwid" height="$thumbht"></a>
     </td>
+</tr>
+<tr>
     <td align="center" width="25%"><h4>Average File Size</h4><br/>
     <a href="$AvgLoC"><img src="$AvgLoC" width="$thumbwid" height="$thumbht"></a>
-    </td>
+    </td>    
+</tr>
+<tr>
+<th colspan=2 align="center"><h3>File Count Graphs</h3></th>
+</tr>
+<tr>
     <td align="center" width="25%"><h4>File Count</h4><br/>
     <a href="$FileCount"><img src="$FileCount" width="$thumbwid" height="$thumbht"></a>
     </td>
+    <td align="center" width="25%"><h4>File Types</h4><br/>
+    <a href="$FileTypes"><img src="$FileTypes" width="$thumbwid" height="$thumbht"></a>
+    </td>
 </tr>
 <tr>
-<th colspan=4 align="center"><h3>Directory Size Graphs</h3></th>
+<th colspan=2 align="center"><h3>Directory Size Graphs</h3></th>
 </tr>
 <tr>
    <td align="center"><h4>Current Directory Size</h4><br/>
@@ -82,7 +92,7 @@ HTMLIndexTemplate ='''
     </td>
 </tr>
 <tr>
-<th colspan=4 align="center"><h3>Commit Activity Graphs</h3></th>
+<th colspan=2 align="center"><h3>Commit Activity Graphs</h3></th>
 </tr>
 <tr>
     <td align="center" width="25%"><h4>Commit Activity By Day of Week </h4><br/>
@@ -91,6 +101,8 @@ HTMLIndexTemplate ='''
     <td align="center" width="25%"><h4>Commit Activity By Hour of Day</h4><br/>
     <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay" width="$thumbwid" height="$thumbht"></a>
     </td>
+</tr>
+<tr>
     <td align="center" width="25%"><h4>Author Activity</h4><br/>
     <a href="$AuthActivity"><img src="$AuthActivity" width="$thumbwid" height="$thumbht"></a>
     </td>
@@ -99,7 +111,7 @@ HTMLIndexTemplate ='''
     </td>    
 </tr>
 <tr>
-<th colspan=4 align="center"><h3>Bug Pronness Graphs</h3></th>
+<th colspan=2 align="center"><h3>Bug Pronness Graphs</h3></th>
 </tr>
 <tr>
    <td span=4 align="center">
@@ -116,7 +128,7 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline",
-                     BugfixCommitsTrend="bugfixcommits")
+                     BugfixCommitsTrend="bugfixcommits", FileTypes="filetypes")
                          
 class SVNPlot(SVNPlotBase):
     def __init__(self, svndbpath, dpi=100, format='png'):
@@ -124,6 +136,7 @@ class SVNPlot(SVNPlotBase):
         self.commitGraphHtPerAuthor = 2 #In inches
         self.bugfixkeywords = ['bug', 'fix']
         self.authorsToDisplay = 10
+        self.fileTypesToDisplay = 20
                 
     def AllGraphs(self, dirpath, svnsearchpath='/%', thumbsize=100):
         self.SetSearchPath(svnsearchpath) 
@@ -132,11 +145,12 @@ class SVNPlot(SVNPlotBase):
         self.LocGraph(self._getGraphFileName(dirpath, "LoC"));
         self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"));
         self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"));
+        self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
         self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"));
         self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"));
         self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"));
         self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"));
-        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"));
+        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"));        
 
         depth=2
         self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), depth);
@@ -253,6 +267,30 @@ class SVNPlot(SVNPlotBase):
         ax.set_ylabel('Files')
         self._closeDateLineGraph(ax, filename)
 
+    def FileTypesGraph(self, filename):
+        self._printProgress("Calculating File Types graph")
+
+        #first get the file types and         
+        self.cur.execute("select filetype(changedpath) as ftype, count(*) as typecount\
+                         from (select distinct changedpath from SVNLogDetail where SVNLogDetail.changedpath like ? \
+                         ) group by ftype order by typecount DESC limit 0,?"
+                         , (self.searchpath,self.fileTypesToDisplay))
+
+        ftypelist = []
+        ftypecountlist = []
+        
+        for ftype, typecount in self.cur:
+            ftypelist.append(ftype)
+            ftypecountlist.append(float(typecount))
+
+        barwid = 0.2
+        ax = self._drawHBarGraph(ftypecountlist, ftypelist, barwid)
+        ax.set_xlabel("Number of files")
+        ax.set_ylabel("File Type")
+        ax.set_title('File Types')
+        fig = ax.figure
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
+            
     def AvgFileLocGraph(self, filename):
         self._printProgress("Calculating Average File Size graph")
         
@@ -324,7 +362,7 @@ class SVNPlot(SVNPlotBase):
         ax.set_title('Author Activity')
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-        
+
     def CommitActivityGraph(self, filename):
         self._printProgress("Calculating Commit activity graph")
         

@@ -23,6 +23,10 @@ def dirname(path, depth):
     #depth, slice has to be [0:depth+1]
     dirpath = '/'.join(pathcomp[0:depth+1])
     return(dirpath)
+
+def filetype(path):
+    (root, ext) = os.path.splitext(path)
+    return(ext)
     
 class SVNPlotBase:
     def __init__(self, svndbpath, dpi=100,format='png'):
@@ -36,7 +40,8 @@ class SVNPlotBase:
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
         # Create the function "regexp" for the REGEXP operator of SQLite
-        self.dbcon.create_function("dirname", 2, dirname)        
+        self.dbcon.create_function("dirname", 2, dirname)
+        self.dbcon.create_function("filetype", 1, filetype)        
         self.cur = self.dbcon.cursor()        
     
     def __del__(self):
@@ -113,6 +118,28 @@ class SVNPlotBase:
         
         return(ax)
 
+    def _drawHBarGraph(self, datalist, labels, barwid):
+        assert(len(datalist) > 0)
+        numDataItems = len(datalist)
+        #create dummy locations based on the number of items in data values
+        ymin = 0.0        
+        ylocations = [y*barwid*2+barwid/2 for y in range(numDataItems)]
+        ymax = ylocations[-1]+2.0*barwid
+        ytickloc = [y+barwid/2.0 for y in ylocations]
+        ytickloc.append(ytickloc[-1]+barwid)
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_color_cycle(self.clrlist)
+        ax.set_yticks(ytickloc)
+        ax.set_yticklabels(labels)
+        
+        clridx = 0
+        maxclridx = len(self.clrlist)
+        ax.barh(ylocations, datalist, height=barwid, color=self.clrlist[clridx])
+        ax.set_ybound(ymin, ymax)
+        return(ax)
+    
     def _drawStackedHBarGraph(self, dataList, labels, legendlist, barwid):
         assert(len(dataList) > 0)
         numDataItems = len(dataList[0])
