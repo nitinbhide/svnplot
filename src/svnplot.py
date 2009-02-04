@@ -11,13 +11,16 @@ Graph types to be supported
    for each developer -- Done
 6. total loc line graph (loc vs dates) -- Done
 7. file count vs dates line graph -- Done
-8. average file size vs date line graph -- Done
-9. directory size vs date line graph. Using different coloured lines for each directory
-10. directory size pie chart (latest status) -- Done
-11. Loc and Churn graph (loc vs date, churn vs date)- Churn is number of lines touched
-	(i.e. lines added + lines deleted + lines modified)
-12. Repository heatmap (treemap)
-13. Bug Commit Trend graph - Number of commits with words like 'bug' or 'fix' in the message
+8. file type vs number of files horizontal bar chart -- Done
+9. average file size vs date line graph -- Done
+10. directory size vs date line graph. Using different coloured lines for each directory
+11. directory size pie chart (latest status) -- Done
+12. Directory file count pie char(latest status) -- Done
+13. Loc and Churn graph (loc vs date, churn vs date)- Churn is number of lines touched
+	(i.e. lines added + lines deleted + lines modified) -- Done
+14. Bug Commit Trend graph - Number of commits with words like 'bug' or 'fix' in the message -- Done
+15. Repository heatmap (treemap)
+
 
 --- Nitin Bhide (nitinbhide@gmail.com)
 
@@ -92,6 +95,11 @@ HTMLIndexTemplate ='''
     </td>
 </tr>
 <tr>
+    <td align="center"><h4>Directory Size(FileCount)</h4><br/>
+    <a href="$DirFileCountPie"><img src="$DirFileCountPie" width="$thumbwid" height="$thumbht"></a>
+    </td>
+</tr>
+<tr>
 <th colspan=2 align="center"><h3>Commit Activity Graphs</h3></th>
 </tr>
 <tr>
@@ -127,7 +135,7 @@ HTMLIndexTemplate ='''
 GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
-                     DirSizePie="dirsizepie", DirSizeLine="dirsizeline",
+                     DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
                      BugfixCommitsTrend="bugfixcommits", FileTypes="filetypes")
                          
 class SVNPlot(SVNPlotBase):
@@ -142,19 +150,20 @@ class SVNPlot(SVNPlotBase):
         self.SetSearchPath(svnsearchpath) 
         self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"));
         self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"));
-        self.LocGraph(self._getGraphFileName(dirpath, "LoC"));
-        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"));
-        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"));
-        self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
-        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"));
-        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"));
         self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"));
         self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"));
+        self.LocGraph(self._getGraphFileName(dirpath, "LoC"));
+        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"));
+        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"));
+        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"));
+        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"));
+        self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
         self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"));        
 
         depth=2
         self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), depth);
         self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),depth);
+        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),depth);
         
         graphParamDict = self._getGraphParamDict( thumbsize)
         dict(GraphNameDict)
@@ -419,7 +428,29 @@ class SVNPlot(SVNPlotBase):
            axs.set_title('Directory Sizes')        
            fig = axs.figure
            fig.savefig(filename, dpi=self.dpi, format=self.format)
+
+    def DirFileCountPieGraph(self, filename, depth=2):
+        '''
+        depth - depth of directory search relative to search path. Default value is 2
+        '''
+        self._printProgress("Calculating current Directory File Count pie graph")
+        
+        self.cur.execute("select dirname(changedpath, ?) as dirpath, count(*) as filecount \
+                    from (select distinct changedpath from SVNLogDetail where SVNLogDetail.changedpath like ?) \
+                    group by dirpath", (depth, self.searchpath,))
             
+        dirlist = []
+        dirsizelist = []        
+        for dirname, fcount in self.cur:
+            dirlist.append(dirname)
+            dirsizelist.append(float(fcount))
+                
+        if( len(dirsizelist) > 0):
+           axs = self._drawPieGraph(dirsizelist, dirlist)
+           axs.set_title('Directory Size(File Count)')        
+           fig = axs.figure
+           fig.savefig(filename, dpi=self.dpi, format=self.format)
+           
     def DirectorySizeLineGraph(self, filename, depth=2):
         '''
         depth - depth of directory search relative to search path. Default value is 2
