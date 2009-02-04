@@ -15,13 +15,17 @@ import string
 import operator
 import logging
 
-def dirname(path, depth):
+def dirname(searchpath, path, depth):
+    assert(searchpath != None and searchpath != "")
+    #replace the search path and then compare the depth
+    path = path.replace(searchpath, "", 1)
     #first split the path and remove the filename
     pathcomp = os.path.dirname(path).split('/')
     #now join the split path upto given depth only
-    #since path starts with '/' and slice ignores the endindex, to get the appropriate
-    #depth, slice has to be [0:depth+1]
-    dirpath = '/'.join(pathcomp[0:depth+1])
+    dirpath = '/'.join(pathcomp[0:depth])
+    #Now add the dirpath to searchpath to get the final directory path
+    dirpath = searchpath+dirpath
+    #print "%s : [%s]" %(path, dirpath)
     return(dirpath)
 
 def filetype(path):
@@ -36,13 +40,13 @@ class SVNPlotBase:
         self.reponame = ""
         self.verbose = False
         self.clrlist = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-        self.searchpath = '/%'
+        self.__searchpath = '/%'
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
         # Create the function "regexp" for the REGEXP operator of SQLite
-        self.dbcon.create_function("dirname", 2, dirname)
+        self.dbcon.create_function("dirname", 3, dirname)
         self.dbcon.create_function("filetype", 1, filetype)        
-        self.cur = self.dbcon.cursor()        
+        self.cur = self.dbcon.cursor() 
     
     def __del__(self):
         self.cur.close()
@@ -54,17 +58,29 @@ class SVNPlotBase:
     def SetVerbose(self, verbose):       
         self.verbose = verbose
 
-    def SetSearchPath(self, searchpath = '/%'):
+    def SetSearchPath(self, searchpath = '/'):
         '''
         Set the path for searching the repository data.
         Default value is '/%' which searches all paths in the repository.
         Use self.SetSearchPath('/trunk/%') for searching inside the 'trunk' folder only
         '''
-        self.searchpath = searchpath
-        if( self.searchpath.endswith('%')==False):
-            self.searchpath = self.searchpath + '%'
-        self._printProgress("Set the search path to %s" % self.searchpath)
-        
+        if(searchpath != None and len(searchpath) > 0):
+            self.__searchpath = searchpath
+        if( self.__searchpath.endswith('%')==True):
+            self.__searchpath = self.__searchpath[:-1]
+        self._printProgress("Set the search path to %s" % self.__searchpath)
+
+    @property
+    def searchpath(self):
+        return(self.__searchpath)
+
+    @property    
+    def sqlsearchpath(self):
+        '''
+        return the sql regex search path (e.g. '/trunk/' will be returned as '/trunk/%'
+        '''
+        return(self.__searchpath + '%')
+    
     def _printProgress(self, msg):
         if( self.verbose == True):
             print msg
@@ -269,3 +285,4 @@ class SVNPlotBase:
         axs.plot_date(dates, values, '-', xdate=True, ydate=False)
         
         return(axs)
+    

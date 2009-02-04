@@ -145,8 +145,9 @@ class SVNPlot(SVNPlotBase):
         self.bugfixkeywords = ['bug', 'fix']
         self.authorsToDisplay = 10
         self.fileTypesToDisplay = 20
+        self.dirdepth = 1
                 
-    def AllGraphs(self, dirpath, svnsearchpath='/%', thumbsize=100):
+    def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100):
         self.SetSearchPath(svnsearchpath) 
         self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"));
         self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"));
@@ -160,10 +161,9 @@ class SVNPlot(SVNPlotBase):
         self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
         self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"));        
 
-        depth=2
-        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), depth);
-        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),depth);
-        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),depth);
+        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth);
+        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth);
+        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth);
         
         graphParamDict = self._getGraphParamDict( thumbsize)
         dict(GraphNameDict)
@@ -182,7 +182,7 @@ class SVNPlot(SVNPlotBase):
            
         self.cur.execute("select strftime('%w', SVNLog.commitdate), count(SVNLog.revno) from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by strftime('%w', SVNLog.commitdate)", (self.searchpath,))
+                         group by strftime('%w', SVNLog.commitdate)", (self.sqlsearchpath,))
         labels =[]
         data = []
         for dayofweek, commitcount in self.cur:
@@ -202,7 +202,7 @@ class SVNPlot(SVNPlotBase):
         
         self.cur.execute("select strftime('%H', SVNLog.commitdate), count(SVNLog.revno) from SVNLog, SVNLogDetail \
                           where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                          group by strftime('%H', SVNLog.commitdate)", (self.searchpath,))
+                          group by strftime('%H', SVNLog.commitdate)", (self.sqlsearchpath,))
         labels =[]
         data = []
         for hourofday, commitcount in self.cur:
@@ -262,7 +262,7 @@ class SVNPlot(SVNPlotBase):
                          strftime('%d', SVNLog.commitdate), sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by date(SVNLog.commitdate)", (self.searchpath,))
+                         group by date(SVNLog.commitdate)", (self.sqlsearchpath,))
         dates = []
         fc = []
         totalfiles = 0
@@ -283,7 +283,7 @@ class SVNPlot(SVNPlotBase):
         self.cur.execute("select filetype(changedpath) as ftype, count(*) as typecount\
                          from (select distinct changedpath from SVNLogDetail where SVNLogDetail.changedpath like ? \
                          ) group by ftype order by typecount DESC limit 0,?"
-                         , (self.searchpath,self.fileTypesToDisplay))
+                         , (self.sqlsearchpath,self.fileTypesToDisplay))
 
         ftypelist = []
         ftypecountlist = []
@@ -308,7 +308,7 @@ class SVNPlot(SVNPlotBase):
                          sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by date(SVNLog.commitdate)", (self.searchpath,))
+                         group by date(SVNLog.commitdate)", (self.sqlsearchpath,))
         dates = []
         avgloclist = []
         avgloc = 0
@@ -336,7 +336,7 @@ class SVNPlot(SVNPlotBase):
                          sum(SVNLog.deletedfiles), count(SVNLog.revno) as commitcount from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
                          group by SVNLog.author order by commitcount DESC LIMIT 0, ?"
-                         , (self.searchpath, self.authorsToDisplay,))
+                         , (self.sqlsearchpath, self.authorsToDisplay,))
 
         authlist = []
         addfraclist = []
@@ -410,10 +410,10 @@ class SVNPlot(SVNPlotBase):
         '''
         self._printProgress("Calculating current Directory size pie graph")
         
-        self.cur.execute("select dirname(SVNLogDetail.changedpath, ?) as dirpath, sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
+        self.cur.execute("select dirname(?, SVNLogDetail.changedpath, ?) as dirpath, sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
                     from SVNLog, SVNLogDetail \
                     where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                    group by dirpath", (depth, self.searchpath,))
+                    group by dirpath", (self.searchpath,depth, self.sqlsearchpath,))
             
         dirlist = []
         dirsizelist = []        
@@ -435,9 +435,9 @@ class SVNPlot(SVNPlotBase):
         '''
         self._printProgress("Calculating current Directory File Count pie graph")
         
-        self.cur.execute("select dirname(changedpath, ?) as dirpath, count(*) as filecount \
+        self.cur.execute("select dirname(?, changedpath, ?) as dirpath, count(*) as filecount \
                     from (select distinct changedpath from SVNLogDetail where SVNLogDetail.changedpath like ?) \
-                    group by dirpath", (depth, self.searchpath,))
+                    group by dirpath", (self.searchpath,depth, self.sqlsearchpath,))
             
         dirlist = []
         dirsizelist = []        
@@ -457,8 +457,8 @@ class SVNPlot(SVNPlotBase):
         '''
         self._printProgress("Calculating Directory size line graph")
         
-        self.cur.execute("select dirname(changedpath, ?) as dirpath from SVNLogDetail where changedpath like ? \
-                         group by dirpath",(depth, self.searchpath,))
+        self.cur.execute("select dirname(?, changedpath, ?) as dirpath from SVNLogDetail where changedpath like ? \
+                         group by dirpath",(self.searchpath, depth, self.sqlsearchpath,))
         
         dirlist = [dirname for dirname, in self.cur]
         ax = None
@@ -477,7 +477,7 @@ class SVNPlot(SVNPlotBase):
         sqlquery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), \
                          strftime('%%d', SVNLog.commitdate), count(*) as commitfilecount \
                          from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
-                         and %s group by date(SVNLog.commitdate)" % (self.searchpath, self._bugFixKeywordsInMsgSql())
+                         and %s group by date(SVNLog.commitdate)" % (self.sqlsearchpath, self._bugFixKeywordsInMsgSql())
         
         self.cur.execute(sqlquery)
         dates = []
@@ -503,7 +503,7 @@ class SVNPlot(SVNPlotBase):
                          strftime('%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by date(SVNLog.commitdate)", (self.searchpath,))
+                         group by date(SVNLog.commitdate)", (self.sqlsearchpath,))
         dates = []
         loc = []
         tocalloc = 0
@@ -520,7 +520,7 @@ class SVNPlot(SVNPlotBase):
                          strftime('%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded+SVNLogDetail.linesdeleted) as churn \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by date(SVNLog.commitdate)", (self.searchpath,))
+                         group by date(SVNLog.commitdate)", (self.sqlsearchpath,))
         dates = []
         loc = []
         tocalloc = 0
@@ -588,7 +588,7 @@ class SVNPlot(SVNPlotBase):
                          strftime('%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? and SVNLog.author=? \
-                         group by date(SVNLog.commitdate)",(self.searchpath, devname,))
+                         group by date(SVNLog.commitdate)",(self.sqlsearchpath, devname,))
         dates = []
         loc = []
         tocalloc = 0
