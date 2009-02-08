@@ -38,7 +38,6 @@ __date__     = '$Date:$'
 import matplotlib.pyplot as plt
 from optparse import OptionParser
 import sqlite3
-import calendar, datetime
 import os.path, sys
 import string
 from svnplotbase import *
@@ -139,16 +138,15 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday",
                      BugfixCommitsTrend="bugfixcommits", FileTypes="filetypes")
                          
 class SVNPlot(SVNPlotBase):
-    def __init__(self, svndbpath, dpi=100, format='png'):
-        SVNPlotBase.__init__(self, svndbpath, dpi,format)
+    def __init__(self, svnstats, dpi=100, format='png'):
+        SVNPlotBase.__init__(self, svnstats, dpi,format)
         self.commitGraphHtPerAuthor = 2 #In inches
-        self.bugfixkeywords = ['bug', 'fix']
         self.authorsToDisplay = 10
         self.fileTypesToDisplay = 20
         self.dirdepth = 1
                 
     def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100):
-        self.SetSearchPath(svnsearchpath) 
+        self.svnstats.SetSearchPath(svnsearchpath) 
         self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"));
         self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"));
         self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"));
@@ -179,16 +177,9 @@ class SVNPlot(SVNPlotBase):
                                
     def ActivityByWeekday(self, filename):
         self._printProgress("Calculating Activity by day of week graph")
-           
-        self.cur.execute("select strftime('%w', SVNLog.commitdate), count(SVNLog.revno) from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by strftime('%w', SVNLog.commitdate)", (self.sqlsearchpath,))
-        labels =[]
-        data = []
-        for dayofweek, commitcount in self.cur:
-           data.append(commitcount)           
-           labels.append(calendar.day_abbr[int(dayofweek)])
-
+        
+        data, labels = self.svnstats.getActivityByWeekday()
+        
         ax = self._drawBarGraph(data, labels,0.5)
         ax.set_ylabel('Commits')
         ax.set_xlabel('Day of Week')
@@ -200,15 +191,8 @@ class SVNPlot(SVNPlotBase):
     def ActivityByTimeOfDay(self, filename):
         self._printProgress("Calculating Activity by time of day graph")
         
-        self.cur.execute("select strftime('%H', SVNLog.commitdate), count(SVNLog.revno) from SVNLog, SVNLogDetail \
-                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                          group by strftime('%H', SVNLog.commitdate)", (self.sqlsearchpath,))
-        labels =[]
-        data = []
-        for hourofday, commitcount in self.cur:
-           data.append(commitcount)           
-           labels.append(int(hourofday))
-
+        data, labels = self.svnstats.getActivityByTimeOfDay()
+        
         ax = self._drawBarGraph(data, labels,0.5)
         ax.set_ylabel('Commits')
         ax.set_xlabel('Hour of Day')
@@ -227,7 +211,7 @@ class SVNPlot(SVNPlotBase):
     def LocGraphAllDev(self, filename):
         self._printProgress("Calculating Developer Contribution graph")
         ax = None
-        authList = self._getAuthorList(self.authorsToDisplay)
+        authList = self.svnstats.getAuthorList(self.authorsToDisplay)
         for author in authList:
             ax = self._drawlocGraphLineByDev(author, ax)
 
@@ -259,19 +243,8 @@ class SVNPlot(SVNPlotBase):
         
     def FileCountGraph(self, filename):
         self._printProgress("Calculating File Count graph")
-        
-        self.cur.execute("select strftime('%Y', SVNLog.commitdate), strftime('%m', SVNLog.commitdate),\
-                         strftime('%d', SVNLog.commitdate), sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by date(SVNLog.commitdate)", (self.sqlsearchpath,))
-        dates = []
-        fc = []
-        totalfiles = 0
-        for year, month, day, fadded,fdeleted in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            totalfiles = totalfiles + fadded-fdeleted
-            fc.append(float(totalfiles))
+
+        dates, fc = self.svnstats.getFileCountStats()        
         
         ax = self._drawDateLineGraph(dates, fc)
         ax.set_title('File Count')
@@ -281,19 +254,9 @@ class SVNPlot(SVNPlotBase):
     def FileTypesGraph(self, filename):
         self._printProgress("Calculating File Types graph")
 
-        #first get the file types and         
-        self.cur.execute("select filetype(changedpath) as ftype, count(*) as typecount\
-                         from (select distinct changedpath from SVNLogDetail where SVNLogDetail.changedpath like ? \
-                         ) group by ftype order by typecount DESC limit 0,?"
-                         , (self.sqlsearchpath,self.fileTypesToDisplay))
-
-        ftypelist = []
-        ftypecountlist = []
-        
-        for ftype, typecount in self.cur:
-            ftypelist.append(ftype)
-            ftypecountlist.append(float(typecount))
-
+        #first get the file types and
+        ftypelist, ftypecountlist = self.svnstats.getFileTypesStats(self.fileTypesToDisplay)
+                
         barwid = 0.2
         ax = self._drawHBarGraph(ftypecountlist, ftypelist, barwid)
         ax.set_xlabel("Number of files")
@@ -304,26 +267,8 @@ class SVNPlot(SVNPlotBase):
             
     def AvgFileLocGraph(self, filename):
         self._printProgress("Calculating Average File Size graph")
-        
-        self.cur.execute("select strftime('%Y', SVNLog.commitdate), strftime('%m', SVNLog.commitdate),\
-                         strftime('%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
-                         sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by date(SVNLog.commitdate)", (self.sqlsearchpath,))
-        dates = []
-        avgloclist = []
-        avgloc = 0
-        totalFileCnt = 0
-        totalLoc = 0
-        for year, month, day, locadded, locdeleted, filesadded, filesdeleted in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            totalLoc = totalLoc + locadded-locdeleted
-            totalFileCnt = totalFileCnt + filesadded - filesdeleted
-            avgloc = 0.0
-            if( totalFileCnt > 0.0):
-               avgloc = float(totalLoc)/float(totalFileCnt)
-            avgloclist.append(avgloc)
+
+        dates, avgloclist = self.svnstats.getAvgLoC()                
             
         ax = self._drawDateLineGraph(dates, avgloclist)
         ax.set_title('Average File Size (Lines)')
@@ -333,36 +278,15 @@ class SVNPlot(SVNPlotBase):
 
     def AuthorActivityGraph(self, filename):
         self._printProgress("Calculating Author Activity graph")
-        
-        self.cur.execute("select SVNLog.author, sum(SVNLog.addedfiles), sum(SVNLog.changedfiles), \
-                         sum(SVNLog.deletedfiles), count(SVNLog.revno) as commitcount from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by SVNLog.author order by commitcount DESC LIMIT 0, ?"
-                         , (self.sqlsearchpath, self.authorsToDisplay,))
 
-        authlist = []
-        addfraclist = []
-        changefraclist=[]
-        delfraclist = []
-        
-        for author, filesadded, fileschanged, filesdeleted,commitcount in self.cur:
-            authlist.append(self._getAuthorLabel(author))
-            activitytotal = float(filesadded+fileschanged+filesdeleted)
-            
-            if( activitytotal > 0.0):
-               addfraclist.append(float(filesadded)/activitytotal*100)
-               changefraclist.append(float(fileschanged)/activitytotal*100)
-               delfraclist.append(float(filesdeleted)/activitytotal*100)
-            else:
-               addfraclist.append(0.0)
-               changefraclist.append(0.0)
-               delfraclist.append(0.0)
-
+        authlist, addfraclist,changefraclist,delfraclist = self.svnstats.getAuthorActivityStats(self.authorsToDisplay)
         dataList = [addfraclist, changefraclist, delfraclist]
+
+        authlabellist = [self._getAuthorLabel(author) for author in authlist]
         
         barwid = 0.2
         legendlist = ["Adding", "Modifying", "Deleting"]
-        ax = self._drawStackedHBarGraph(dataList, authlist, legendlist, barwid)
+        ax = self._drawStackedHBarGraph(dataList, authlabellist, legendlist, barwid)
         #set the x-axis format.                
         ax.set_xbound(0, 100)
         xfmt = FormatStrFormatter('%d%%')
@@ -377,7 +301,7 @@ class SVNPlot(SVNPlotBase):
     def CommitActivityGraph(self, filename):
         self._printProgress("Calculating Commit activity graph")
         
-        authList = self._getAuthorList(self.authorsToDisplay)
+        authList = self.svnstats.getAuthorList(self.authorsToDisplay)
         authCount = len(authList)
         
         authIdx = 1
@@ -412,19 +336,8 @@ class SVNPlot(SVNPlotBase):
         '''
         self._printProgress("Calculating current Directory size pie graph")
         
-        self.cur.execute("select dirname(?, SVNLogDetail.changedpath, ?) as dirpath, sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
-                    from SVNLog, SVNLogDetail \
-                    where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                    group by dirpath", (self.searchpath,depth, self.sqlsearchpath,))
-            
-        dirlist = []
-        dirsizelist = []        
-        for dirname, linesadded, linesdeleted in self.cur:
-            dsize = linesadded-linesdeleted
-            if( dsize > 0):
-                dirlist.append(dirname)
-                dirsizelist.append(dsize)
-                
+        dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth)
+        
         if( len(dirsizelist) > 0):
            axs = self._drawPieGraph(dirsizelist, dirlist)
            axs.set_title('Directory Sizes')        
@@ -436,16 +349,8 @@ class SVNPlot(SVNPlotBase):
         depth - depth of directory search relative to search path. Default value is 2
         '''
         self._printProgress("Calculating current Directory File Count pie graph")
-        
-        self.cur.execute("select dirname(?, changedpath, ?) as dirpath, count(*) as filecount \
-                    from (select distinct changedpath from SVNLogDetail where SVNLogDetail.changedpath like ?) \
-                    group by dirpath", (self.searchpath,depth, self.sqlsearchpath,))
-            
-        dirlist = []
-        dirsizelist = []        
-        for dirname, fcount in self.cur:
-            dirlist.append(dirname)
-            dirsizelist.append(float(fcount))
+
+        dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth)
                 
         if( len(dirsizelist) > 0):
            axs = self._drawPieGraph(dirsizelist, dirlist)
@@ -459,11 +364,8 @@ class SVNPlot(SVNPlotBase):
         '''
         self._printProgress("Calculating Directory size line graph")
         
-        self.cur.execute("select dirname(?, changedpath, ?) as dirpath from SVNLogDetail where changedpath like ? \
-                         group by dirpath",(self.searchpath, depth, self.sqlsearchpath,))
-        
-        dirlist = [dirname for dirname, in self.cur]
         ax = None
+        dirlist = self.svnstats.getDirnames(depth)
         for dirname in dirlist:
             ax = self._drawDirectorySizeLineGraphByDir(dirname, ax)
 
@@ -476,22 +378,8 @@ class SVNPlot(SVNPlotBase):
     def BugfixCommitsTrend(self, filename):
         self._printProgress("Calculating Bug fix commit trend")
         
-        sqlquery = "select strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), \
-                         strftime('%%d', SVNLog.commitdate), count(*) as commitfilecount \
-                         from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
-                         and %s group by date(SVNLog.commitdate)" % (self.sqlsearchpath, self._bugFixKeywordsInMsgSql())
+        dates, fc, commitchurn = self.svnstats.getBugfixCommitsTrendStats()
         
-        self.cur.execute(sqlquery)
-        dates = []
-        fc = []
-        commitchurn = []
-        totalcommits = 0
-        for year, month, day, commitfilecount in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            commitchurn.append(float(commitfilecount))
-            totalcommits = totalcommits+commitfilecount
-            fc.append(float(totalcommits))
-            
         ax = None
         ax = self._drawDateLineGraph(dates, fc,ax)        
         ax = self._drawDateLineGraph(dates, commitchurn, ax)
@@ -501,55 +389,19 @@ class SVNPlot(SVNPlotBase):
         self._closeDateLineGraph(ax, filename)
         
     def _drawLocGraph(self):
-        self.cur.execute("select strftime('%Y', SVNLog.commitdate), strftime('%m', SVNLog.commitdate),\
-                         strftime('%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by date(SVNLog.commitdate)", (self.sqlsearchpath,))
-        dates = []
-        loc = []
-        tocalloc = 0
-        for year, month, day, locadded, locdeleted in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            tocalloc = tocalloc + locadded-locdeleted
-            loc.append(float(tocalloc))
-            
+        dates, loc = self.svnstats.getLoCStats()        
         ax = self._drawDateLineGraph(dates, loc)
         return(ax)
     
     def _drawDailyChurnGraph(self, ax):
-        self.cur.execute("select strftime('%Y', SVNLog.commitdate), strftime('%m', SVNLog.commitdate),\
-                         strftime('%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded+SVNLogDetail.linesdeleted) as churn \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by date(SVNLog.commitdate)", (self.sqlsearchpath,))
-        dates = []
-        loc = []
-        tocalloc = 0
-        for year, month, day, churn in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            loc.append(float(churn))
-        
-        lines = ax.vlines(dates, [0.1], loc, color='r', label='Churn')
+
+        dates, churnlist = self.svnstats.getChurnStats()
+        lines = ax.vlines(dates, [0.1], churnlist, color='r', label='Churn')
         
         return(ax)
             
     def _drawDirectorySizeLineGraphByDir(self, dirname, ax):
-        sqlQuery = "select sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
-                    strftime('%%Y', SVNLog.commitdate), strftime('%%m', SVNLog.commitdate), strftime('%%d', SVNLog.commitdate) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s%%' \
-                         group by date(SVNLog.commitdate)" % (dirname)
-
-        self.cur.execute(sqlQuery)
-        dates = []
-        dirsizelist = []
-        dirsize = 0
-        for locadded, locdeleted, year, month, day in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            dirsize= dirsize+locadded-locdeleted
-            dirsizelist.append(max(0, float(dirsize)))
-
+        dates, dirsizelist = self.svnstats.getDirLocTrendStats(dirname)
         ax = self._drawDateLineGraph(dates, dirsizelist, ax)
         return(ax)
         
@@ -570,15 +422,7 @@ class SVNPlot(SVNPlotBase):
         return(graphParamDict)
 
     def _drawCommitActivityGraphByAuthor(self, authIdx, authCount, author, axs=None):
-        self.cur.execute("select strftime('%H', commitdate), strftime('%Y', SVNLog.commitdate), \
-                    strftime('%m', SVNLog.commitdate), strftime('%d', SVNLog.commitdate) \
-                    from SVNLog where author=? group by date(commitdate)" ,(author,))
-
-        dates = []
-        committimelist = []
-        for hr, year, month, day in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            committimelist.append(int(hr))
+        dates,committimelist= self.svnstats.getAuthorCommitActivityStats(author)
         #Plot title
         plotTitle = "Author : %s" % author
         axs = self._drawScatterPlot(dates, committimelist, authCount, authIdx, plotTitle, axs)
@@ -586,33 +430,9 @@ class SVNPlot(SVNPlotBase):
         return(axs)
             
     def _drawlocGraphLineByDev(self, devname, ax=None):
-        self.cur.execute("select strftime('%Y', SVNLog.commitdate), strftime('%m', SVNLog.commitdate),\
-                         strftime('%d', SVNLog.commitdate), sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? and SVNLog.author=? \
-                         group by date(SVNLog.commitdate)",(self.sqlsearchpath, devname,))
-        dates = []
-        loc = []
-        tocalloc = 0
-        for year, month, day, locadded, locdeleted in self.cur:
-            dates.append(datetime.date(int(year), int(month), int(day)))
-            tocalloc = tocalloc + locadded-locdeleted
-            loc.append(float(tocalloc))
-            
+        dates, loc = self.svnstats.getLoCTrendForAuthor(devname)        
         ax = self._drawDateLineGraph(dates, loc, ax)
-        return(ax)
-    
-    def _bugFixKeywordsInMsgSql(self):
-        sqlstr = "( "
-        first = True
-        for keyword in self.bugfixkeywords:
-            if( first == False):
-                sqlstr = sqlstr + ' or '
-            sqlstr=sqlstr + "svnlog.msg like '%%%s%%'" % keyword
-            first = False
-        sqlstr = sqlstr + " )"
-        return(sqlstr)
-    
+        return(ax)    
         
 def RunMain():
     usage = "usage: %prog [options] <svnsqlitedbpath> <graphdir>"

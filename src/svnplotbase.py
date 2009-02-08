@@ -9,101 +9,32 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
 from matplotlib.ticker import FixedLocator, FormatStrFormatter
 from matplotlib.font_manager import FontProperties
-import sqlite3
 import os.path, sys
 import string
 import operator
 import logging
-
-def dirname(searchpath, path, depth):
-    assert(searchpath != None and searchpath != "")
-    #replace the search path and then compare the depth
-    path = path.replace(searchpath, "", 1)
-    #first split the path and remove the filename
-    pathcomp = os.path.dirname(path).split('/')
-    #now join the split path upto given depth only
-    dirpath = '/'.join(pathcomp[0:depth])
-    #Now add the dirpath to searchpath to get the final directory path
-    dirpath = searchpath+dirpath
-    #print "%s : [%s]" %(path, dirpath)
-    return(dirpath)
-
-def filetype(path):
-    (root, ext) = os.path.splitext(path)
-    return(ext)
+import svnstats
     
 class SVNPlotBase:
-    def __init__(self, svndbpath, dpi=100,format='png'):
-        self.svndbpath = svndbpath
+    def __init__(self, svnstats, dpi=100,format='png'):
+        self.svnstats = svnstats
+        self.reponame = ""        
         self.dpi = dpi
         self.format = format
-        self.reponame = ""
         self.verbose = False
         self.clrlist = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-        self.__searchpath = '/%'
-        self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        #self.dbcon.row_factory = sqlite3.Row
-        # Create the function "regexp" for the REGEXP operator of SQLite
-        self.dbcon.create_function("dirname", 3, dirname)
-        self.dbcon.create_function("filetype", 1, filetype)        
-        self.cur = self.dbcon.cursor() 
-    
-    def __del__(self):
-        self.cur.close()
-        self.dbcon.close()
+            
+    def SetVerbose(self, verbose):       
+        self.verbose = verbose
+        self.svnstats.SetVerbose(verbose)
 
     def SetRepoName(self, reponame):
         self.reponame = reponame
         
-    def SetVerbose(self, verbose):       
-        self.verbose = verbose
-
-    def SetSearchPath(self, searchpath = '/'):
-        '''
-        Set the path for searching the repository data.
-        Default value is '/%' which searches all paths in the repository.
-        Use self.SetSearchPath('/trunk/%') for searching inside the 'trunk' folder only
-        '''
-        if(searchpath != None and len(searchpath) > 0):
-            self.__searchpath = searchpath
-        if( self.__searchpath.endswith('%')==True):
-            self.__searchpath = self.__searchpath[:-1]
-        self._printProgress("Set the search path to %s" % self.__searchpath)
-
-    @property
-    def searchpath(self):
-        return(self.__searchpath)
-
-    @property    
-    def sqlsearchpath(self):
-        '''
-        return the sql regex search path (e.g. '/trunk/' will be returned as '/trunk/%'
-        '''
-        return(self.__searchpath + '%')
-    
     def _printProgress(self, msg):
         if( self.verbose == True):
             print msg
-                                                
-    def _getAuthorList(self, numAuthors=None):
-        #Find out the unique developers and their number of commit sorted in 'descending' order
-        self.cur.execute("select author, count(*) as commitcount from SVNLog group by author order by commitcount desc")
-        
-        #get the auhor list (ignore commitcount) and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
-        # get overwritten
-        authList = [author for author,commitcount in self.cur]
-        #Keep only top 'numAuthors'
-        if( numAuthors != None):
-            authList = authList[:numAuthors]
-        
-        #if there is an empty string in author list, replace it by "unknown"
-        authListFinal = []
-        for author in authList:
-            if( author == ""):
-                author='unknown'
-            authListFinal.append(author)
-        return(authListFinal)
-
+                                                    
     def _getAuthorLabel(self, author):
         '''
         sometimes are author names are email ids. Hence labels have higher width. So split the
