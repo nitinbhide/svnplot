@@ -467,8 +467,9 @@ def RunMain():
             print "Repository Name : %s" % options.reponame
             print "Search path inside repository : %s" % options.searchpath
             print "Graph thumbnail size : %s" % options.thumbsize
-            
-        svnplot = SVNPlot(svndbpath, dpi=options.dpi)
+
+        svnstats = SVNStats(svndbpath)     
+        svnplot = SVNPlot(svnstats, dpi=options.dpi)
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
         svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
