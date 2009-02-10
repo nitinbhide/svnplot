@@ -43,8 +43,8 @@ class SVNStats:
         self.verbose = False
         self.bugfixkeywords = ['bug', 'fix']
         self.__invalidWordPattern = re.compile("\d+|an|the|me|my|we|you|he|she|it|are|is|am|\
-                        will|shall|had|has|been|this|that|there|who|how|\
-                        yet|to|in|out|of|for|if|no|yes|not|can|could|at|with|without", re.IGNORECASE)
+                        will|shall|had|has|been|this|that|there|who|how|already|after|\
+                        yet|to|in|out|of|for|if|no|yes|not|can|could|at|as|with|without", re.IGNORECASE)
         self.dbcon = None
         self.initdb()
         
