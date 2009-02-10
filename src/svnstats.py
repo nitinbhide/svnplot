@@ -9,7 +9,7 @@ graphs or html tables or json data.
 import sqlite3
 import calendar, datetime
 import os.path, sys
-import string
+import string, re
 import operator
 import logging
 
@@ -42,18 +42,33 @@ class SVNStats:
         self.__searchpath = '/%'
         self.verbose = False
         self.bugfixkeywords = ['bug', 'fix']
-
+        self.__invalidWordPattern = re.compile("\d+|an|the|me|my|we|you|he|she|it|are|is|am|\
+                        will|shall|had|has|been|this|that|there|who|how|\
+                        yet|to|in|out|of|for|if|no|yes|not|can|could|at|with|without", re.IGNORECASE)
+        self.dbcon = None
+        self.initdb()
+        
+    def initdb(self):
+        if( self.dbcon != None):
+            self.closedb()
+            
+        #InitSqlite
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
         # Create the function "regexp" for the REGEXP operator of SQLite
         self.dbcon.create_function("dirname", 3, dirname)
         self.dbcon.create_function("filetype", 1, filetype)        
         self.cur = self.dbcon.cursor() 
+
+    def closedb(self):
+        if( self.dbcon != None):
+            self.cur.close()            
+            self.dbcon.commit()
+            self.dbcon.close()
+            self.dbcon = None
             
     def __del__(self):
-        self.cur.close()
-        self.dbcon.commit()
-        self.dbcon.close()
+        self.closedb()
         
     def SetVerbose(self, verbose):       
         self.verbose = verbose
@@ -407,3 +422,31 @@ class SVNStats:
             totalcommits = totalcommits+commitfilecount
             fc.append(float(totalcommits))
         return(dates, fc, commitchurn)
+
+    def __isValidWord(self, word):
+        valid = True
+        if( len(word) < 2 or re.match(self.__invalidWordPattern, word) != None):
+            valid = False
+        return(valid)
+    
+    def getLogMsgWordFreq(self, minWordFreq = 3):
+        '''
+        get word frequency of log messages. Common words like 'a', 'the' are removed.
+        returns a dictionary with words as key and frequency of occurance as value
+        '''
+        self.cur.execute("select msg from SVNLog")
+
+        wordFreq = dict()
+        pattern = re.compile('\W+')
+        for msg, in self.cur:
+            #split the words in msg
+            wordlist = re.split(pattern, msg)
+            for word in filter(self.__isValidWord, wordlist):
+                count = wordFreq.get(word, 0)        
+                wordFreq[word] = count+1
+        #Filter words with frequency less than minWordFreq
+        invalidWords = [word for word,freq in wordFreq.items() if (freq < minWordFreq)]
+        for word in invalidWords:
+            del wordFreq[word]
+
+        return(wordFreq)
