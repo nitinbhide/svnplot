@@ -152,21 +152,21 @@ class SVNPlot(SVNPlotBase):
                 
     def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100):
         self.svnstats.SetSearchPath(svnsearchpath) 
-        self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"));
-        self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"));
-        self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"));
-        self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"));
-        self.LocGraph(self._getGraphFileName(dirpath, "LoC"));
-        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"));
-        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"));
-        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"));
-        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"));
-        self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
-        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"));        
-
-        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth);
-        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth);
-        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth);
+##        self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"));
+##        self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"));
+##        self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"));
+##        self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"));
+##        self.LocGraph(self._getGraphFileName(dirpath, "LoC"));
+##        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"));
+##        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"));
+##        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"));
+##        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"));
+##        self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
+##        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"));        
+##
+##        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth);
+##        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth);
+##        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth);
         
         graphParamDict = self._getGraphParamDict( thumbsize)
         dict(GraphNameDict)
@@ -394,16 +394,17 @@ class SVNPlot(SVNPlotBase):
         ax.legend(("Total Commited Files", "Committed Files Churn"), prop=self._getLegendFont())
         self._closeDateLineGraph(ax, filename)
 
-    def TagCloud(self):
+    def TagCloud(self, numWords=50):
         self._printProgress("Calculating tag cloud for log messages")
         words = self.svnstats.getLogMsgWordFreq(5)
-        #first get top 100 words based on frequency
+        #first get top 'numWords' words based on frequency
         tagWordList = sorted(words, key=operator.itemgetter(1))
-        tagWordList = sorted(tagWordList[0:100])
+        tagWordList = sorted(tagWordList[0:numWords])
         tagWordSet = set(tagWordList)
         #Now remove all the remaining words from the dictionary
         maxFreq = max([freq for word, freq in words.items() if word in tagWordSet])
-        tagHtmlStr = ' '.join([('<font size="%d">%s</font>'%(min(1+words[x]*5/maxFreq, 5), x))
+        #change the font size between "-5" to "+5" relative to current font size
+        tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(min(-5+words[x]*10/maxFreq+0.5, +5), x))
                                    for x in tagWordList])
         return(tagHtmlStr)
         
