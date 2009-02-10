@@ -43,9 +43,9 @@ class SVNStats:
         self.verbose = False
         self.bugfixkeywords = ['bug', 'fix']
         self.__invalidWordPattern = re.compile("\d+|an|the|me|my|we|you|he|she|it|are|is|am|\
-                        will|shall|had|has|was|were|be|been|this|that|there|who|how|already|after|\
-                        by|on|or|so|also|got|get|do|don't|\
-                        yet|to|in|out|of|for|if|no|yes|not|can|could|at|as|with|without", re.IGNORECASE)
+                        |will|shall|had|has|was|were|be|been|this|that|there|who|when|how|\
+                        |already|after|by|on|or|so|also|got|get|do|don't|from|all|but|\
+                        |yet|to|in|out|of|for|if|no|yes|not|may|can|could|at|as|with|without", re.IGNORECASE)
         self.dbcon = None
         self.initdb()
         
@@ -443,11 +443,12 @@ class SVNStats:
             #split the words in msg
             wordlist = re.split(pattern, msg)
             for word in filter(self.__isValidWord, wordlist):
+                word = word.lower()
                 count = wordFreq.get(word, 0)        
                 wordFreq[word] = count+1
         #Filter words with frequency less than minWordFreq
         invalidWords = [word for word,freq in wordFreq.items() if (freq < minWordFreq)]
         for word in invalidWords:
             del wordFreq[word]
-
+                
         return(wordFreq)
