@@ -126,6 +126,11 @@ HTMLIndexTemplate ='''
        <a href="$BugfixCommitsTrend"><img src="$BugfixCommitsTrend" width="$thumbwid" height="$thumbht"></a>        
    </td>   
 </tr>
+<th colspan=2 align="center"><h3>Log Message Tag Cloud</h3></th>
+</tr>
+<tr id='tagcloud'>
+<td colspan=2 align="center">$TagCloud</td>
+</tr>
 </table>
 </body>
 </html>
@@ -168,6 +173,7 @@ class SVNPlot(SVNPlotBase):
         graphParamDict["thumbwid"]=str(thumbsize)
         graphParamDict["thumbht"]=str(thumbsize)
         graphParamDict["RepoName"]=self.reponame
+        graphParamDict["TagCloud"] = self.TagCloud()
         
         htmlidxTmpl = string.Template(HTMLIndexTemplate)        
         htmlidxname = os.path.join(dirpath, "index.htm")
@@ -387,6 +393,19 @@ class SVNPlot(SVNPlotBase):
         ax.set_ylabel('Commited Files Count')
         ax.legend(("Total Commited Files", "Committed Files Churn"), prop=self._getLegendFont())
         self._closeDateLineGraph(ax, filename)
+
+    def TagCloud(self):
+        self._printProgress("Calculating tag cloud for log messages")
+        words = self.svnstats.getLogMsgWordFreq(5)
+        #first get top 100 words based on frequency
+        tagWordList = sorted(words, key=operator.itemgetter(1))
+        tagWordList = sorted(tagWordList[0:100])
+        tagWordSet = set(tagWordList)
+        #Now remove all the remaining words from the dictionary
+        maxFreq = max([freq for word, freq in words.items() if word in tagWordSet])
+        tagHtmlStr = ' '.join([('<font size="%d">%s</font>'%(min(1+words[x]*5/maxFreq, 5), x))
+                                   for x in tagWordList])
+        return(tagHtmlStr)
         
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
