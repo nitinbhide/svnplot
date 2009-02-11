@@ -478,3 +478,27 @@ class SVNStats:
         wordFreq = self.__detectStemming(wordFreq)
         
         return(wordFreq)
+
+    def getRevTimeDeltaStats(self):
+        '''
+        get the 'time delta' statistics between two revisions.
+        returns two lists revision number, time difference between this revision and the last revision
+        '''
+        self.cur.execute('select SVNLog.revno, SVNLog.commitdate as "commitdate [timestamp]" from SVNLog,SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
+                         group by SVNLogDetail.revno order by SVNLogDetail.revno ASC',(self.sqlsearchpath,))
+
+        lastcommitdate = None
+        revnolist = []
+        timedeltalist = []
+        
+        for revno, commitdate in self.cur:
+            if( lastcommitdate != None):
+                revnolist.append(revno)
+                timediff = commitdate - lastcommitdate
+                hrs = timediff.days*24 + timediff.seconds/3600.0
+                timedeltalist.append(hrs)                
+            lastcommitdate = commitdate
+
+        return(revnolist, timedeltalist)
+    
