@@ -459,7 +459,8 @@ class SVNStats:
         get word frequency of log messages. Common words like 'a', 'the' are removed.
         returns a dictionary with words as key and frequency of occurance as value
         '''
-        self.cur.execute("select msg from SVNLog")
+        self.cur.execute("select SVNLog.msg from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
+                         group by SVNLogDetail.revno",(self.sqlsearchpath,))
 
         wordFreq = dict()
         pattern = re.compile('\W+')
