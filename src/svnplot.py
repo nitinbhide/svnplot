@@ -119,6 +119,11 @@ HTMLIndexTemplate ='''
     </td>    
 </tr>
 <tr>
+<tr>
+    <td align="center" width="25%"><h4>Time Difference Between Consecutive Revisions</h4><br/>
+    <a href="$RevTimeDelta"><img src="$RevTimeDelta" width="$thumbwid" height="$thumbht"></a>
+    </td>    
+</tr>
 <th colspan=2 align="center"><h3>Bug Pronness Graphs</h3></th>
 </tr>
 <tr>
@@ -137,7 +142,7 @@ HTMLIndexTemplate ='''
 </html>
 '''
 
-GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday",
+GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", RevTimeDelta="revtimedelta",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
@@ -153,21 +158,22 @@ class SVNPlot(SVNPlotBase):
                 
     def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100):
         self.svnstats.SetSearchPath(svnsearchpath) 
-        self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"));
-        self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"));
-        self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"));
-        self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"));
-        self.LocGraph(self._getGraphFileName(dirpath, "LoC"));
-        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"));
-        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"));
-        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"));
-        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"));
+        self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"))
+        self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"))
+        self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"))
+        self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"))
+        self.RevTimeDeltaGraph(self._getGraphFileName(dirpath, "RevTimeDelta"))
+        self.LocGraph(self._getGraphFileName(dirpath, "LoC"))
+        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"))
+        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"))
+        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"))
+        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"))
         self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
-        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"));        
+        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"))
 
-        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth);
-        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth);
-        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth);
+        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth)
+        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth)
+        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth)
         
         graphParamDict = self._getGraphParamDict( thumbsize)
         dict(GraphNameDict)
@@ -239,12 +245,29 @@ class SVNPlot(SVNPlotBase):
         ax.set_ylabel('Line Count')
         self._closeDateLineGraph(ax, filename)
 
+    def RevTimeDeltaGraph(self, filename):
+        self._printProgress("Calculating graph of time difference between consecutive revisions")
+
+        revlist, timedeltalist = self.svnstats.getRevTimeDeltaStats()
+        assert(len(revlist) == len(timedeltalist))
+        fig = plt.figure()            
+        ax = fig.add_subplot(111)
+        #ax.semilogy(revlist, timedeltalist)
+        ax.vlines(revlist, [0]*len(revlist), timedeltalist, color='b')
+        ax.set_ylim(ymin=0.0)
+        #ax.plot(revlist, timedeltalist)
+        ax.set_title("Time Difference between consecutive revisions")
+        ax.set_xlabel("Revisions")
+        ax.set_ylabel("Time Difference (hr)")
+        ax.grid(True)
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        
     def LocChurnGraph(self, filename):
         self._printProgress("Calculating LoC and Churn graph")
         ax = self._drawLocGraph()
         ax = self._drawDailyChurnGraph(ax)
         ax.set_title('LoC and Churn')
-        ax.set_ylabel('Line Count')
+        ax.set_ylabel('Line Count')        
         #ax.legend(loc='center right')
         self._closeDateLineGraph(ax, filename)
         
@@ -416,10 +439,9 @@ class SVNPlot(SVNPlotBase):
         return(ax)
     
     def _drawDailyChurnGraph(self, ax):
-
         dates, churnlist = self.svnstats.getChurnStats()
         lines = ax.vlines(dates, [0.1], churnlist, color='r', label='Churn')
-        
+        ax.set_ylim(ymin=0.0)
         return(ax)
             
     def _drawDirectorySizeLineGraphByDir(self, dirname, ax):
