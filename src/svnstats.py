@@ -43,7 +43,7 @@ class SVNStats:
         self.verbose = False
         self.bugfixkeywords = ['bug', 'fix']
         self.__invalidWordPattern = re.compile("\d+|an|the|me|my|we|you|he|she|it|are|is|am|\
-                        |will|shall|had|has|was|were|be|been|this|that|there|who|when|how|\
+                        |will|shall|should|would|had|have|has|was|were|be|been|this|that|there|who|when|how|\
                         |already|after|by|on|or|so|also|got|get|do|don't|from|all|but|\
                         |yet|to|in|out|of|for|if|no|yes|not|may|can|could|at|as|with|without", re.IGNORECASE)
         self.dbcon = None
@@ -429,7 +429,31 @@ class SVNStats:
         if( len(word) < 2 or re.match(self.__invalidWordPattern, word) != None):
             valid = False
         return(valid)
-    
+
+    def __detectStemming(self, wordFreq):
+        '''
+        detect common stemming patterns and merge those word counts (e.g. close and closed are  merged)
+        '''
+        wordList = wordFreq.keys()
+        
+        for word in wordList:            
+            wordFreq = self.__mergeStemmingSuffix(wordFreq, word, 'ed')
+            wordFreq = self.__mergeStemmingSuffix(wordFreq, word, 'ing')
+            wordFreq = self.__mergeStemmingSuffix(wordFreq, word, 's')
+            wordFreq = self.__mergeStemmingSuffix(wordFreq, word, 'es')
+        
+        return(wordFreq)
+            
+    def __mergeStemmingSuffix(self, wordFreq, word, suffix):
+        if( wordFreq.has_key(word) == True and word.endswith(suffix) == True):
+            #strip suffix
+            stemmedword = word[0:-len(suffix)]
+            if( wordFreq.has_key(stemmedword) == True):
+                wordFreq[stemmedword] = wordFreq[stemmedword]+wordFreq[word]
+                del wordFreq[word]
+        return(wordFreq)
+            
+        
     def getLogMsgWordFreq(self, minWordFreq = 3):
         '''
         get word frequency of log messages. Common words like 'a', 'the' are removed.
@@ -450,5 +474,7 @@ class SVNStats:
         invalidWords = [word for word,freq in wordFreq.items() if (freq < minWordFreq)]
         for word in invalidWords:
             del wordFreq[word]
-                
+
+        wordFreq = self.__detectStemming(wordFreq)
+        
         return(wordFreq)
