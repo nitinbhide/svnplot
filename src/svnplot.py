@@ -40,6 +40,7 @@ from optparse import OptionParser
 import sqlite3
 import os.path, sys
 import string
+import math
 from svnplotbase import *
 
 HTMLIndexTemplate ='''
@@ -403,9 +404,10 @@ class SVNPlot(SVNPlotBase):
         tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
         #now calculate the maximum value from the sorted list.
         maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
-        #change the font size between "-5" to "+5" relative to current font size
-        tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(min(-5+val*10/maxFreq+0.5, +5), x))
-                                   for x,val in tagWordList])
+        maxFreq = math.log(maxFreq)
+        #change the font size between "-2" to "+8" relative to current font size
+        tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(min(-2+math.log(val)*5/maxFreq+0.5, +8), x))
+                                   for x,val in tagWordList])                
         return(tagHtmlStr)
         
     def _drawLocGraph(self):
