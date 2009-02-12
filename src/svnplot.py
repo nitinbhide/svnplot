@@ -158,22 +158,22 @@ class SVNPlot(SVNPlotBase):
                 
     def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100):
         self.svnstats.SetSearchPath(svnsearchpath) 
-        self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"))
-        self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"))
-        self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"))
-        self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"))
+##        self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"))
+##        self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"))
+##        self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"))
+##        self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"))
         self.RevTimeDeltaGraph(self._getGraphFileName(dirpath, "RevTimeDelta"))
-        self.LocGraph(self._getGraphFileName(dirpath, "LoC"))
-        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"))
-        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"))
-        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"))
-        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"))
-        self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
-        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"))
-
-        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth)
-        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth)
-        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth)
+##        self.LocGraph(self._getGraphFileName(dirpath, "LoC"))
+##        self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"))
+##        self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"))
+##        self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"))
+##        self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"))
+##        self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
+##        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"))
+##
+##        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth)
+##        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth)
+##        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth)
         
         graphParamDict = self._getGraphParamDict( thumbsize)
         dict(GraphNameDict)
@@ -247,8 +247,8 @@ class SVNPlot(SVNPlotBase):
 
     def RevTimeDeltaGraph(self, filename):
         self._printProgress("Calculating graph of time difference between consecutive revisions")
-
-        revlist, timedeltalist = self.svnstats.getRevTimeDeltaStats()
+        
+        revlist, authlist, timedeltalist = self.svnstats.getRevTimeDeltaStats()
         assert(len(revlist) == len(timedeltalist))
         fig = plt.figure()            
         ax = fig.add_subplot(111)
@@ -256,6 +256,44 @@ class SVNPlot(SVNPlotBase):
         ax.vlines(revlist, [0]*len(revlist), timedeltalist, color='b')
         ax.set_ylim(ymin=0.0)
         #ax.plot(revlist, timedeltalist)
+        ax.set_title("Time Difference between consecutive revisions")
+        ax.set_xlabel("Revisions")
+        ax.set_ylabel("Time Difference (hr)")
+        ax.grid(True)
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        
+    def RevTimeDeltaGraphAuthClr(self, filename):
+        self._printProgress("Calculating graph of time difference between consecutive revisions")
+
+        #number of unique authors to get. 
+        numTopAuthors = len(self.clrlist)-1
+        revlist, authlist, timedeltalist = self.svnstats.getRevTimeDeltaStats(numTopAuthors)
+        assert(len(revlist) == len(timedeltalist) and len(revlist) == len(authlist))
+        #create 
+        authdatadict = dict()
+        for revno, author, timediff in zip(revlist, authlist, timedeltalist):
+            authdata= authdatadict.get(author)
+            if( authdata == None):
+                authdata = ([], [])
+                authdatadict[author] = authdata
+            authdata[0].append(revno)
+            authdata[1].append(timediff)
+            
+        assert(len(authdatadict) <= len(self.clrlist))
+        fig = plt.figure()            
+        ax = fig.add_subplot(111)
+        ax.set_color_cycle(self.clrlist)
+        handlelist = []        
+        for authdata, clr in zip(authdatadict.values(), self.clrlist):
+            authrevlist = authdata[0]
+            authtimedifflist = authdata[1]
+            ax.vlines(authrevlist, [0]*len(authrevlist), authtimedifflist, colors=clr)
+            #create a dummy line for legend creation
+            lines = ax.plot(authrevlist[0:1], authtimedifflist[0:1], color=clr)
+            handlelist.append(lines)
+            
+        ax.legend(handlelist, authdatadict.keys(), loc="upper right", ncol=1, prop=self._getLegendFont())
+        ax.set_ylim(ymin=0.0)
         ax.set_title("Time Difference between consecutive revisions")
         ax.set_xlabel("Revisions")
         ax.set_ylabel("Time Difference (hr)")
