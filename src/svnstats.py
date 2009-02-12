@@ -480,26 +480,34 @@ class SVNStats:
         
         return(wordFreq)
 
-    def getRevTimeDeltaStats(self):
+    def getRevTimeDeltaStats(self, numTopAuthors= None):
         '''
+        numTopAuthors - returns the top 'numTopAuthors' in the authors. Remaining author names are replaced
+        as 'others'. If the value is 'None' then all authors are returned.
         get the 'time delta' statistics between two revisions.
-        returns two lists revision number, time difference between this revision and the last revision
+        returns three lists revision number, author, time difference between this revision and the last revision        
         '''
-        self.cur.execute('select SVNLog.revno, SVNLog.commitdate as "commitdate [timestamp]" from SVNLog,SVNLogDetail \
+        authset = set(self.getAuthorList(numTopAuthors))
+
+        self.cur.execute('select SVNLog.revno, SVNLog.author, SVNLog.commitdate as "commitdate [timestamp]" from SVNLog,SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
                          group by SVNLogDetail.revno order by SVNLogDetail.revno ASC',(self.sqlsearchpath,))
 
         lastcommitdate = None
         revnolist = []
+        authlist = []
         timedeltalist = []
-        
-        for revno, commitdate in self.cur:
+                
+        for revno, author, commitdate in self.cur:
             if( lastcommitdate != None):
                 revnolist.append(revno)
+                if( author not in authset):
+                    author = 'others'
+                authlist.append(author)
                 timediff = commitdate - lastcommitdate
                 hrs = timediff.days*24 + timediff.seconds/3600.0
-                timedeltalist.append(hrs)                
+                timedeltalist.append(hrs)         
             lastcommitdate = commitdate
 
-        return(revnolist, timedeltalist)
+        return(revnolist, authlist, timedeltalist)
     
