@@ -76,15 +76,16 @@ class SVNLog2Sqlite:
 ##                logging.debug("Revision date:%s" % revlog.date)
 ##                logging.debug("Revision msg:%s" % revlog.message)
                 revcount = revcount+1
-                addedfiles, changedfiles, deletedfiles = revlog.changedFileCount(bChkIfDir)
-                cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
-                            values(?, ?, ?, ?,?, ?, ?)",
-                            (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
-                for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):                    
-                    cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted, lc_updated) \
-                                values(?, ?, ?, ?,?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted, lc_updated))
-                    #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
-                #commit after every change
+                addedfiles, changedfiles, deletedfiles = revlog.changedFileCount(bChkIfDir)                
+                if( revlog.isvalid() == True):
+                    cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
+                                values(?, ?, ?, ?,?, ?, ?)",
+                                (revlog.revno, revlogdate, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
+                    for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):                    
+                        cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted, lc_updated) \
+                                    values(?, ?, ?, ?,?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted, lc_updated))
+                        #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
+                    #commit after every change
                 print "Number revisions converted : %d (Rev no : %d)" % (revcount, revlog.revno)                        
             cur.close()
 

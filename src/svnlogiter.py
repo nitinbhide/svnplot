@@ -358,6 +358,15 @@ class SVNRevLog:
         else:
             self.revlog = revnolog
         assert(self.revlog == None or isinstance(revnolog, pysvn.PysvnLog)==True)
+
+    def isvalid(self):
+        '''
+        if the revision log is a valid log. Currently the log is invalid if the commit 'date' is not there.        
+        '''
+        valid = True
+        if( self.__getattr__('date') == None):
+            valid = False
+        return(valid)
         
     def changedFileCount(self, bChkIfDir):
         '''includes directory and files. Initially I wanted to only add the changed file paths.
@@ -469,7 +478,11 @@ class SVNRevLog:
                 msg = ''
             return(msg)
         elif(name == 'date'):
-            return(covert2datetime(self.revlog.date))
+            try:
+                dt = covert2datetime(self.revlog.date)
+            except:
+                dt = None
+            return(dt)
         elif(name == 'revno'):
             return(self.revlog.revision.number)
         elif(name == 'changedpathcount'):
