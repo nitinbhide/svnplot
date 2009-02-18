@@ -80,7 +80,7 @@ class SVNLog2Sqlite:
                 if( revlog.isvalid() == True):
                     cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
                                 values(?, ?, ?, ?,?, ?, ?)",
-                                (revlog.revno, revlogdate, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
+                                (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
                     for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):                    
                         cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted, lc_updated) \
                                     values(?, ?, ?, ?,?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted, lc_updated))
