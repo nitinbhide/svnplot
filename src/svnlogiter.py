@@ -462,7 +462,12 @@ class SVNRevLog:
                 pass
             return(author)
         elif(name == 'message'):
-            return(self.revlog.message )
+            msg = None
+            try:
+                msg = self.revlog.message
+            except:
+                msg = ''
+            return(msg)
         elif(name == 'date'):
             return(covert2datetime(self.revlog.date))
         elif(name == 'revno'):
