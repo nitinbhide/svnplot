@@ -1,4 +1,11 @@
 '''
+svnplot.py
+Copyright (C) 2009 Nitin Bhide nitinbhide@gmail.com
+
+This module is part of SVNPlot (http://code.google.com/p/svnplot) and is released under
+the New BSD License: http://www.opensource.org/licenses/bsd-license.php
+--------------------------------------------------------------------------------------
+
 Generate various graphs from the Subversion log data in the sqlite database.
 It assumes that the sqlite file is generated using the 'svnlog2sqlite.py' script.
 
@@ -21,12 +28,6 @@ Graph types to be supported
 14. Bug Commit Trend graph - Number of commits with words like 'bug' or 'fix' in the message -- Done
 15. Repository heatmap (treemap)
 
-
---- Nitin Bhide (nitinbhide@gmail.com)
-
-Part of 'svnplot' project
-Available on google code at http://code.google.com/p/svnplot/
-Licensed under the 'New BSD License'
 
 To use copy the file in Python 'site-packages' directory Setup is not available
 yet.

@@ -1,14 +1,16 @@
 '''
+svnlogiter.py
+Copyright (C) 2009 Nitin Bhide (nitinbhide@gmail.com)
+
+This module is part of SVNPlot (http://code.google.com/p/svnplot) and is released under
+the New BSD License: http://www.opensource.org/licenses/bsd-license.php
+--------------------------------------------------------------------------------------
+
 This file implements the iterators to iterate over the subversion log.
 This is just a convinience interface over the pysvn module.
 
 It is intended to be used in  python script to convert the Subversion log into
 an sqlite database.
---- Nitin Bhide (nitinbhide@gmail.com)
-
-Part of 'svnplot' project
-Available on google code at http://code.google.com/p/svnplot/
-Licensed under the 'New BSD License'
 
 To use copy the file in Python 'site-packages' directory Setup is not available
 yet.
