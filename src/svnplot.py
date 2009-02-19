@@ -57,7 +57,7 @@ HTMLIndexTemplate ='''
 <table align="center" frame="box">
 <caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
 <tr>
-<th colspan=2 align="center"><h3>Lines of Code Graphs</h3></th>
+<th colspan=3 align="center"><h3>Lines of Code Graphs</h3></th>
 </tr>
 <tr>
     <td align="center" width="25%"><h4>Lines of Code</h4><br/>
@@ -66,14 +66,12 @@ HTMLIndexTemplate ='''
     <td align="center" width="25%"><h4>Contributed Lines of Code</h4><br/>
     <a href="$LoCByDev"><img src="$LoCByDev" width="$thumbwid" height="$thumbht"></a>
     </td>
-</tr>
-<tr>
     <td align="center" width="25%"><h4>Average File Size</h4><br/>
     <a href="$AvgLoC"><img src="$AvgLoC" width="$thumbwid" height="$thumbht"></a>
     </td>    
 </tr>
 <tr>
-<th colspan=2 align="center"><h3>File Count Graphs</h3></th>
+<th colspan=3 align="center"><h3>File Count Graphs</h3></th>
 </tr>
 <tr>
     <td align="center" width="25%"><h4>File Count</h4><br/>
@@ -84,7 +82,7 @@ HTMLIndexTemplate ='''
     </td>
 </tr>
 <tr>
-<th colspan=2 align="center"><h3>Directory Size Graphs</h3></th>
+<th colspan=3 align="center"><h3>Directory Size Graphs</h3></th>
 </tr>
 <tr>
    <td align="center"><h4>Current Directory Size</h4><br/>
@@ -93,14 +91,12 @@ HTMLIndexTemplate ='''
     <td align="center"><h4>Directory Size</h4><br/>
     <a href="$DirSizeLine"><img src="$DirSizeLine" width="$thumbwid" height="$thumbht"></a>
     </td>
-</tr>
-<tr>
     <td align="center"><h4>Directory Size(FileCount)</h4><br/>
     <a href="$DirFileCountPie"><img src="$DirFileCountPie" width="$thumbwid" height="$thumbht"></a>
     </td>
 </tr>
 <tr>
-<th colspan=2 align="center"><h3>Commit Activity Graphs</h3></th>
+<th colspan=3 align="center"><h3>Commit Activity Graphs</h3></th>
 </tr>
 <tr>
     <td align="center" width="25%"><h4>Commit Activity By Day of Week </h4><br/>
@@ -109,22 +105,20 @@ HTMLIndexTemplate ='''
     <td align="center" width="25%"><h4>Commit Activity By Hour of Day</h4><br/>
     <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay" width="$thumbwid" height="$thumbht"></a>
     </td>
-</tr>
-<tr>
     <td align="center" width="25%"><h4>Author Activity</h4><br/>
     <a href="$AuthActivity"><img src="$AuthActivity" width="$thumbwid" height="$thumbht"></a>
     </td>
+</tr>
+<tr>
     <td align="center" width="25%"><h4>Developer Commit Activity</h4><br/>
     <a href="$CommitAct"><img src="$CommitAct" width="$thumbwid" height="$thumbht"></a>
     </td>    
-</tr>
-<tr>
-<tr>
     <td align="center" width="25%"><h4>Time Difference Between Consecutive Revisions</h4><br/>
     <a href="$RevTimeDelta"><img src="$RevTimeDelta" width="$thumbwid" height="$thumbht"></a>
     </td>    
 </tr>
-<th colspan=2 align="center"><h3>Bug Pronness Graphs</h3></th>
+<tr>
+<th colspan=3 align="center"><h3>Bug Pronness Graphs</h3></th>
 </tr>
 <tr>
    <td span=4 align="center">
@@ -132,10 +126,10 @@ HTMLIndexTemplate ='''
        <a href="$BugfixCommitsTrend"><img src="$BugfixCommitsTrend" width="$thumbwid" height="$thumbht"></a>        
    </td>   
 </tr>
-<th colspan=2 align="center"><h3>Log Message Tag Cloud</h3></th>
+<th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
 </tr>
 <tr id='tagcloud'>
-<td colspan=2 align="center">$TagCloud</td>
+<td colspan=3 align="center">$TagCloud</td>
 </tr>
 </table>
 </body>
