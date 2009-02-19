@@ -1,5 +1,10 @@
 '''
 svnstats.py
+Copyright (C) 2009 Nitin Bhide (nitinbhide@gmail.com)
+
+This module is part of SVNPlot (http://code.google.com/p/svnplot) and is released under
+the New BSD License: http://www.opensource.org/licenses/bsd-license.php
+--------------------------------------------------------------------------------------
 
 This is a helper class for getting the actual subversion statistics from the database.
 SVNPlot and other classes will use this to query the data and then render it as
