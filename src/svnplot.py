@@ -48,7 +48,7 @@ HTMLIndexTemplate ='''
 <head><title>Subversion Stats Plot for $RepoName</title>
     <style type="text/css">
     th {background-color: #F5F5F5; text-align:center}
-    td {background-color: #FFFFF0}
+    /*td {background-color: #FFFFF0}*/
     h3 {background-color: transparent;margin:2}
     h4 {background-color: transparent;margin:1}    
     </style>
@@ -56,6 +56,14 @@ HTMLIndexTemplate ='''
 <body>
 <table align="center" frame="box">
 <caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
+<tr>
+<th colspan=3 align="center"><h3>General Statistics</h3></th>
+</tr>
+<tr>
+    <td colpan=3>
+    $BasicStats
+    </td>
+</tr>
 <tr>
 <th colspan=3 align="center"><h3>Lines of Code Graphs</h3></th>
 </tr>
@@ -136,6 +144,19 @@ HTMLIndexTemplate ='''
 </html>
 '''
 
+HTMLBasicStatsTmpl = '''
+<table align="center">
+<tr><td>Head Revision Number</td><td>:</td><td>$LastRev</td></tr>
+<tr><td>First Revision Number</td><td>:</td><td>$FirstRev</td></tr>
+<tr><td>Last Commit Date</td><td>:</td><td>$LastRevDate</td></tr>
+<tr><td>First Commit Date</td><td>:</td><td>$FirstRevDate</td></tr>
+<tr><td>Revision Count</td><td>:</td><td>$NumRev</td></tr>
+<tr><td>Author Count</td><td>:</td><td>$NumAuthors</td></tr>
+<tr><td>File Count</td><td>:</td><td>$NumFiles</td></tr>
+<tr><td>LoC</td><td>:</td><td>$LoC</td></tr> 
+</table>
+'''
+
 GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", RevTimeDelta="revtimedelta",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
@@ -170,11 +191,6 @@ class SVNPlot(SVNPlotBase):
         self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth)
         
         graphParamDict = self._getGraphParamDict( thumbsize)
-        dict(GraphNameDict)
-        graphParamDict["thumbwid"]=str(thumbsize)
-        graphParamDict["thumbht"]=str(thumbsize)
-        graphParamDict["RepoName"]=self.reponame
-        graphParamDict["TagCloud"] = self.TagCloud()
         
         htmlidxTmpl = string.Template(HTMLIndexTemplate)        
         htmlidxname = os.path.join(dirpath, "index.htm")
@@ -464,7 +480,21 @@ class SVNPlot(SVNPlotBase):
         tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(min(-2+math.log(val)*5/maxFreq+0.5, +8), x))
                                    for x,val in tagWordList])                
         return(tagHtmlStr)
+
+    def BasicStats(self, basicStatsTmpl):
+        '''
+        get the html string for basic repository statistics (like last revision, etc)
+        '''
+        self._printProgress("Calculating Basic stats")
+        basestats = self.svnstats.getBasicStats()
+        #replace dates with proper formated date strings
+        basestats['FirstRevDate']= basestats['FirstRevDate'].strftime('%b %d, %Y %I:%M %p')
+        basestats['LastRevDate']= basestats['LastRevDate'].strftime('%b %d, %Y %I:%M %p')
+        statsTmpl = string.Template(basicStatsTmpl)
+        statsStr = statsTmpl.safe_substitute(basestats)
         
+        return(statsStr)
+                
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
         ax = self._drawDateLineGraph(dates, loc)
@@ -495,6 +525,9 @@ class SVNPlot(SVNPlotBase):
         graphParamDict["thumbwid"]=str(thumbsize)
         graphParamDict["thumbht"]=str(thumbsize)
         graphParamDict["RepoName"]=self.reponame
+        graphParamDict["TagCloud"] = self.TagCloud()
+        graphParamDict["BasicStats"] = self.BasicStats(HTMLBasicStatsTmpl)
+        
         return(graphParamDict)
 
     def _drawCommitActivityGraphByAuthor(self, authIdx, authCount, author, axs=None):

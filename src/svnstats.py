@@ -511,3 +511,56 @@ class SVNStats:
 
         return(revnolist, authlist, timedeltalist)
     
+    def getBasicStats(self):
+        '''
+        returns a dictinary of basic SVN stats
+        stats['LastRev'] -- returns last revision in the searchpath
+        stats['FirstRev'] -- first revision number for the given searchpath
+        stats['FirstRevDate'] -- first commit date
+        stats['LastRevDate'] -- last commit date.
+        stats['NumRev'] -- number of revisions in the search path.
+        stats['NumFiles'] -- returns total number of files (files added - files deleted)
+        stats['NumAuthors'] -- return total number of unique authors
+        stats['LoC'] -- total loc
+        '''
+        stats = dict()
+        #get head revision
+        self.cur.execute('select min(SVNLog.revno), max(SVNLog.revno), count(SVNLog.revno) from SVNLog,SVNLogDetail \
+                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ?'
+                         ,(self.sqlsearchpath,))
+        row = self.cur.fetchone()
+        firstrev = row[0]
+        lastrev = row[1]
+        numrev = row[2]
+        stats['LastRev'] = lastrev
+        stats['NumRev'] = numrev
+        stats['FirstRev'] = firstrev
+        #now get first and last revision dates
+        self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
+                        where SVNLog.revno = ?', (firstrev,))
+        row = self.cur.fetchone()
+        stats['FirstRevDate'] = row[0]
+        self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
+                        where SVNLog.revno = ?', (lastrev,))
+        row = self.cur.fetchone()
+        stats['LastRevDate'] = row[0]
+        #get number of unique paths(files) (added and deleted)
+        self.cur.execute('select count(*) from SVNLogDetail where SVNLogDetail.changetype = "A" \
+                        and SVNLogDetail.changedpath like ?', (self.sqlsearchpath,))
+        row = self.cur.fetchone()
+        filesAdded = row[0]
+        self.cur.execute('select count(*) from SVNLogDetail where SVNLogDetail.changetype = "D" \
+                        and SVNLogDetail.changedpath like ?', (self.sqlsearchpath,))
+        row = self.cur.fetchone()
+        filesDeleted = row[0]
+        stats['NumFiles'] = filesAdded-filesDeleted
+        authors = self.getAuthorList()
+        stats['NumAuthors'] = len(authors)
+    
+        self.cur.execute("select sum(SVNLogDetail.linesadded-SVNLogDetail.linesdeleted) \
+                         from SVNLogDetail where SVNLogDetail.changedpath like ?"
+                         ,(self.sqlsearchpath,))
+        row = self.cur.fetchone()
+        stats['LoC'] = row[0]
+        return(stats)
+        
