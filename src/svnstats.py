@@ -15,8 +15,12 @@ import sqlite3
 import calendar, datetime
 import os.path, sys
 import string, re
+import math
 import operator
 import logging
+
+COOLINGRATE = 1.0/24.0 #degree per hour
+TEMPINCREMENT = 10.0 # degrees per commit
 
 def filetype(path):
     '''
@@ -41,6 +45,19 @@ def dirname(searchpath, path, depth):
     #print "%s : [%s]" %(path, dirpath)
     return(dirpath)
 
+def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
+    '''
+    calculate the new temparature at time 'tm'. given the
+    lastTemp - last temperature measurement,
+    coolingRate - rate of cool per hour
+    '''
+    tmdelta = curTime-lastTime
+    hrsSinceLastTime = tmdelta.days*24.0+tmdelta.seconds/3600.0
+    tempFactor = -(coolingRate*hrsSinceLastTime)
+    temperature = lastTemp*math.exp(tempFactor)        
+    
+    return(temperature)
+                      
 class SVNStats:
     def __init__(self, svndbpath):
         self.svndbpath = svndbpath
@@ -48,9 +65,10 @@ class SVNStats:
         self.verbose = False
         self.bugfixkeywords = ['bug', 'fix']
         self.__invalidWordPattern = re.compile("\d+|an|the|me|my|we|you|he|she|it|are|is|am|\
-                        |will|shall|should|would|had|have|has|was|were|be|been|this|that|there|who|when|how|\
+                        |will|shall|should|would|had|have|has|was|were|be|been|this|that|there|\
+                        |who|when|how|where|which|\
                         |already|after|by|on|or|so|also|got|get|do|don't|from|all|but|\
-                        |yet|to|in|out|of|for|if|no|yes|not|may|can|could|at|as|with|without", re.IGNORECASE)
+                        |yet|to|in|out|of|for|if|yes|no|not|may|can|could|at|as|with|without", re.IGNORECASE)
         self.dbcon = None
         self.initdb()
         
@@ -568,4 +586,68 @@ class SVNStats:
         row = self.cur.fetchone()
         stats['LoC'] = row[0]
         return(stats)
+
+    def _updateActivityHotness(self):
+        '''
+        update the file activity as 'temparature' data. Every commit adds 10 degrees. Rate of temperature
+        drop is 1 deg/day. The temparature is calculated using the 'newtons law of cooling'
+        '''
+        self._printProgress("updating file hotness table")
+        self.cur.execute("CREATE TABLE IF NOT EXISTS ActivityHotness(filepath text, lastrevno integer, \
+                         temperature real)")
+        
+        self.dbcon.commit()
+        self.cur.execute("select max(ActivityHotness.lastrevno) from ActivityHotness")
+        lastrevno = self.cur.fetchone()[0]         
+        if(lastrevno == None):
+            lastrevno = 0
+        self.cur.execute("select max(SVNLog.revno) from SVNLog")
+        lastlogrevno = self.cur.fetchone()[0]
+        if( lastlogrevno == None):
+            lastlogrevno= 0
+        
+        for revno in xrange(lastrevno+1, lastlogrevno+1):
+            self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
+                            where SVNLog.revno=?', (revno,))
+            commitdate = self.cur.fetchone()[0]
+            self.cur.execute('select changedpath from SVNLogDetail where revno=?', (revno,))
+            changedpaths = self.cur.fetchall()
+            self._updateRevActivityHotness(revno, commitdate, changedpaths)
+
+    def _updateRevActivityHotness(self, revno, commitdate, changedpaths):
+        self._printProgress("updating file hotness table for revision %d" % revno)
+        for filepathrow in changedpaths:
+            filepath = filepathrow[0]
+            temperature = TEMPINCREMENT
+            lastrevno = revno            
+            self.cur.execute("select temperature, lastrevno from ActivityHotness where filepath=?", (filepath,))
+            try:
+                row = self.cur.fetchone()
+                temperature = row[0]
+                lastrevno = row[1]
+                #get last commit date
+                self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog where revno=?', (lastrevno,))
+                lastcommitdate = self.cur.fetchone()[0]
+                #now calculate the new temperature.
+                temperature = TEMPINCREMENT+getTemperatureAtTime(commitdate, lastcommitdate, temperature, COOLINGRATE)
+                self.cur.execute("UPDATE ActivityHotness SET temperature=?, lastrevno=? \
+                                where lastrevno = ? and filepath=?", (temperature, revno, lastrevno,filepath,))                
+            except:
+                self.cur.execute("insert into ActivityHotness(temperature, lastrevno, filepath) \
+                                values(?,?,?)", (temperature, revno, filepath))
+            logging.debug("updated file %s revno=%d temp=%f" % (filepath, revno,temperature))
+            
+        self.dbcon.commit()
+            
+            
+    def getHotFiles(self, numFiles):
+        '''
+        get the top 'numfiles' number of hot files.
+        returns list of tuples (filepath, temperature)
+        '''
+        self._updateActivityHotness()
+        self.cur.execute("select filepath,temperature from ActivityHotness order by temperature DESC LIMIT ?", (numFiles,))
+        hotfileslist = [(filepath, temparature) for filepath, temparature in self.cur]
+        return(hotfileslist)
+        
         
