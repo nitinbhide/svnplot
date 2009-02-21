@@ -61,7 +61,7 @@ HTMLIndexTemplate ='''
 <th colspan=3 align="center"><h3>General Statistics</h3></th>
 </tr>
 <tr>
-    <td colpan=3>
+    <td colspan=3>
     $BasicStats
     </td>
 </tr>
@@ -70,7 +70,7 @@ HTMLIndexTemplate ='''
 <th colspan=3 align="center"><h3>Top 10 Active Files</h3></th>
 </tr>
 <tr>
-    <td colpan=3>
+    <td colspan=3>
     $ActiveFiles
     </td>
 </tr>
