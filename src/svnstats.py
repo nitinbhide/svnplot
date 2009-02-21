@@ -56,8 +56,13 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
             curTime = datetime.datetime.strptime(curTime[:16], "%Y-%m-%d %H:%M")
         if( isinstance(lastTime,unicode)==True):
             lastTime = datetime.datetime.strptime(lastTime[:16], "%Y-%m-%d %H:%M")
+            
         tmdelta = curTime-lastTime
         hrsSinceLastTime = tmdelta.days*24.0+tmdelta.seconds/3600.0
+        #since this is cooling rate computation, curTime cannot be smaller than 'lastTime'
+        #(i.e. if hrsSinceLastTime is -ve ) then reset hrsSinceLastTime to 0
+        if( hrsSinceLastTime < 0.0):
+            hrsSinceLastTime = 0.0
         tempFactor = -(coolingRate*hrsSinceLastTime)
         temperature = lastTemp*math.exp(tempFactor)        
     except Exception, expinst:
@@ -621,6 +626,13 @@ class SVNStats:
 
         maxrev_temperature = 0.0
         lastcommitdate = None
+        self.cur.execute("select SVNLog.commitdate, RevisionActivity.temperature from SVNLog, RevisionActivity \
+                where SVNLog.revno=? and RevisionActivity.revno = SVNLog.revno",(lastrevno,))
+        row = self.cur.fetchone()
+        if( row != None):
+            lastcommitdate= row[0]
+            maxrev_temperature = row[1]
+            
         for revno in xrange(lastrevno+1, lastlogrevno+1):
             self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
                             where SVNLog.revno=?', (revno,))
@@ -628,10 +640,13 @@ class SVNStats:
             self.cur.execute('select changedpath from SVNLogDetail where revno=?', (revno,))
             changedpaths = self.cur.fetchall()
             maxrev_temperature = self._updateRevActivityHotness(revno, commitdate, changedpaths, lastcommitdate, maxrev_temperature)
-            lastcommitdate = commitdate
+            lastcommitdate = commitdate            
 
     def _updateRevActivityHotness(self, revno, commitdate, changedpaths,lastrevcommitdate, prev_maxrev_temp):
         self._printProgress("updating file activity hotness table for revision %d" % revno)
+
+        #NOTE : in some cases where the subversion repository is created by converting it from other version control
+        #systems, the dates can become confusing. 
         
         maxrev_temperature = getTemperatureAtTime(commitdate,lastrevcommitdate, prev_maxrev_temp,COOLINGRATE)
         
@@ -656,6 +671,7 @@ class SVNStats:
                                 values(?,?,?)", (temperature, revno, filepath))
             if( temperature > maxrev_temperature):
                 maxrev_temperature = temperature
+                
             logging.debug("updated file %s revno=%d temp=%f" % (filepath, revno,temperature))
 
         self.cur.execute("insert into RevisionActivity(revno, temperature) values(?,?)",(revno, maxrev_temperature))
