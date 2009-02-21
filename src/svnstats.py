@@ -604,7 +604,8 @@ class SVNStats:
         self._printProgress("updating file hotness table")
         self.cur.execute("CREATE TABLE IF NOT EXISTS ActivityHotness(filepath text, lastrevno integer, \
                          temperature real)")
-        
+        self.cur.execute("CREATE INDEX IF NOT EXISTS ActHotRevIdx On ActivityHotness(lastrevno ASC)")
+        self.cur.execute("CREATE INDEX IF NOT EXISTS ActHotFileIdx On ActivityHotness(filepath ASC)")
         self.dbcon.commit()
         self.cur.execute("select max(ActivityHotness.lastrevno) from ActivityHotness")
         lastrevno = self.cur.fetchone()[0]         
