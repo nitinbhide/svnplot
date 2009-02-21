@@ -619,11 +619,7 @@ class SVNStats:
         lastrevno = self.cur.fetchone()[0]         
         if(lastrevno == None):
             lastrevno = 0
-        self.cur.execute("select max(SVNLog.revno) from SVNLog")
-        lastlogrevno = self.cur.fetchone()[0]
-        if( lastlogrevno == None):
-            lastlogrevno= 0
-
+            
         maxrev_temperature = 0.0
         lastcommitdate = None
         self.cur.execute("select SVNLog.commitdate, RevisionActivity.temperature from SVNLog, RevisionActivity \
@@ -632,8 +628,12 @@ class SVNStats:
         if( row != None):
             lastcommitdate= row[0]
             maxrev_temperature = row[1]
-            
-        for revno in xrange(lastrevno+1, lastlogrevno+1):
+
+        #get the valid revision numbers from SVNLog table from lastrevno 
+        self.cur.execute("select revno from SVNLog where revno > ?", (lastrevno,))
+        revnolist = [row[0] for row in self.cur]
+        
+        for revno in revnolist:
             self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
                             where SVNLog.revno=?', (revno,))
             commitdate = self.cur.fetchone()[0]
