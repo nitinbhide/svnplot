@@ -19,7 +19,7 @@ import math
 import operator
 import logging
 
-COOLINGRATE = 1.0/24.0 #degree per hour
+COOLINGRATE = 0.1/24.0 #degree per hour
 TEMPINCREMENT = 10.0 # degrees per commit
 
 def filetype(path):
@@ -50,14 +50,22 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
     calculate the new temparature at time 'tm'. given the
     lastTemp - last temperature measurement,
     coolingRate - rate of cool per hour
-    '''
-    tmdelta = curTime-lastTime
-    hrsSinceLastTime = tmdelta.days*24.0+tmdelta.seconds/3600.0
-    tempFactor = -(coolingRate*hrsSinceLastTime)
-    temperature = lastTemp*math.exp(tempFactor)        
-    
+    '''    
+    try:
+        if( isinstance(curTime,unicode)==True):
+            curTime = datetime.datetime.strptime(curTime[:16], "%Y-%m-%d %H:%M")
+        if( isinstance(lastTime,unicode)==True):
+            lastTime = datetime.datetime.strptime(lastTime[:16], "%Y-%m-%d %H:%M")
+        tmdelta = curTime-lastTime
+        hrsSinceLastTime = tmdelta.days*24.0+tmdelta.seconds/3600.0
+        tempFactor = -(coolingRate*hrsSinceLastTime)
+        temperature = lastTemp*math.exp(tempFactor)        
+    except Exception, expinst:
+        logging.debug("Error %s" % expinst)
+        temperature = 0
+        
     return(temperature)
-                      
+
 class SVNStats:
     def __init__(self, svndbpath):
         self.svndbpath = svndbpath
@@ -81,7 +89,8 @@ class SVNStats:
         #self.dbcon.row_factory = sqlite3.Row
         # Create the function "regexp" for the REGEXP operator of SQLite
         self.dbcon.create_function("dirname", 3, dirname)
-        self.dbcon.create_function("filetype", 1, filetype)        
+        self.dbcon.create_function("filetype", 1, filetype)
+        self.dbcon.create_function("getTemperatureAtTime", 4, getTemperatureAtTime)
         self.cur = self.dbcon.cursor() 
 
     def closedb(self):
@@ -646,8 +655,14 @@ class SVNStats:
         returns list of tuples (filepath, temperature)
         '''
         self._updateActivityHotness()
-        self.cur.execute("select filepath,temperature from ActivityHotness order by temperature DESC LIMIT ?", (numFiles,))
-        hotfileslist = [(filepath, temparature) for filepath, temparature in self.cur]
+        curTime = datetime.datetime.now()
+        self.cur.execute("select ActivityHotness.filepath, \
+                getTemperatureAtTime(?,SVNLog.commitdate,ActivityHotness.temperature,?) as hotness \
+                from ActivityHotness,SVNLog \
+                where ActivityHotness.lastrevno=SVNLog.revno order by hotness DESC LIMIT ?",
+                         (curTime,COOLINGRATE,numFiles))
+        hotfileslist = [(filepath, hotness) for filepath, hotness in self.cur]
+        print hotfileslist
         return(hotfileslist)
         
         
