@@ -662,7 +662,6 @@ class SVNStats:
                 where ActivityHotness.lastrevno=SVNLog.revno order by hotness DESC LIMIT ?",
                          (curTime,COOLINGRATE,numFiles))
         hotfileslist = [(filepath, hotness) for filepath, hotness in self.cur]
-        print hotfileslist
         return(hotfileslist)
         
         
