@@ -117,21 +117,25 @@ HTMLIndexTemplate ='''
 <th colspan=3 align="center"><h3>Commit Activity Graphs</h3></th>
 </tr>
 <tr>
-    <td align="center" width="25%"><h4>Commit Activity By Day of Week </h4><br/>
+    <td align="center" ><h4>Commit Activity Index over time</h4><br/>
+        <a href="$CommitActivityIdx"><img src="$CommitActivityIdx" width="$thumbwid" height="$thumbht"></a>
+    </td>    
+    <td align="center" ><h4>Commit Activity By Day of Week </h4><br/>
     <a href="$ActByWeek"><img src="$ActByWeek" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h4>Commit Activity By Hour of Day</h4><br/>
+    <td align="center" ><h4>Commit Activity By Hour of Day</h4><br/>
     <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h4>Author Activity</h4><br/>
-    <a href="$AuthActivity"><img src="$AuthActivity" width="$thumbwid" height="$thumbht"></a>
-    </td>
+    
 </tr>
 <tr>
-    <td align="center" width="25%"><h4>Developer Commit Activity</h4><br/>
+    <td align="center"><h4>Author Activity</h4><br/>
+    <a href="$AuthActivity"><img src="$AuthActivity" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center" ><h4>Developer Commit Activity</h4><br/>
     <a href="$CommitAct"><img src="$CommitAct" width="$thumbwid" height="$thumbht"></a>
     </td>    
-    <td align="center" width="25%"><h4>Time Difference Between Consecutive Revisions</h4><br/>
+    <td align="center" ><h4>Time Difference Between Consecutive Revisions</h4><br/>
     <a href="$RevTimeDelta"><img src="$RevTimeDelta" width="$thumbwid" height="$thumbht"></a>
     </td>    
 </tr>
@@ -168,6 +172,7 @@ HTMLBasicStatsTmpl = '''
 '''
 
 GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", RevTimeDelta="revtimedelta",
+                     CommitActivityIdx="cmtactidx",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
@@ -182,12 +187,15 @@ class SVNPlot(SVNPlotBase):
         self.dirdepth = 1
                 
     def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100):
-        self.svnstats.SetSearchPath(svnsearchpath) 
+        self.svnstats.SetSearchPath(svnsearchpath)
+        #Commit activity graphs
         self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"))
         self.ActivityByTimeOfDay(self._getGraphFileName(dirpath, "ActByTimeOfDay"))
         self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"))
         self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"))
         self.RevTimeDeltaGraph(self._getGraphFileName(dirpath, "RevTimeDelta"))
+        self.CommitActivityIdxGraph(self._getGraphFileName(dirpath, "CommitActivityIdx"))
+        #LoC and FileCount Graphs
         self.LocGraph(self._getGraphFileName(dirpath, "LoC"))
         self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"))
         self.LocGraphAllDev(self._getGraphFileName(dirpath,"LoCByDev"))
@@ -195,7 +203,7 @@ class SVNPlot(SVNPlotBase):
         self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"))
         self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
         self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"))
-
+        #Directory size graphs
         self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth)
         self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth)
         self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth)
@@ -233,6 +241,19 @@ class SVNPlot(SVNPlotBase):
 
         fig = ax.figure                        
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
+
+    def CommitActivityIdxGraph(self, filename):
+        '''
+        commit activity index over time graph. Commit activity index is calculated as 'hotness/temperature'
+        of repository using the newtons' law of cooling.
+        '''
+        self._printProgress("Calculating Commit Activity Index by time of day graph")
+        cmdates, temperaturelist = self.svnstats.getRevActivityTemperature()
+        
+        ax = self._drawDateLineGraph(cmdates, temperaturelist)
+        ax.set_title('Commit Activity Index')
+        ax.set_ylabel('Activity Index')
+        self._closeDateLineGraph(ax, filename)
         
     def LocGraph(self, filename):
         self._printProgress("Calculating LoC graph")
@@ -510,6 +531,7 @@ class SVNPlot(SVNPlotBase):
         TODO - template for generating the hot files list. Currently format is hard coded as
         HTML ordered list
         '''
+        self._printProgress("Calculating Active (hot) files list")
         hotfiles = self.svnstats.getHotFiles(10)
         outstr = StringIO.StringIO()
         outstr.write("<ol>\n")
