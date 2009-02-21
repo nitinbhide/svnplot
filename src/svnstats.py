@@ -619,16 +619,7 @@ class SVNStats:
         lastrevno = self.cur.fetchone()[0]         
         if(lastrevno == None):
             lastrevno = 0
-            
-        maxrev_temperature = 0.0
-        lastcommitdate = None
-        self.cur.execute("select SVNLog.commitdate, RevisionActivity.temperature from SVNLog, RevisionActivity \
-                where SVNLog.revno=? and RevisionActivity.revno = SVNLog.revno",(lastrevno,))
-        row = self.cur.fetchone()
-        if( row != None):
-            lastcommitdate= row[0]
-            maxrev_temperature = row[1]
-
+                    
         #get the valid revision numbers from SVNLog table from lastrevno 
         self.cur.execute("select revno from SVNLog where revno > ?", (lastrevno,))
         revnolist = [row[0] for row in self.cur]
@@ -639,16 +630,15 @@ class SVNStats:
             commitdate = self.cur.fetchone()[0]
             self.cur.execute('select changedpath from SVNLogDetail where revno=?', (revno,))
             changedpaths = self.cur.fetchall()
-            maxrev_temperature = self._updateRevActivityHotness(revno, commitdate, changedpaths, lastcommitdate, maxrev_temperature)
-            lastcommitdate = commitdate            
+            self._updateRevActivityHotness(revno, commitdate, changedpaths)            
 
-    def _updateRevActivityHotness(self, revno, commitdate, changedpaths,lastrevcommitdate, prev_maxrev_temp):
+    def _updateRevActivityHotness(self, revno, commitdate, changedpaths):
         self._printProgress("updating file activity hotness table for revision %d" % revno)
 
         #NOTE : in some cases where the subversion repository is created by converting it from other version control
         #systems, the dates can become confusing. 
         
-        maxrev_temperature = getTemperatureAtTime(commitdate,lastrevcommitdate, prev_maxrev_temp,COOLINGRATE)
+        maxrev_temperature = 0.0
         
         for filepathrow in changedpaths:
             filepath = filepathrow[0]
@@ -687,9 +677,19 @@ class SVNStats:
                     where SVNLog.revno = RevisionActivity.revno group by commitdate order by commitdate ASC')
         cmdatelist = []
         temperaturelist = []
+        lastcommitdate = None
         for cmdate, temperature in self.cur:
             cmdatelist.append(cmdate)
-            temperaturelist.append(temperature)
+            revtemp = temperature
+            if( lastcommitdate != None):
+                temp = getTemperatureAtTime(cmdate, lastcommitdate, lasttemp, COOLINGRATE)
+                if( revtemp < temp):
+                    revtemp = temp
+                
+            temperaturelist.append(revtemp)
+            lastcommitdate = cmdate
+            lasttemp = revtemp
+            
         return( cmdatelist,temperaturelist)            
             
     def getHotFiles(self, numFiles):
