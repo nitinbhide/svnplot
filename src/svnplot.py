@@ -40,7 +40,7 @@ import matplotlib.pyplot as plt
 from optparse import OptionParser
 import sqlite3
 import os.path, sys
-import string
+import string,StringIO
 import math
 from svnplotbase import *
 
@@ -63,6 +63,15 @@ HTMLIndexTemplate ='''
 <tr>
     <td colpan=3>
     $BasicStats
+    </td>
+</tr>
+<tr>
+<tr>
+<th colspan=3 align="center"><h3>Top 10 Active Files</h3></th>
+</tr>
+<tr>
+    <td colpan=3>
+    $ActiveFiles
     </td>
 </tr>
 <tr>
@@ -495,7 +504,20 @@ class SVNPlot(SVNPlotBase):
         statsStr = statsTmpl.safe_substitute(basestats)
         
         return(statsStr)
-                
+
+    def ActiveFiles(self):
+        '''
+        TODO - template for generating the hot files list. Currently format is hard coded as
+        HTML ordered list
+        '''
+        hotfiles = self.svnstats.getHotFiles(10)
+        outstr = StringIO.StringIO()
+        outstr.write("<ol>\n")
+        for filepath, temperatur in hotfiles:
+            outstr.write("<li>%s</li>\n"%filepath)
+        outstr.write("</ol>\n")
+        return(outstr.getvalue())
+        
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
         ax = self._drawDateLineGraph(dates, loc)
@@ -528,6 +550,7 @@ class SVNPlot(SVNPlotBase):
         graphParamDict["RepoName"]=self.reponame
         graphParamDict["TagCloud"] = self.TagCloud()
         graphParamDict["BasicStats"] = self.BasicStats(HTMLBasicStatsTmpl)
+        graphParamDict["ActiveFiles"] = self.ActiveFiles()
         
         return(graphParamDict)
 
