@@ -604,8 +604,11 @@ class SVNStats:
         self._printProgress("updating file hotness table")
         self.cur.execute("CREATE TABLE IF NOT EXISTS ActivityHotness(filepath text, lastrevno integer, \
                          temperature real)")
+        self.cur.execute("CREATE TABLE IF NOT EXISTS RevisionActivity(revno integer, \
+                         temperature real)")
         self.cur.execute("CREATE INDEX IF NOT EXISTS ActHotRevIdx On ActivityHotness(lastrevno ASC)")
         self.cur.execute("CREATE INDEX IF NOT EXISTS ActHotFileIdx On ActivityHotness(filepath ASC)")
+        self.cur.execute("CREATE INDEX IF NOT EXISTS RevActivityIdx On RevisionActivity(revno ASC)")
         self.dbcon.commit()
         self.cur.execute("select max(ActivityHotness.lastrevno) from ActivityHotness")
         lastrevno = self.cur.fetchone()[0]         
@@ -615,17 +618,23 @@ class SVNStats:
         lastlogrevno = self.cur.fetchone()[0]
         if( lastlogrevno == None):
             lastlogrevno= 0
-        
+
+        maxrev_temperature = 0.0
+        lastcommitdate = None
         for revno in xrange(lastrevno+1, lastlogrevno+1):
             self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
                             where SVNLog.revno=?', (revno,))
             commitdate = self.cur.fetchone()[0]
             self.cur.execute('select changedpath from SVNLogDetail where revno=?', (revno,))
             changedpaths = self.cur.fetchall()
-            self._updateRevActivityHotness(revno, commitdate, changedpaths)
+            maxrev_temperature = self._updateRevActivityHotness(revno, commitdate, changedpaths, lastcommitdate, maxrev_temperature)
+            lastcommitdate = commitdate
 
-    def _updateRevActivityHotness(self, revno, commitdate, changedpaths):
+    def _updateRevActivityHotness(self, revno, commitdate, changedpaths,lastrevcommitdate, prev_maxrev_temp):
         self._printProgress("updating file activity hotness table for revision %d" % revno)
+        
+        maxrev_temperature = getTemperatureAtTime(commitdate,lastrevcommitdate, prev_maxrev_temp,COOLINGRATE)
+        
         for filepathrow in changedpaths:
             filepath = filepathrow[0]
             temperature = TEMPINCREMENT
@@ -645,10 +654,27 @@ class SVNStats:
             except:
                 self.cur.execute("insert into ActivityHotness(temperature, lastrevno, filepath) \
                                 values(?,?,?)", (temperature, revno, filepath))
+            if( temperature > maxrev_temperature):
+                maxrev_temperature = temperature
             logging.debug("updated file %s revno=%d temp=%f" % (filepath, revno,temperature))
-            
+
+        self.cur.execute("insert into RevisionActivity(revno, temperature) values(?,?)",(revno, maxrev_temperature))
         self.dbcon.commit()
+        return(maxrev_temperature)
             
+    def getRevActivityTemperature(self):
+        '''
+        return revision activity as maximum temperature at each revision(using the newton's law of cooling)                                                                         
+        '''
+        self._updateActivityHotness()
+        self.cur.execute('select date(SVNLog.commitdate) as "commitdate [date]", max(RevisionActivity.temperature) from RevisionActivity, SVNLog \
+                    where SVNLog.revno = RevisionActivity.revno group by commitdate order by commitdate ASC')
+        cmdatelist = []
+        temperaturelist = []
+        for cmdate, temperature in self.cur:
+            cmdatelist.append(cmdate)
+            temperaturelist.append(temperature)
+        return( cmdatelist,temperaturelist)            
             
     def getHotFiles(self, numFiles):
         '''
