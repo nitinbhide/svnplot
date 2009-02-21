@@ -624,7 +624,7 @@ class SVNStats:
             self._updateRevActivityHotness(revno, commitdate, changedpaths)
 
     def _updateRevActivityHotness(self, revno, commitdate, changedpaths):
-        self._printProgress("updating file hotness table for revision %d" % revno)
+        self._printProgress("updating file activity hotness table for revision %d" % revno)
         for filepathrow in changedpaths:
             filepath = filepathrow[0]
             temperature = TEMPINCREMENT
