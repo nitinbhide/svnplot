@@ -606,7 +606,7 @@ class SVNStats:
         update the file activity as 'temparature' data. Every commit adds 10 degrees. Rate of temperature
         drop is 1 deg/day. The temparature is calculated using the 'newtons law of cooling'
         '''
-        self._printProgress("updating file hotness table")
+        #self._printProgress("updating file hotness table")
         self.cur.execute("CREATE TABLE IF NOT EXISTS ActivityHotness(filepath text, lastrevno integer, \
                          temperature real)")
         self.cur.execute("CREATE TABLE IF NOT EXISTS RevisionActivity(revno integer, \
@@ -691,7 +691,34 @@ class SVNStats:
             lasttemp = revtemp
             
         return( cmdatelist,temperaturelist)            
-            
+
+    def getActiveAuthors(self, numAuthors):
+        '''
+        return top numAthors based on the activity index of commited revisions
+        '''
+        self._updateActivityHotness()
+        self.cur.execute('select SVNLog.author, SVNLog.commitdate as "commitdate [timestamp]", RevisionActivity.temperature from RevisionActivity, SVNLog \
+                    where SVNLog.revno = RevisionActivity.revno order by commitdate ASC')
+
+        authActivityIdx = dict()                    
+        for author, cmdate, temperature in self.cur:
+            cmtactv = authActivityIdx.get(author)
+            revtemp = temperature
+            if( cmtactv != None):                
+                revtemp = temperature+getTemperatureAtTime(cmdate, cmtactv[0], cmtactv[1], COOLINGRATE)
+            authActivityIdx[author] = (cmdate, revtemp)
+
+        #now update the temperature to current temperature and create a list of tuples for
+        #sorting.
+        curTime = datetime.datetime.now()
+        authlist = []
+        for author, cmtactiv in authActivityIdx.items():
+            temperature = getTemperatureAtTime(curTime, cmtactiv[0], cmtactiv[1], COOLINGRATE)
+            authlist.append((author, temperature))                        
+
+        authlist = sorted(authlist, key=operator.itemgetter(1), reverse=True)        
+        return(authlist[0:numAuthors])
+    
     def getHotFiles(self, numFiles):
         '''
         get the top 'numfiles' number of hot files.
@@ -705,6 +732,7 @@ class SVNStats:
                 where ActivityHotness.lastrevno=SVNLog.revno order by hotness DESC LIMIT ?",
                          (curTime,COOLINGRATE,numFiles))
         hotfileslist = [(filepath, hotness) for filepath, hotness in self.cur]
+        
         return(hotfileslist)
         
         

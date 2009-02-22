@@ -67,11 +67,22 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
 <tr>
-<th colspan=3 align="center"><h3>Top 10 Active Files</h3></th>
+<th colspan=3 align="center"><h3>Top 10 List</h3></th>
 </tr>
 <tr>
     <td colspan=3>
-    $ActiveFiles
+        <table width="100%">
+        <tr>
+            <td width="50%">
+            <p align='center'><b>Top 10 Files</b></p>
+            $ActiveFiles
+            </td>
+            <td>
+            <p align='center'><b>Top 10 Authors</b></p>
+            $ActiveAuthors
+            </td>
+        </tr>
+        </table>
     </td>
 </tr>
 <tr>
@@ -479,7 +490,21 @@ class SVNPlot(SVNPlotBase):
             outstr.write("<li>%s</li>\n"%filepath)
         outstr.write("</ol>\n")
         return(outstr.getvalue())
-        
+
+    def ActiveAuthors(self):
+        '''
+        TODO - template for generating the hot files list. Currently format is hard coded as
+        HTML ordered list
+        '''
+        self._printProgress("Calculating Active authors list")
+        hotfiles = self.svnstats.getActiveAuthors(10)
+        outstr = StringIO.StringIO()
+        outstr.write("<ol>\n")
+        for author, temperatur in hotfiles:
+            outstr.write("<li>%s</li>\n"%author)
+        outstr.write("</ol>\n")
+        return(outstr.getvalue())
+            
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
         ax = self._drawDateLineGraph(dates, loc)
@@ -513,7 +538,8 @@ class SVNPlot(SVNPlotBase):
         graphParamDict["TagCloud"] = self.TagCloud()
         graphParamDict["BasicStats"] = self.BasicStats(HTMLBasicStatsTmpl)
         graphParamDict["ActiveFiles"] = self.ActiveFiles()
-        
+        graphParamDict["ActiveAuthors"] = self.ActiveAuthors()
+            
         return(graphParamDict)
 
     def _drawCommitActivityGraphByAuthor(self, authIdx, authCount, author, axs=None):
