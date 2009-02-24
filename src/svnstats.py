@@ -562,9 +562,10 @@ class SVNStats:
         '''
         stats = dict()
         #get head revision
-        self.cur.execute('select min(SVNLog.revno), max(SVNLog.revno), count(SVNLog.revno) from SVNLog,SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ?'
-                         ,(self.sqlsearchpath,))
+        self.cur.execute('select min(revno), max(revno), count(*) from \
+                          (select SVNLog.revno as revno from SVNLog,SVNLogDetail \
+                             where SVNLog.revno == SVNLogDetail.revno and \
+                             SVNLogDetail.changedpath like ? group by SVNLog.revno)',(self.sqlsearchpath,))
         row = self.cur.fetchone()
         firstrev = row[0]
         lastrev = row[1]
