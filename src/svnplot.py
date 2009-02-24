@@ -67,18 +67,18 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
 <tr>
-<th colspan=3 align="center"><h3>Top 10 List</h3></th>
+<th colspan=3 align="center"><h3>Top 10 Hot List</h3></th>
 </tr>
 <tr>
     <td colspan=3>
         <table width="100%">
         <tr>
             <td width="50%">
-            <p align='center'><b>Top 10 Files</b></p>
+            <p align='center'><b>Top 10 Active Files</b></p>
             $ActiveFiles
             </td>
             <td>
-            <p align='center'><b>Top 10 Authors</b></p>
+            <p align='center'><b>Top 10 Active Authors</b></p>
             $ActiveAuthors
             </td>
         </tr>
