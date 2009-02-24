@@ -25,7 +25,7 @@ Graph types to be supported
 12. Directory file count pie char(latest status) -- Done
 13. Loc and Churn graph (loc vs date, churn vs date)- Churn is number of lines touched
 	(i.e. lines added + lines deleted + lines modified) -- Done
-14. Bug Commit Trend graph - Number of commits with words like 'bug' or 'fix' in the message -- Done
+14. Repository Activity Index (using exponential decay) -- Done
 15. Repository heatmap (treemap)
 
 
@@ -147,15 +147,6 @@ HTMLIndexTemplate ='''
     <a href="$CommitAct"><img src="$CommitAct" width="$thumbwid" height="$thumbht"></a>
     </td>        
 </tr>
-<tr>
-<th colspan=3 align="center"><h3>Bug Pronness Graphs</h3></th>
-</tr>
-<tr>
-   <td span=4 align="center">
-       <h4>Bug fix Commits</h4><br/>
-       <a href="$BugfixCommitsTrend"><img src="$BugfixCommitsTrend" width="$thumbwid" height="$thumbht"></a>        
-   </td>   
-</tr>
 <th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
 </tr>
 <tr id='tagcloud'>
@@ -183,7 +174,7 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", 
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
-                     BugfixCommitsTrend="bugfixcommits", FileTypes="filetypes")
+                     FileTypes="filetypes")
                          
 class SVNPlot(SVNPlotBase):
     def __init__(self, svnstats, dpi=100, format='png'):
@@ -208,7 +199,6 @@ class SVNPlot(SVNPlotBase):
         self.AvgFileLocGraph(self._getGraphFileName(dirpath, "AvgLoC"))
         self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"))
         self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
-        self.BugfixCommitsTrend(self._getGraphFileName(dirpath, "BugfixCommitsTrend"))
         #Directory size graphs
         self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth)
         self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth)
@@ -434,20 +424,7 @@ class SVNPlot(SVNPlotBase):
         ax.set_title('Directory Size (Lines of Code)')
         ax.set_ylabel('Lines')        
         self._closeDateLineGraph(ax, filename)
-        
-    def BugfixCommitsTrend(self, filename):
-        self._printProgress("Calculating Bug fix commit trend")
-        
-        dates, fc, commitchurn = self.svnstats.getBugfixCommitsTrendStats()
-        
-        ax = None
-        ax = self._drawDateLineGraph(dates, fc,ax)        
-        ax = self._drawDateLineGraph(dates, commitchurn, ax)
-        ax.set_title('Bugfix Commits Trend')
-        ax.set_ylabel('Commited Files Count')
-        ax.legend(("Total Commited Files", "Committed Files Churn"), prop=self._getLegendFont())
-        self._closeDateLineGraph(ax, filename)
-
+            
     def TagCloud(self, numWords=50):
         self._printProgress("Calculating tag cloud for log messages")
         words = self.svnstats.getLogMsgWordFreq(5)
