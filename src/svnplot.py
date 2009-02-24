@@ -89,13 +89,13 @@ HTMLIndexTemplate ='''
 <th colspan=3 align="center"><h3>Lines of Code Graphs</h3></th>
 </tr>
 <tr>
-    <td align="center" width="25%"><h4>Lines of Code</h4><br/>
+    <td align="center"><h4>Lines of Code</h4><br/>
     <a href="$LoC"><img src="$LoC" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h4>Contributed Lines of Code</h4><br/>
+    <td align="center"><h4>Contributed Lines of Code</h4><br/>
     <a href="$LoCByDev"><img src="$LoCByDev" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h4>Average File Size</h4><br/>
+    <td align="center"><h4>Average File Size</h4><br/>
     <a href="$AvgLoC"><img src="$AvgLoC" width="$thumbwid" height="$thumbht"></a>
     </td>    
 </tr>
@@ -103,10 +103,10 @@ HTMLIndexTemplate ='''
 <th colspan=3 align="center"><h3>File Count Graphs</h3></th>
 </tr>
 <tr>
-    <td align="center" width="25%"><h4>File Count</h4><br/>
+    <td align="center"><h4>File Count</h4><br/>
     <a href="$FileCount"><img src="$FileCount" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center" width="25%"><h4>File Types</h4><br/>
+    <td align="center" ><h4>File Types</h4><br/>
     <a href="$FileTypes"><img src="$FileTypes" width="$thumbwid" height="$thumbht"></a>
     </td>
 </tr>
