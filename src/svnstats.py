@@ -666,8 +666,9 @@ class SVNStats:
         return revision activity as maximum temperature at each revision(using the newton's law of cooling)                                                                         
         '''
         self._updateActivityHotness()
-        self.cur.execute('select date(SVNLog.commitdate) as "commitdate [date]", max(RevisionActivity.temperature) from RevisionActivity, SVNLog \
-                    where SVNLog.revno = RevisionActivity.revno group by commitdate order by commitdate ASC')
+        self.cur.execute('select date(SVNLog.commitdate) as "commitdate [date]", max(RevisionActivity.temperature) \
+                    from RevisionActivity, SVNLog where SVNLog.revno = RevisionActivity.revno \
+                    group by commitdate order by commitdate ASC')
         cmdatelist = []
         temperaturelist = []
         lastcommitdate = None
@@ -722,8 +723,8 @@ class SVNStats:
         self.cur.execute("select ActivityHotness.filepath, \
                 getTemperatureAtTime(?,SVNLog.commitdate,ActivityHotness.temperature,?) as hotness \
                 from ActivityHotness,SVNLog \
-                where ActivityHotness.lastrevno=SVNLog.revno order by hotness DESC LIMIT ?",
-                         (curTime,COOLINGRATE,numFiles))
+                where ActivityHotness.filepath like ? and ActivityHotness.lastrevno=SVNLog.revno \
+                order by hotness DESC LIMIT ?", (curTime,COOLINGRATE,self.sqlsearchpath, numFiles))
         hotfileslist = [(filepath, hotness) for filepath, hotness in self.cur]
         
         return(hotfileslist)
