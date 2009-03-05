@@ -75,7 +75,9 @@ class SVNStats:
     def __init__(self, svndbpath):
         self.svndbpath = svndbpath
         self.__searchpath = '/%'
-        self.verbose = False
+        self.__startDate=None
+        self.__endDate = None
+        self.verbose = False        
         self.bugfixkeywords = ['bug', 'fix']
         self.__invalidWordPattern = re.compile("\d+|an|the|me|my|we|you|he|she|it|are|is|am|\
                         |will|shall|should|would|had|have|has|was|were|be|been|this|that|there|\
@@ -96,8 +98,8 @@ class SVNStats:
         self.dbcon.create_function("dirname", 3, dirname)
         self.dbcon.create_function("filetype", 1, filetype)
         self.dbcon.create_function("getTemperatureAtTime", 4, getTemperatureAtTime)
-        self.cur = self.dbcon.cursor() 
-
+        self.cur = self.dbcon.cursor()
+        
     def closedb(self):
         if( self.dbcon != None):
             self.cur.close()            
@@ -117,12 +119,44 @@ class SVNStats:
         Default value is '/%' which searches all paths in the repository.
         Use self.SetSearchPath('/trunk/%') for searching inside the 'trunk' folder only
         '''
+        self.SetSearchParam(searchpath, None, None)
+
+    def SetSearchParam(self, searchpath='/', startdate=None, enddate=None):
+        '''
+        The search parameters the statistics generation will be restricted to commits which
+        fulfill these parameters.
+        searchpath = changed file path should match to the searchpath
+            Default value is '/%' which searches all paths in the repository.
+            Use self.SetSearchPath('/trunk/%') for searching inside the 'trunk' folder only
+        startdate = start date for the analysis (if None, earliest date in the repository)
+        enddate = end date for the analysis (if None, last date in the repository)
+        '''
         if(searchpath != None and len(searchpath) > 0):
             self.__searchpath = searchpath
         if( self.__searchpath.endswith('%')==True):
             self.__searchpath = self.__searchpath[:-1]
         self._printProgress("Set the search path to %s" % self.__searchpath)
+        self.__startDate = startdate
+        self.__endDate = enddate
+        self.__createSearchParamView()
 
+    def __createSearchParamView(self):
+        '''
+        create temporary view with only the revisions matching the search parameters.
+        '''
+        assert(self.dbcon != None)
+        self.cur.execute("DROP VIEW IF EXISTS search_view")
+        selQuery = "select SVNLog.revno as revno from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno \
+                    and SVNLogDetail.changedpath like '%s%%'" % self.__searchpath
+        if( self.__startDate != None):
+            selQuery = selQuery + "and julianday(SVNLog.commitdate) >= julianday(%s)" % self.__startDate
+        if( self.__endDate != None):
+            selQuery = selQuery + "and julianday(SVNLog.commitdate) <= julianday(%s)" % self.__endDate
+        print "Sel query : %s" % selQuery
+        
+        self.cur.execute("CREATE TEMP VIEW search_view AS %s" % selQuery)
+        self.dbcon.commit()
+        
     @property
     def searchpath(self):
         return(self.__searchpath)
