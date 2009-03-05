@@ -119,7 +119,7 @@ class SVNStats:
         Default value is '/%' which searches all paths in the repository.
         Use self.SetSearchPath('/trunk/%') for searching inside the 'trunk' folder only
         '''
-        self.SetSearchParam(searchpath, None, None)
+        self.SetSearchParam(searchpath, self.__startDate, self.__endDate)
 
     def SetSearchParam(self, searchpath='/', startdate=None, enddate=None):
         '''
@@ -149,9 +149,9 @@ class SVNStats:
         selQuery = "select SVNLog.revno as revno from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno \
                     and SVNLogDetail.changedpath like '%s%%'" % self.__searchpath
         if( self.__startDate != None):
-            selQuery = selQuery + "and julianday(SVNLog.commitdate) >= julianday(%s)" % self.__startDate
+            selQuery = selQuery + "and julianday(SVNLog.commitdate) >= julianday('%s')" % self.__startDate
         if( self.__endDate != None):
-            selQuery = selQuery + "and julianday(SVNLog.commitdate) <= julianday(%s)" % self.__endDate
+            selQuery = selQuery + "and julianday(SVNLog.commitdate) <= julianday('%s')" % self.__endDate
         #print "Sel query : %s" % selQuery
         
         self.cur.execute("CREATE TEMP VIEW search_view AS %s" % selQuery)
@@ -167,7 +167,15 @@ class SVNStats:
         return the sql regex search path (e.g. '/trunk/' will be returned as '/trunk/%'
         '''
         return(self.__searchpath + '%')
-
+        
+    def isDateInRange(self, cmdate):
+        valid = True
+        if( self.__startDate != None and self.__startDate > cmdate):
+            valid = False
+        if( self.__endDate != None and self.__endDate < cmdate):
+            valid = False
+        return(valid)
+    
     def _printProgress(self, msg):
         if( self.verbose == True):
             print msg
@@ -185,7 +193,8 @@ class SVNStats:
     
     def getAuthorList(self, numAuthors=None):
         #Find out the unique developers and their number of commit sorted in 'descending' order
-        self.cur.execute("select author, count(*) as commitcount from SVNLog group by author order by commitcount desc")
+        self.cur.execute("select SVNLog.author, count(*) as commitcount from SVNLog, search_view \
+                        where SVNLog.revno = search_view.revno group by SVNLog.author order by commitcount desc")
         
         #get the auhor list (ignore commitcount) and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
         # get overwritten
@@ -206,9 +215,8 @@ class SVNStats:
         '''
         returns two lists (commit counts and weekday)
         '''
-        self.cur.execute("select strftime('%w', SVNLog.commitdate) as dayofweek, count(SVNLog.revno) from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by dayofweek", (self.sqlsearchpath,))
+        self.cur.execute("select strftime('%w', SVNLog.commitdate) as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
+                         where SVNLog.revno = search_view.revno group by dayofweek")
         weekdaylist=[]
         commits = []
         for dayofweek, commitcount in self.cur:
@@ -221,9 +229,8 @@ class SVNStats:
         '''
         returns two lists (commit counts and time of day)
         '''
-        self.cur.execute("select strftime('%H', SVNLog.commitdate) as hourofday, count(SVNLog.revno) from SVNLog, SVNLogDetail \
-                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                          group by hourofday", (self.sqlsearchpath,))
+        self.cur.execute("select strftime('%H', SVNLog.commitdate) as hourofday, count(SVNLog.revno) from SVNLog, search_view \
+                          where SVNLog.revno = search_view.revno group by hourofday")
         commits =[]
         hrofdaylist = []
         for hourofday, commitcount in self.cur:
@@ -243,9 +250,10 @@ class SVNStats:
         fc = []
         totalfiles = 0
         for commitdate, fadded,fdeleted in self.cur:
-            dates.append(commitdate)
             totalfiles = totalfiles + fadded-fdeleted
-            fc.append(float(totalfiles))
+            if( self.isDateInRange(commitdate) == True):
+                dates.append(commitdate)
+                fc.append(float(totalfiles))
 
         return(dates, fc)            
 
@@ -284,13 +292,15 @@ class SVNStats:
         totalFileCnt = 0
         totalLoc = 0
         for commitdate, locadded, locdeleted, filesadded, filesdeleted in self.cur:
-            dates.append(commitdate)
             totalLoc = totalLoc + locadded-locdeleted
             totalFileCnt = totalFileCnt + filesadded - filesdeleted
             avgloc = 0.0
             if( totalFileCnt > 0.0):
-               avgloc = float(totalLoc)/float(totalFileCnt)
-            avgloclist.append(avgloc)
+                avgloc = float(totalLoc)/float(totalFileCnt)
+            if( self.isDateInRange(commitdate) == True):
+                avgloclist.append(avgloc)
+                dates.append(commitdate)
+            
         return(dates, avgloclist)
 
     def getAuthorActivityStats(self, numAuthors):
@@ -386,9 +396,10 @@ class SVNStats:
         loc = []
         tocalloc = 0
         for commitdate, locadded, locdeleted in self.cur:
-            dates.append(commitdate)
             tocalloc = tocalloc + locadded-locdeleted
-            loc.append(float(tocalloc))
+            if( self.isDateInRange(commitdate) == True):            
+                dates.append(commitdate)
+                loc.append(float(tocalloc))
             
         return(dates, loc)
     
@@ -405,8 +416,9 @@ class SVNStats:
         churnloclist = []
         tocalloc = 0
         for commitdate, churn in self.cur:
-            dates.append(commitdate)
-            churnloclist.append(float(churn))
+            if( self.isDateInRange(commitdate) == True):            
+                dates.append(commitdate)
+                churnloclist.append(float(churn))
             
         return(dates, churnloclist)
 
@@ -425,9 +437,10 @@ class SVNStats:
         dirsizelist = []
         dirsize = 0
         for commitdate, locadded, locdeleted in self.cur:
-            dates.append(commitdate)
             dirsize= dirsize+locadded-locdeleted
-            dirsizelist.append(max(0, float(dirsize)))
+            if( self.isDateInRange(commitdate) == True):            
+                dates.append(commitdate)
+                dirsizelist.append(max(0, float(dirsize)))
             
         return(dates, dirsizelist)
 
@@ -436,8 +449,8 @@ class SVNStats:
         get the commit activit by hour of day stats for author 'author'
         returns two lists (dates , time at which commits happened on that date) for author.
         '''
-        self.cur.execute("select strftime('%H', commitdate), date(SVNLog.commitdate) as 'commitdate [date]' \
-                    from SVNLog where author=? group by commitdate order by commitdate ASC" ,(author,))
+        self.cur.execute("select strftime('%H', SVNLog.commitdate), date(SVNLog.commitdate) as 'commitdate [date]' \
+                    from SVNLog, search_view where SVNLog.revno == search_view.revno and SVNLog.author=? group by commitdate order by commitdate ASC" ,(author,))
 
         dates = []
         committimelist = []
@@ -459,9 +472,10 @@ class SVNStats:
         loc = []
         tocalloc = 0
         for commitdate, locadded, locdeleted in self.cur:
-            dates.append(commitdate)
             tocalloc = tocalloc + locadded-locdeleted
-            loc.append(float(tocalloc))
+            if( self.isDateInRange(commitdate) == True):            
+                dates.append(commitdate)
+                loc.append(float(tocalloc))
             
         return(dates, loc)
 
@@ -481,10 +495,11 @@ class SVNStats:
         commitchurn = []
         totalcommits = 0
         for commitdate, commitfilecount in self.cur:
-            dates.append(commitdate)
-            commitchurn.append(float(commitfilecount))
             totalcommits = totalcommits+commitfilecount
-            fc.append(float(totalcommits))
+            if( self.isDateInRange(commitdate) == True):            
+                dates.append(commitdate)
+                commitchurn.append(float(commitfilecount))
+                fc.append(float(totalcommits))
         return(dates, fc, commitchurn)
 
     def __isValidWord(self, word):
@@ -707,17 +722,18 @@ class SVNStats:
         temperaturelist = []
         lastcommitdate = None
         for cmdate, temperature in self.cur:
-            cmdatelist.append(cmdate)
             revtemp = temperature
             if( lastcommitdate != None):
                 temp = getTemperatureAtTime(cmdate, lastcommitdate, lasttemp, COOLINGRATE)
                 if( revtemp < temp):
                     revtemp = temp
                 
-            temperaturelist.append(revtemp)
             lastcommitdate = cmdate
             lasttemp = revtemp
-            
+            if( self.isDateInRange(cmdate) == True):
+                cmdatelist.append(cmdate)
+                temperaturelist.append(revtemp)
+                        
         return( cmdatelist,temperaturelist)            
 
     def getActiveAuthors(self, numAuthors):
