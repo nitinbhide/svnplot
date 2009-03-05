@@ -152,7 +152,7 @@ class SVNStats:
             selQuery = selQuery + "and julianday(SVNLog.commitdate) >= julianday(%s)" % self.__startDate
         if( self.__endDate != None):
             selQuery = selQuery + "and julianday(SVNLog.commitdate) <= julianday(%s)" % self.__endDate
-        print "Sel query : %s" % selQuery
+        #print "Sel query : %s" % selQuery
         
         self.cur.execute("CREATE TEMP VIEW search_view AS %s" % selQuery)
         self.dbcon.commit()
