@@ -218,7 +218,7 @@ class SVNPlotBase:
         ax.grid(True)
         ax.set_xlabel('Date')
         fig = ax.figure
-	fig.autofmt_xdate()
+        fig.autofmt_xdate()
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
         
     def _drawDateLineGraph(self, dates, values, axs= None):
