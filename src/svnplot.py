@@ -377,6 +377,9 @@ class SVNPlot(SVNPlotBase):
         refaxs.set_ybound(0, 24)
         hrLocator= FixedLocator([0,6,12,18,24])
         refaxs.yaxis.set_major_locator(hrLocator)
+        #auto format the date.
+        fig = refaxs.figure
+        fig.autofmt_xdate()
         
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
         
