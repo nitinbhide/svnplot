@@ -145,7 +145,7 @@ class SVNStats:
         create temporary view with only the revisions matching the search parameters.
         '''
         assert(self.dbcon != None)
-        self.cur.execute("DROP VIEW IF EXISTS search_view")
+        self.cur.execute("DROP TABLE IF EXISTS search_view")
         selQuery = "select SVNLog.revno as revno from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno \
                     and SVNLogDetail.changedpath like '%s%%'" % self.__searchpath
         if( self.__startDate != None):
@@ -153,8 +153,10 @@ class SVNStats:
         if( self.__endDate != None):
             selQuery = selQuery + "and julianday(SVNLog.commitdate) <= julianday('%s')" % self.__endDate
         #print "Sel query : %s" % selQuery
-        
-        self.cur.execute("CREATE TEMP VIEW search_view AS %s" % selQuery)
+
+        selQuery = selQuery +" group by SVNLog.revno"
+        self.cur.execute("CREATE TEMP TABLE search_view AS %s" % selQuery)
+        self.cur.execute("CREATE INDEX srchvidx on search_view(revno)")
         self.dbcon.commit()
         
     @property
@@ -194,7 +196,7 @@ class SVNStats:
     def getAuthorList(self, numAuthors=None):
         #Find out the unique developers and their number of commit sorted in 'descending' order
         self.cur.execute("select SVNLog.author, count(*) as commitcount from SVNLog, search_view \
-                        where SVNLog.revno = search_view.revno group by SVNLog.author order by commitcount desc")
+                        where search_view.revno = SVNLog.revno group by SVNLog.author order by commitcount desc")
         
         #get the auhor list (ignore commitcount) and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
         # get overwritten
@@ -216,7 +218,7 @@ class SVNStats:
         returns two lists (commit counts and weekday)
         '''
         self.cur.execute("select strftime('%w', SVNLog.commitdate) as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
-                         where SVNLog.revno = search_view.revno group by dayofweek")
+                         where search_view.revno=SVNLog.revno group by dayofweek")
         weekdaylist=[]
         commits = []
         for dayofweek, commitcount in self.cur:
@@ -230,7 +232,7 @@ class SVNStats:
         returns two lists (commit counts and time of day)
         '''
         self.cur.execute("select strftime('%H', SVNLog.commitdate) as hourofday, count(SVNLog.revno) from SVNLog, search_view \
-                          where SVNLog.revno = search_view.revno group by hourofday")
+                          where search_view.revno=SVNLog.revno group by hourofday")
         commits =[]
         hrofdaylist = []
         for hourofday, commitcount in self.cur:
@@ -309,7 +311,7 @@ class SVNStats:
         returns four lists (authors, percentage of added files, percentage of changed files and percentage of deleted files)
         '''
         self.cur.execute("select SVNLog.author, sum(SVNLog.addedfiles), sum(SVNLog.changedfiles), \
-                         sum(SVNLog.deletedfiles), count(SVNLog.revno) as commitcount from SVNLog, SVNLogDetail \
+                         sum(SVNLog.deletedfiles), count(distinct SVNLog.revno) as commitcount from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
                          group by SVNLog.author order by commitcount DESC LIMIT 0, ?"
                          , (self.sqlsearchpath, numAuthors,))
@@ -450,7 +452,7 @@ class SVNStats:
         returns two lists (dates , time at which commits happened on that date) for author.
         '''
         self.cur.execute("select strftime('%H', SVNLog.commitdate), date(SVNLog.commitdate) as 'commitdate [date]' \
-                    from SVNLog, search_view where SVNLog.revno == search_view.revno and SVNLog.author=? group by commitdate order by commitdate ASC" ,(author,))
+                    from SVNLog, search_view where search_view.revno=SVNLog.revno and SVNLog.author=? group by commitdate order by commitdate ASC" ,(author,))
 
         dates = []
         committimelist = []
@@ -752,13 +754,18 @@ class SVNStats:
                 revtemp = temperature+getTemperatureAtTime(cmdate, cmtactv[0], cmtactv[1], COOLINGRATE)
             authActivityIdx[author] = (cmdate, revtemp)
 
+        #get the authors list for the given search path as 'set' so that searching is faster
+        searchpathauthlist = set(self.getAuthorList())
+        
         #now update the temperature to current temperature and create a list of tuples for
         #sorting.
         curTime = datetime.datetime.now()
         authlist = []
         for author, cmtactiv in authActivityIdx.items():
             temperature = getTemperatureAtTime(curTime, cmtactiv[0], cmtactiv[1], COOLINGRATE)
-            authlist.append((author, temperature))                        
+            #if author has modified files in the search path add his name.
+            if( author in searchpathauthlist):
+                authlist.append((author, temperature))                        
 
         authlist = sorted(authlist, key=operator.itemgetter(1), reverse=True)        
         return(authlist[0:numAuthors])
