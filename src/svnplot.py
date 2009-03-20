@@ -43,6 +43,7 @@ import os.path, sys
 import string,StringIO
 import math
 from svnplotbase import *
+from svnstats import *
 
 HTMLIndexTemplate ='''
 <html>
@@ -549,11 +550,11 @@ def RunMain():
     parser.add_option("-r", "--dpi", dest="dpi", default=100, type="int",
                       help="set the dpi of output png images")
     parser.add_option("-t", "--thumbsize", dest="thumbsize", default=100, type="int",
-                      help="set the widht and heigth of thumbnail display (pixels)")
+                      help="set the width and heigth of thumbnail display (pixels)")
     (options, args) = parser.parse_args()
     
     if( len(args) < 2):
-        print "Invalid number of arguments"
+        print "Invalid number of arguments. Use svnplot.py --help to see the details."
     else:        
         svndbpath = args[0]
         graphdir  = args[1]
