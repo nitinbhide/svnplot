@@ -146,7 +146,7 @@ class SVNStats:
         '''
         assert(self.dbcon != None)
         self.cur.execute("DROP TABLE IF EXISTS search_view")
-        selQuery = "select SVNLog.revno as revno from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno \
+        selQuery = "SELECT DISTINCT SVNLog.revno as revno from SVNLog, SVNLogDetail where (SVNLog.revno = SVNLogDetail.revno \
                     and SVNLogDetail.changedpath like '%s%%'" % self.__searchpath
         if( self.__startDate != None):
             selQuery = selQuery + "and julianday(SVNLog.commitdate) >= julianday('%s')" % self.__startDate
@@ -154,7 +154,7 @@ class SVNStats:
             selQuery = selQuery + "and julianday(SVNLog.commitdate) <= julianday('%s')" % self.__endDate
         #print "Sel query : %s" % selQuery
 
-        selQuery = selQuery +" group by SVNLog.revno"
+        selQuery = selQuery +")"
         self.cur.execute("CREATE TEMP TABLE search_view AS %s" % selQuery)
         self.cur.execute("CREATE INDEX srchvidx on search_view(revno)")
         self.dbcon.commit()
