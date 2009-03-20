@@ -22,6 +22,7 @@ import os, re, string
 import StringIO
 import urllib
 import logging
+import getpass
 
 def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -72,7 +73,21 @@ class SVNLogClient:
         self.tmppath = None
         self._updateTempPath()
         self.maxTryCount = 3
+        self.svnclient.callback_get_login = self.get_login
         
+    
+    def get_login(self, realm, username, may_save):
+        print "This is a svnclient.callback_get_login event. "
+        user = raw_input("username for %s:" % realm)
+        #save = True
+        password = getpass.getpass()
+        if(user==''): 
+            retcode = False
+        else:
+            retcode = True
+        return retcode, user, password, may_save
+    
+    
     def _updateTempPath(self):
         #Get temp directory
         if os.environ.has_key('TEMP'):
