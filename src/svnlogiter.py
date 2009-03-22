@@ -22,6 +22,7 @@ import os, re, string
 import StringIO
 import urllib
 import logging
+import getpass
 
 def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -72,7 +73,38 @@ class SVNLogClient:
         self.tmppath = None
         self._updateTempPath()
         self.maxTryCount = 3
+        self.svnclient.callback_get_login = self.get_login
+        self.svnclient.callback_ssl_server_trust_prompt = self.ssl_server_trust_prompt
+        self.svnclient.callback_ssl_client_cert_password_prompt = self.ssl_client_cert_password_prompt
         
+    
+    def get_login(self, realm, username, may_save):
+        print "This is a svnclient.callback_get_login event. "
+        user = raw_input("username for %s:" % realm)
+        #save = True
+        password = getpass.getpass()
+        if(user==''): 
+            retcode = False
+        else:
+            retcode = True
+        return retcode, user, password, may_save
+
+    def ssl_server_trust_prompt( self, trust_dict ):
+        retcode=True
+        accepted_failures = 1
+        save=1
+        print "trusting: "
+        print trust_dict
+        return retcode, accepted_failures, save
+        
+    def ssl_client_cert_password_prompt(self, realm, may_save):
+        """callback_ssl_client_cert_password_prompt is called each time subversion needs a password in the realm to use a client certificate and has no cached credentials. """
+        print "callback_ssl_client_cert_password_prompt called to gain password for subversion in realm ", realm, "."
+        password = getpass.getpass()
+        return retcode, password, may_save
+
+    
+    
     def _updateTempPath(self):
         #Get temp directory
         if os.environ.has_key('TEMP'):
