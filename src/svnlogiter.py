@@ -79,7 +79,7 @@ class SVNLogClient:
         
     
     def get_login(self, realm, username, may_save):
-        print "This is a svnclient.callback_get_login event. "
+        logging.debug("This is a svnclient.callback_get_login event. ")
         user = raw_input("username for %s:" % realm)
         #save = True
         password = getpass.getpass()
@@ -99,11 +99,9 @@ class SVNLogClient:
         
     def ssl_client_cert_password_prompt(self, realm, may_save):
         """callback_ssl_client_cert_password_prompt is called each time subversion needs a password in the realm to use a client certificate and has no cached credentials. """
-        print "callback_ssl_client_cert_password_prompt called to gain password for subversion in realm ", realm, "."
+        logging.debug("callback_ssl_client_cert_password_prompt called to gain password for subversion in realm %s ." %(realm))
         password = getpass.getpass()
-        return retcode, password, may_save
-
-    
+        return retcode, password, may_save    
     
     def _updateTempPath(self):
         #Get temp directory
