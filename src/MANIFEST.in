@@ -1,1 +1,4 @@
 include svnplot/*.py
+include svnplot/README.txt
+
+
