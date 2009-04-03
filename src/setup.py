@@ -14,7 +14,10 @@ setup(name='SVNPlot', version ='0.5',
       description='python module to generate graphs and statistics from Subversion repository data',
       author='Nitin Bhide',
       author_email='nitinbhide@gmail.com',
+      license = 'http://www.opensource.org/licenses/bsd-license.php',
       url='http://code.google.com/p/svnplot',
-      py_modules=['matplotlib', 'numpy'],
-      packages=['svnplot']
+      requires = ['matplotlib', 'numpy', 'pysvn'],
+      packages=['svnplot'],
+      package_dir = {'svnplot': 'svnplot'},
+      package_data= {'svnplot':['README.txt']}
      )
