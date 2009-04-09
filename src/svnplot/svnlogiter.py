@@ -23,6 +23,7 @@ import StringIO
 import urllib
 import logging
 import getpass
+import traceback
 
 def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -122,19 +123,28 @@ class SVNLogClient:
         revno = 0
         headrev = pysvn.Revision( pysvn.opt_revision_kind.head )            
         url = self.getUrl('')
-                
+
+        bFoundHeadRev = False
+        
         for trycount in range(0, self.maxTryCount):
             try:
                 logging.debug("Trying (%d) to get head revision" % trycount)
                 revlog = self.svnclient.log( url,
                      revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
                 #got the revision log. Now break out the multi-try for loop
-                revno = revlog[0].revision.number
-                logging.debug("Found head revision %d" % revno)
-                break
+                if( revlog != None and len(revlog) > 0):
+                    revno = revlog[0].revision.number                
+                    logging.debug("Found head revision %d" % revno)
+                    bFoundHeadRev=True
+                    break                
             except Exception, expinst:
                 logging.error("Error %s" % expinst)
                 continue
+
+        if( bFoundHeadRev == False):
+            print "Unable to find head revision for the repository"
+            print "Make sure that you are using repository root (e.g. http://svnplot.google.com/svn/)"
+            print "Check the firewall settings, network connection and repository path"
             
         return(revno)
 
