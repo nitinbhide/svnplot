@@ -20,6 +20,7 @@ import datetime
 import sqlite3
 import sys
 import logging
+from optparse import OptionParser
 
 class SVNLog2Sqlite:
     def __init__(self, svnrepopath, sqlitedbpath):
@@ -88,7 +89,7 @@ class SVNLog2Sqlite:
                                     values(?, ?, ?, ?,?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted, lc_updated))
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                     #commit after every change
-                print "Number revisions converted : %d (Rev no : %d)" % (revcount, revlog.revno)                        
+            print "Number revisions converted : %d (Rev no : %d)" % (revcount, revlog.revno)                        
             cur.close()
 
     def UpdateLineCountData(self):
@@ -144,14 +145,28 @@ class SVNLog2Sqlite:
         #update SVNLogDetail set lc_updated ='Y' ## Use 'Y' or 'N' as appropriate.
 
 def RunMain():
-    if( len(sys.argv) < 3):
-        print "Usage : svnlog2sqlite.py <svnrepo url> <sqlitedbpath>"
+    usage = "usage: %prog [options] <svnrepo root url> <sqlitedbpath>"
+    parser = OptionParser(usage)
+    parser.set_defaults(updlinecount=False)
+
+    parser.add_option("-l", "--linecount", action="store_true", dest="updlinecount", default=False,
+                      help="update changed line count (True/False). Default is False")
+    (options, args) = parser.parse_args()
+    
+    if( len(args) < 2):
+        print "Invalid number of arguments. Use svnlog2sqlite.py --help to see the details."    
     else:
-        svnrepopath = sys.argv[1]
-        sqlitedbpath = sys.argv[2]        
+        svnrepopath = args[0]
+        sqlitedbpath = args[1]
+
         try:
+            print "Updating the subversion log"
+            print "Repository : %s" % svnrepopath
+            print "Log database filepath : %s" % sqlitedbpath
+            print "Update Changed Line Count : %s" % options.updlinecount
+            
             conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath)
-            conv.convert()
+            conv.convert(options.updlinecount)
         except:
             del conv
             raise
