@@ -24,6 +24,7 @@ import urllib
 import logging
 import getpass
 import traceback
+import types
 
 def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -139,6 +140,7 @@ class SVNLogClient:
                     break                
             except Exception, expinst:
                 logging.error("Error %s" % expinst)
+                traceback.print_exc()
                 continue
 
         if( bFoundHeadRev == False):
@@ -514,10 +516,14 @@ class SVNRevLog:
             return(author)
         elif(name == 'message'):
             msg = None
+                
             try:
                 msg = self.revlog.message
+                if type(msg) == types.StringType: 
+                    msg = unicode(msg, 'utf-8')
+
             except:
-                msg = ''
+                msg = u''
             return(msg)
         elif(name == 'date'):
             try:
