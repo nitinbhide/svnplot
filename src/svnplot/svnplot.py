@@ -432,16 +432,18 @@ class SVNPlot(SVNPlotBase):
     def TagCloud(self, numWords=50):
         self._printProgress("Calculating tag cloud for log messages")
         words = self.svnstats.getLogMsgWordFreq(5)
-        #first get sorted wordlist (reverse sorted by frequency)
-        tagWordList = sorted(words.items(), key=operator.itemgetter(1),reverse=True)
-        #now extract top 'numWords' from the list and then sort it with alphabetical order.
-        tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
-        #now calculate the maximum value from the sorted list.
-        maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
-        maxFreq = math.log(maxFreq)
-        #change the font size between "-2" to "+8" relative to current font size
-        tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(min(-2+math.log(val)*5/maxFreq+0.5, +8), x))
-                                   for x,val in tagWordList])                
+        tagHtmlStr = ''
+        if( len(words) > 0):
+            #first get sorted wordlist (reverse sorted by frequency)
+            tagWordList = sorted(words.items(), key=operator.itemgetter(1),reverse=True)
+            #now extract top 'numWords' from the list and then sort it with alphabetical order.
+            tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
+            #now calculate the maximum value from the sorted list.
+            maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
+            maxFreq = math.log(maxFreq)
+            #change the font size between "-2" to "+8" relative to current font size
+            tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(min(-2+math.log(val)*5/maxFreq+0.5, +8), x))
+                                       for x,val in tagWordList])                
         return(tagHtmlStr)
 
     def BasicStats(self, basicStatsTmpl):
