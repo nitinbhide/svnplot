@@ -25,6 +25,7 @@ import logging
 import getpass
 import traceback
 import types
+import tempfile
 
 def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -107,19 +108,9 @@ class SVNLogClient:
     
     def _updateTempPath(self):
         #Get temp directory
-        if os.environ.has_key('TEMP'):
-            self.tmppath = os.environ['TEMP']
-        elif os.environ.has_key('TMPDIR'):
-            self.tmppath= os.environ['TMPDIR']
-        elif os.environ.has_key('TMP'):
-            self.tmppath= os.environ['TMP']
-        elif os.path.exists( '/usr/tmp' ):
-            self.tmppath= '/usr/tmp'
-        elif os.path.exists( '/tmp' ):
-            self.tmppath= '/tmp'
-        elif os.path.exists('c:\\temp'):
-            self.tmppath = 'c:\\temp'
-            
+        tempdir = tempfile.gettempdir()
+        self.tmppath = os.path.join(tempdir, "svnplot")
+        
     def getHeadRevNo(self):
         revno = 0
         headrev = pysvn.Revision( pysvn.opt_revision_kind.head )            
