@@ -233,9 +233,7 @@ class SVNLogClient:
         #print "getting diff count for %d:%s" % (revno, filepath)
         if( changetype != 'A' and changetype != 'D'):
             #file or directory is modified
-            print 'change type %s' % changetype
             diff_log = self.getRevFileDiff(filepath, revno)
-            print diff_log
             diffDict = getDiffLineCountDict(diff_log)
             #The dictionary may not have the filepath key if only properties are modfiied.
             if(diffDict.has_key(filepath) == True):
