@@ -120,7 +120,7 @@ class SVNLogClient:
         
         for trycount in range(0, self.maxTryCount):
             try:
-                logging.debug("Trying (%d) to get head revision" % trycount)
+                logging.info("Trying (%d) to get head revision" % trycount)
                 revlog = self.svnclient.log( url,
                      revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
                 #got the revision log. Now break out the multi-try for loop
@@ -148,7 +148,7 @@ class SVNLogClient:
                 
         for trycount in range(0, self.maxTryCount):
             try:
-                logging.debug("Trying (%d) to get revision log" % trycount)
+                logging.info("Trying (%d) to get revision log" % trycount)
                 revlog = self.svnclient.log( url,
                      revision_start=rev, revision_end=rev, discover_changed_paths=detailedLog)
                 log = revlog[0]
@@ -166,7 +166,7 @@ class SVNLogClient:
                 
         for trycount in range(0, self.maxTryCount):
             try:
-                logging.debug("Trying (%d) to get revision logs [%d:%d]" % (trycount,startrevno, endrevno))
+                logging.info("Trying (%d) to get revision logs [%d:%d]" % (trycount,startrevno, endrevno))
                 revlog = self.svnclient.log( url,
                      revision_start=startrev, revision_end=endrev, discover_changed_paths=detailedLog)                
                 break
@@ -182,7 +182,7 @@ class SVNLogClient:
         diff_log = None
         for trycount in range(0, self.maxTryCount):
             try:
-                logging.debug("Trying (%d) to get revision diffs" % trycount)
+                logging.info("Trying (%d) to get revision diffs" % trycount)
                 diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                                 recurse=True,ignore_ancestry=True,ignore_content_type=False,
                                        diff_deleted=True)
@@ -199,7 +199,7 @@ class SVNLogClient:
         diff_log = None
         for trycount in range(0, self.maxTryCount):
             try:
-                logging.debug("Trying (%d) to get filelevel revision diffs" % trycount)
+                logging.info("Trying (%d) to get filelevel revision diffs" % trycount)
                 diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                             recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                        diff_deleted=True)
@@ -290,7 +290,7 @@ class SVNLogClient:
         linecount = 0
         for trycount in range(0, self.maxTryCount):
             try:
-                logging.debug("Trying (%d) to get linecount for %s" % (trycount, filepath))
+                logging.info("Trying (%d) to get linecount for %s" % (trycount, filepath))
                 rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
                 url = self.getUrl(path)
                 contents = self.svnclient.cat(url, revision = rev)
@@ -319,69 +319,41 @@ class SVNLogClient:
         return(SVNRevLogIter(self, 1, self.getHeadRevNo()))
 
 class SVNRevLogIter:
-    def __init__(self, logclient, startRevNo, endRevNo):
+    def __init__(self, logclient, startRevNo, endRevNo, cachesize=50):
         self.logclient = logclient
         self.startrev = startRevNo
         self.endrev = endRevNo
-        self.currev = 0
         self.revlogcache = None
+        self.cachesize = cachesize
         
     def __iter__(self):
-        return(self)
+        return(self.next())
 
     def next(self):
         if( self.endrev == 0):
             self.endrev = self.logclient.getHeadRevNo()
         if( self.startrev == 0):
             self.startrev = self.endrev
-        if( self.currev == 0):
-            self.currev = self.startrev
-        if( self.currev> self.endrev):
-            raise StopIteration
-
-        if( self.revlogcache== None):
-            self.revlogcache = SVNRevLogCache(self.logclient, self.startrev, self.endrev)
         
-        revlog = self.revlogcache.getLog(self.currev)        
-        self.currev = self.currev+1
-        return(revlog)
-
-class SVNRevLogCache:
-    def __init__(self, logclient, startRev, endRev, cachesize=50):
-        self.logclient = logclient
-        self.startrevno = startRev
-        self.cachesize = cachesize
-        self.endrevno = endRev
-        self.revlogcache = []
-
-    def __getNextStart(self):
-        nextstart = self.startrevno+len(self.revlogcache)
-        return(nextstart)
-
-    def __getNextEnd(self):
-        nextstart = self.__getNextStart()
-        nextend = min(nextstart+self.cachesize-1, self.endrevno)
-        return(nextend)
-    
-    def __updateCache(self):
-        nextstart = self.__getNextStart()
-        nextend = self.__getNextEnd()
-        self.revlogcache = self.logclient.getLogs(nextstart, nextend, True)        
-        self.startrevno = nextstart
-        
-    def __isUpdateRequired(self, revno):
-        updateNeeded = False
-        if( revno >= self.__getNextStart()):
-            updateNeeded = True
-        return(updateNeeded)
+        while (self.startrev < self.endrev):
+            cache_end = self.__getCacheEnd()
+            logging.info("updating logs %d to %d" % (self.startrev, cache_end))
+            self.revlogcache = self.logclient.getLogs(self.startrev, cache_end, True)
+            if( self.revlogcache == None or len(self.revlogcache) == 0):
+                raise StopIteration
             
-    def getLog(self, revno):
-        if(self.__isUpdateRequired(revno) ==True):
-            self.__updateCache()
-        idx = revno-self.startrevno
-        assert(idx >= 0 and idx < len(self.revlogcache))
-        revlog = SVNRevLog(self.logclient, self.revlogcache[idx])
-        return(revlog)        
+            self.startrev = self.startrev+len(self.revlogcache)
+            for revlog in self.revlogcache:
+                #since reach revision log entry is a dictionary. If the dictionary is empty
+                #then log is not available or its end of log entries
+                if( len(revlog) == 0):
+                    raise StopIteration
+                svnrevlog = SVNRevLog(self.logclient, revlog)
+                yield svnrevlog
+                                    
+    def __getCacheEnd(self):
+        nextend = min(self.startrev+self.cachesize-1, self.endrev)
+        return(nextend)
     
 class SVNRevLog:
     def __init__(self, logclient, revnolog):
