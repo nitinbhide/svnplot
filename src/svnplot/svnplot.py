@@ -27,7 +27,7 @@ Graph types to be supported
 	(i.e. lines added + lines deleted + lines modified) -- Done
 14. Repository Activity Index (using exponential decay) -- Done
 15. Repository heatmap (treemap)
-
+16. Tag cloud of words in commit log message.
 
 To use copy the file in Python 'site-packages' directory Setup is not available
 yet.
@@ -37,6 +37,7 @@ __revision__ = '$Revision:$'
 __date__     = '$Date:$'
 
 import matplotlib.pyplot as plt
+import matplotlib.mpl as mpl
 from optparse import OptionParser
 import sqlite3
 import os.path, sys
@@ -153,6 +154,11 @@ HTMLIndexTemplate ='''
 <tr id='tagcloud'>
 <td colspan=3 align="center">$TagCloud</td>
 </tr>
+<th colspan=3 align="center"><h3>Author Cloud</h3></th>
+</tr>
+<tr id='authcloud'>
+<td colspan=3 align="center">$AuthCloud</td>
+</tr>
 </table>
 </body>
 </html>
@@ -170,6 +176,17 @@ HTMLBasicStatsTmpl = '''
 <tr><td>LoC</td><td>:</td><td>$LoC</td></tr> 
 </table>
 '''
+
+def getTagFontSize(freq, maxFreq):
+    #change the font size between "-2" to "+8" relative to current font size
+    fontsize = min(-2+math.log(freq)*5/maxFreq+0.5, +8)
+    return(fontsize)
+
+def getActivityClr(actIdx, clrNorm, cmap):
+    rgbclr = clrNorm(actIdx)
+    rgbclr = cmap(rgbclr)
+    clrStr=mpl.colors.rgb2hex(rgbclr[0:3])    
+    return(clrStr)
 
 GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", CommitActivityIdx="cmtactidx",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
@@ -442,8 +459,8 @@ class SVNPlot(SVNPlotBase):
             maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
             maxFreq = math.log(maxFreq)
             #change the font size between "-2" to "+8" relative to current font size
-            tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(min(-2+math.log(val)*5/maxFreq+0.5, +8), x))
-                                       for x,val in tagWordList])                
+            tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(getTagFontSize(freq, maxFreq), x))
+                                       for x,freq in tagWordList])                
         return(tagHtmlStr)
 
     def BasicStats(self, basicStatsTmpl):
@@ -487,7 +504,33 @@ class SVNPlot(SVNPlotBase):
             outstr.write("<li>%s</li>\n"%author)
         outstr.write("</ol>\n")
         return(outstr.getvalue())
+    
+    def AuthorCloud(self, maxAuthCount=50):
+        self._printProgress("Calculating Author Tag Cloud")
+        authCloud = self.svnstats.getAuthorCloud()
+        tagHtmlStr = ''
+        if( len(authCloud) > 0):
+            #sort and extract maximum of the "maxAuthCount" number of author based on the
+            #activity index
+            authTagList = sorted(authCloud, key=operator.itemgetter(2),reverse=True)
+            authTagList = authTagList[0:maxAuthCount]
+            #now calculate the maximum value from the sorted list.
+            maxFreq = max(authTagList, key=operator.itemgetter(1))[1]
+            maxFreq = math.log(maxFreq)
+            maxActivity = max(authTagList, key=operator.itemgetter(2))[2]
+            minActivity = min(authTagList, key=operator.itemgetter(2))[2]
+            clrNorm = mpl.colors.LogNorm(vmin=minActivity, vmax=maxActivity)
+            cmap = mpl.cm.jet
+
+            #Now sort the authers by author names
+            authTagList = sorted(authTagList, key=operator.itemgetter(0))
             
+            #change the font size between "-2" to "+8" relative to current font size
+            tagHtmlStr = ' '.join([('<font size="%+d" color="%s">%s</font>\n'%
+                                    (getTagFontSize(freq, maxFreq), getActivityClr(actIdx, clrNorm, cmap), auth))
+                                       for auth, freq, actIdx in authTagList])
+        return(tagHtmlStr)
+    
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
         ax = self._drawDateLineGraph(dates, loc)
@@ -519,6 +562,7 @@ class SVNPlot(SVNPlotBase):
         graphParamDict["thumbht"]=str(thumbsize)
         graphParamDict["RepoName"]=self.reponame
         graphParamDict["TagCloud"] = self.TagCloud()
+        graphParamDict["AuthCloud"] = self.AuthorCloud()
         graphParamDict["BasicStats"] = self.BasicStats(HTMLBasicStatsTmpl)
         graphParamDict["ActiveFiles"] = self.ActiveFiles()
         graphParamDict["ActiveAuthors"] = self.ActiveAuthors()

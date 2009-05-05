@@ -711,7 +711,21 @@ class SVNStats:
         self.cur.execute("insert into RevisionActivity(revno, temperature) values(?,?)",(revno, maxrev_temperature))
         self.dbcon.commit()
         return(maxrev_temperature)
-            
+
+    def _getAuthActivityDict(self):
+        self._updateActivityHotness()
+        self.cur.execute('select SVNLog.author, SVNLog.commitdate as "commitdate [timestamp]", RevisionActivity.temperature from RevisionActivity, SVNLog \
+                    where SVNLog.revno = RevisionActivity.revno order by commitdate ASC')
+
+        authActivityIdx = dict()                    
+        for author, cmdate, temperature in self.cur:
+            cmtactv = authActivityIdx.get(author)
+            revtemp = temperature
+            if( cmtactv != None):                
+                revtemp = temperature+getTemperatureAtTime(cmdate, cmtactv[0], cmtactv[1], COOLINGRATE)
+            authActivityIdx[author] = (cmdate, revtemp)
+        return(authActivityIdx)
+        
     def getRevActivityTemperature(self):
         '''
         return revision activity as maximum temperature at each revision(using the newton's law of cooling)                                                                         
@@ -738,22 +752,26 @@ class SVNStats:
                         
         return( cmdatelist,temperaturelist)            
 
+    def getAuthorCloud(self):
+        '''
+        return the list of tuples of (author, number of revisions commited, activity index) of author.
+        These are intended to be used for creating  an author tag cloud. Number of revisions commited will
+        determine the size of the author tag and Activity index will determine the color
+        '''
+        authActivityIdx = self._getAuthActivityDict()
+        self.cur.execute("select author, count(revno) as commitcount from SVNLog group by author")
+        authCloud = []
+        for author, commitcount in self.cur:
+            activity = authActivityIdx[author]
+            authCloud.append((author, commitcount,activity[1]))
+            
+        return(authCloud)
+        
     def getActiveAuthors(self, numAuthors):
         '''
         return top numAthors based on the activity index of commited revisions
         '''
-        self._updateActivityHotness()
-        self.cur.execute('select SVNLog.author, SVNLog.commitdate as "commitdate [timestamp]", RevisionActivity.temperature from RevisionActivity, SVNLog \
-                    where SVNLog.revno = RevisionActivity.revno order by commitdate ASC')
-
-        authActivityIdx = dict()                    
-        for author, cmdate, temperature in self.cur:
-            cmtactv = authActivityIdx.get(author)
-            revtemp = temperature
-            if( cmtactv != None):                
-                revtemp = temperature+getTemperatureAtTime(cmdate, cmtactv[0], cmtactv[1], COOLINGRATE)
-            authActivityIdx[author] = (cmdate, revtemp)
-
+        authActivityIdx = self._getAuthActivityDict()
         #get the authors list for the given search path as 'set' so that searching is faster
         searchpathauthlist = set(self.getAuthorList())
         
