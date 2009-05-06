@@ -72,6 +72,7 @@ def getDiffLineCountDict(diff_log):
 class SVNLogClient:
     def __init__(self, svnrepourl):
         self.svnrepourl = svnrepourl
+        self.svnrooturl = None
         self.svnclient = pysvn.Client()
         self.tmppath = None
         self._updateTempPath()
@@ -112,9 +113,7 @@ class SVNLogClient:
         
     def getHeadRevNo(self):
         revno = 0
-        url = self.getUrl('')
-        rooturl = self.svnclient.root_url_from_path(url)
-        headrev = self._getHeadRev(rooturl)
+        headrev = self._getHeadRev()
         
         if( headrev != None):
             revno = headrev.revision.number
@@ -124,7 +123,8 @@ class SVNLogClient:
             
         return(revno)
 
-    def _getHeadRev(self, rooturl):
+    def _getHeadRev(self):
+        rooturl = self.getRootUrl()
         headrevlog = None
         headrev = pysvn.Revision( pysvn.opt_revision_kind.head )                    
         
@@ -142,9 +142,8 @@ class SVNLogClient:
     def findStartEndRev(self):
         #Find svn-root for the url
         url = self.getUrl('')
-        rooturl = self.svnclient.root_url_from_path(url)
-        headrev = self._getHeadRev(rooturl)
-        firstrev = self.getLog(1, url=rooturl, detailedLog=False)
+        headrev = self._getHeadRev()
+        firstrev = self.getLog(1, url=self.getRootUrl(), detailedLog=False)
         #headrev and first revision of the repository is found
         #actual start end revision numbers for given URL will be between these two numbers
         #Since svn log doesnot have a direct way of determining the start and end revisions
@@ -268,7 +267,8 @@ class SVNLogClient:
     
     def isDirectory(self, revno, changepath, changetype):
         #if the file/dir is deleted in the current revision. Then the status needs to be checked for
-        # one revision before that        
+        # one revision before that
+        logging.debug("path %s change type %s revno %d" % (changepath, changetype, revno))
         if( changetype == 'D'):            
             revno = revno-1
         entry = self.getInfo(changepath, revno)
@@ -300,8 +300,15 @@ class SVNLogClient:
         
         return(linecount)
 
+    def getRootUrl(self):
+        if( self.svnrooturl == None):
+            self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
+        return(self.svnrooturl)
+    
     def getUrl(self, path):
-        url = self.svnrepourl + urllib.pathname2url(path)
+        url = self.svnrepourl
+        if( path.strip() != ""):
+            url = self.getRootUrl() + urllib.pathname2url(path)
         return(url)
         
     def __iter__(self):
@@ -486,6 +493,11 @@ class SVNRevLog:
     
     def _updateDiffCount(self):
         revno = self.getRevNo()
-        revdiff_log = self.logclient.getRevDiff(revno)
-        return(getDiffLineCountDict(revdiff_log))
+        diffcountdict = dict()
+        try:
+            revdiff_log = self.logclient.getRevDiff(revno)
+            diffcountdict = getDiffLineCountDict(revdiff_log)
+        except:
+            pass
+        return(diffcountdict)
                  
