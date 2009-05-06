@@ -20,6 +20,7 @@ import datetime
 import sqlite3
 import sys
 import logging
+import traceback
 from optparse import OptionParser
 
 class SVNLog2Sqlite:
@@ -35,11 +36,14 @@ class SVNLog2Sqlite:
         for trycount in range(0, maxtrycount):
             try:
                 laststoredrev = self.getLastStoredRev()
-                headrev = self.svnclient.getHeadRevNo()    
-                self.ConvertRevs(laststoredrev, headrev, bUpdLineCount, maxtrycount)
+                headrev = self.svnclient.getHeadRevNo()
+                (startrevno, endrevno) = self.svnclient.findStartEndRev()
+                startrevno = max(startrevno,laststoredrev+1) 
+                self.ConvertRevs(startrevno, endrevno, bUpdLineCount, maxtrycount)
             except Exception, expinst:
                 logging.error("Error %s" % expinst)
-                print "Error %s" % expinst                
+                print "Error %s" % expinst
+                traceback.print_exc()
                 print "Trying again (%d)" % (trycount+1)
             finally:                        
                 self.dbcon.commit()
@@ -64,15 +68,16 @@ class SVNLog2Sqlite:
             lastStoreRev = int(row[0])        
         return(lastStoreRev)
                
-    def ConvertRevs(self, laststoredrev, headrev, bUpdLineCount, maxtrycount=3):
-        if( laststoredrev < headrev):            
+    def ConvertRevs(self, startrev, endrev, bUpdLineCount, maxtrycount=3):
+        if( startrev < endrev):            
             cur = self.dbcon.cursor()
-            svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, laststoredrev+1, headrev)
+            svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, startrev, endrev)
             revcount = 0
             bChkIfDir = bUpdLineCount
             lc_updated = 'N'
             if( bUpdLineCount == True):
                 lc_updated = 'Y'
+            lastrevno = 0
             for revlog in svnloglist:
                 logging.debug("converting revision %d" % revlog.revno)
 ##                logging.debug("Revision author:%s" % revlog.author)
@@ -88,8 +93,9 @@ class SVNLog2Sqlite:
                         cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted, lc_updated) \
                                     values(?, ?, ?, ?,?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted, lc_updated))
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
+                    lastrevno = revlog.revno
                     #commit after every change
-            print "Number revisions converted : %d (Rev no : %d)" % (revcount, revlog.revno)                        
+            print "Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno)                        
             cur.close()
 
     def UpdateLineCountData(self):
