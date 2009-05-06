@@ -113,38 +113,68 @@ class SVNLogClient:
         
     def getHeadRevNo(self):
         revno = 0
-        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )            
         url = self.getUrl('')
+        rooturl = self.svnclient.root_url_from_path(url)
+        headrev = self._getHeadRev(rooturl)
+        
+        if( headrev != None):
+            revno = headrev.revision.number
+        else:
+            print "Unable to find head revision for the repository"
+            print "Check the firewall settings, network connection and repository path"
+            
+        return(revno)
 
-        bFoundHeadRev = False
+    def _getHeadRev(self, rooturl):
+        headrevlog = None
+        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )                    
         
         for trycount in range(0, self.maxTryCount):
             try:
                 logging.info("Trying (%d) to get head revision" % trycount)
-                revlog = self.svnclient.log( url,
+                revlog = self.svnclient.log( rooturl,
                      revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
                 #got the revision log. Now break out the multi-try for loop
                 if( revlog != None and len(revlog) > 0):
-                    revno = revlog[0].revision.number                
-                    logging.debug("Found head revision %d" % revno)
-                    bFoundHeadRev=True
+                    revno = revlog[0].revision.number
+                    logging.info("Found head revision %d" % revno)
+                    headrevlog = revlog[0]
                     break                
             except Exception, expinst:
                 logging.error("Error %s" % expinst)
                 traceback.print_exc()
                 continue
-
-        if( bFoundHeadRev == False):
-            print "Unable to find head revision for the repository"
-            print "Make sure that you are using repository root (e.g. http://svnplot.google.com/svn/)"
-            print "Check the firewall settings, network connection and repository path"
             
-        return(revno)
-
-    def getLog(self, revno, detailedLog=False):
-        log=None
-        rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+        return(headrevlog)
+    
+    def findStartEndRev(self):
+        #Find svn-root for the url
         url = self.getUrl('')
+        rooturl = self.svnclient.root_url_from_path(url)
+        headrev = self._getHeadRev(rooturl)
+        firstrev = self.getLog(1, url=rooturl, detailedLog=False)
+        #headrev and first revision of the repository is found
+        #actual start end revision numbers for given URL will be between these two numbers
+        #Since svn log doesnot have a direct way of determining the start and end revisions
+        #for a given url, I am using headrevision and first revision time to get those
+        starttime = firstrev.date
+        revstart = pysvn.Revision(pysvn.opt_revision_kind.date, starttime)
+        startrev = self.svnclient.log( url,
+                     revision_start=revstart, revision_end=headrev.revision, limit = 1, discover_changed_paths=False)
+        
+        startrevno = 0
+        endrevno = 0
+        if( startrev != None and len(startrev[0]) > 0):
+            startrevno = startrev[0].revision.number
+            endrevno   = headrev.revision.number
+            
+        return(startrevno, endrevno)        
+        
+    def getLog(self, revno, url=None, detailedLog=False):
+        log=None
+        if( url == None):
+            url = self.getUrl('')
+        rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
                 
         for trycount in range(0, self.maxTryCount):
             try:
@@ -155,10 +185,11 @@ class SVNLogClient:
                 break
             except Exception, expinst:
                 logging.error("Error %s" % expinst)
+                traceback.print_exc()
                 continue
         return(log)
 
-    def getLogs(self, startrevno, endrevno, detailedLog=False):
+    def getLogs(self, startrevno, endrevno, cachesize=1, detailedLog=False):
         revlog =None
         startrev = pysvn.Revision(pysvn.opt_revision_kind.number, startrevno)
         endrev = pysvn.Revision(pysvn.opt_revision_kind.number, endrevno)
@@ -168,7 +199,8 @@ class SVNLogClient:
             try:
                 logging.info("Trying (%d) to get revision logs [%d:%d]" % (trycount,startrevno, endrevno))
                 revlog = self.svnclient.log( url,
-                     revision_start=startrev, revision_end=endrev, discover_changed_paths=detailedLog)                
+                     revision_start=startrev, revision_end=endrev, limit=cachesize,
+                                             discover_changed_paths=detailedLog)                
                 break
             except Exception, expinst:
                 logging.error("Error %s" % expinst)
@@ -336,13 +368,13 @@ class SVNRevLogIter:
             self.startrev = self.endrev
         
         while (self.startrev < self.endrev):
-            cache_end = self.__getCacheEnd()
-            logging.info("updating logs %d to %d" % (self.startrev, cache_end))
-            self.revlogcache = self.logclient.getLogs(self.startrev, cache_end, True)
+            logging.info("updating logs %d to %d" % (self.startrev, self.endrev))
+            self.revlogcache = self.logclient.getLogs(self.startrev, self.endrev,
+                                                          cachesize=self.cachesize, detailedLog=True)
             if( self.revlogcache == None or len(self.revlogcache) == 0):
                 raise StopIteration
             
-            self.startrev = self.startrev+len(self.revlogcache)
+            self.startrev = self.revlogcache[-1].revision.number+1
             for revlog in self.revlogcache:
                 #since reach revision log entry is a dictionary. If the dictionary is empty
                 #then log is not available or its end of log entries
@@ -350,16 +382,12 @@ class SVNRevLogIter:
                     raise StopIteration
                 svnrevlog = SVNRevLog(self.logclient, revlog)
                 yield svnrevlog
-                                    
-    def __getCacheEnd(self):
-        nextend = min(self.startrev+self.cachesize-1, self.endrev)
-        return(nextend)
-    
+                                        
 class SVNRevLog:
     def __init__(self, logclient, revnolog):
         self.logclient = logclient
         if( isinstance(revnolog, pysvn.PysvnLog) == False):
-            self.revlog = self.logclient.getLog(revnolog, True)
+            self.revlog = self.logclient.getLog(revnolog, detailedLog=True)
         else:
             self.revlog = revnolog
         assert(self.revlog == None or isinstance(revnolog, pysvn.PysvnLog)==True)
