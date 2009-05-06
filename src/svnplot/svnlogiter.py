@@ -75,7 +75,6 @@ class SVNLogClient:
         self.svnclient = pysvn.Client()
         self.tmppath = None
         self._updateTempPath()
-        self.maxTryCount = 3
         self.svnclient.callback_get_login = self.get_login
         self.svnclient.callback_ssl_server_trust_prompt = self.ssl_server_trust_prompt
         self.svnclient.callback_ssl_client_cert_password_prompt = self.ssl_client_cert_password_prompt
@@ -129,21 +128,14 @@ class SVNLogClient:
         headrevlog = None
         headrev = pysvn.Revision( pysvn.opt_revision_kind.head )                    
         
-        for trycount in range(0, self.maxTryCount):
-            try:
-                logging.info("Trying (%d) to get head revision" % trycount)
-                revlog = self.svnclient.log( rooturl,
-                     revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
-                #got the revision log. Now break out the multi-try for loop
-                if( revlog != None and len(revlog) > 0):
-                    revno = revlog[0].revision.number
-                    logging.info("Found head revision %d" % revno)
-                    headrevlog = revlog[0]
-                    break                
-            except Exception, expinst:
-                logging.error("Error %s" % expinst)
-                traceback.print_exc()
-                continue
+        logging.debug("Trying to get head revision rooturl:%s" % rooturl)
+        revlog = self.svnclient.log( rooturl,
+             revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
+        #got the revision log. Now break out the multi-try for loop
+        if( revlog != None and len(revlog) > 0):
+            revno = revlog[0].revision.number
+            logging.debug("Found head revision %d" % revno)
+            headrevlog = revlog[0]            
             
         return(headrevlog)
     
@@ -176,17 +168,11 @@ class SVNLogClient:
             url = self.getUrl('')
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
                 
-        for trycount in range(0, self.maxTryCount):
-            try:
-                logging.info("Trying (%d) to get revision log" % trycount)
-                revlog = self.svnclient.log( url,
-                     revision_start=rev, revision_end=rev, discover_changed_paths=detailedLog)
-                log = revlog[0]
-                break
-            except Exception, expinst:
-                logging.error("Error %s" % expinst)
-                traceback.print_exc()
-                continue
+        logging.debug("Trying to get revision log. revno:%d, url=%s" % (revno, url))
+        revlog = self.svnclient.log( url,
+             revision_start=rev, revision_end=rev, discover_changed_paths=detailedLog)
+        log = revlog[0]
+                
         return(log)
 
     def getLogs(self, startrevno, endrevno, cachesize=1, detailedLog=False):
@@ -195,16 +181,10 @@ class SVNLogClient:
         endrev = pysvn.Revision(pysvn.opt_revision_kind.number, endrevno)
         url = self.getUrl('')
                 
-        for trycount in range(0, self.maxTryCount):
-            try:
-                logging.info("Trying (%d) to get revision logs [%d:%d]" % (trycount,startrevno, endrevno))
-                revlog = self.svnclient.log( url,
-                     revision_start=startrev, revision_end=endrev, limit=cachesize,
-                                             discover_changed_paths=detailedLog)                
-                break
-            except Exception, expinst:
-                logging.error("Error %s" % expinst)
-                continue        
+        logging.debug("Trying to get revision logs [%d:%d]" % (startrevno, endrevno))
+        revlog = self.svnclient.log( url,
+             revision_start=startrev, revision_end=endrev, limit=cachesize,
+                                     discover_changed_paths=detailedLog)                
         return(revlog)
     
     def getRevDiff(self, revno):
@@ -212,16 +192,11 @@ class SVNLogClient:
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl('')
         diff_log = None
-        for trycount in range(0, self.maxTryCount):
-            try:
-                logging.info("Trying (%d) to get revision diffs" % trycount)
-                diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
-                                recurse=True,ignore_ancestry=True,ignore_content_type=False,
-                                       diff_deleted=True)
-                break
-            except Exception, expinst:                
-                logging.error("Error %s" % expinst)
-                continue
+        
+        logging.info("Trying to get revision diffs url:%s" % url)
+        diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
+                        recurse=True,ignore_ancestry=True,ignore_content_type=False,
+                               diff_deleted=True)
         return diff_log
 
     def getRevFileDiff(self, path, revno):
@@ -229,16 +204,11 @@ class SVNLogClient:
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
         diff_log = None
-        for trycount in range(0, self.maxTryCount):
-            try:
-                logging.info("Trying (%d) to get filelevel revision diffs" % trycount)
-                diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
-                            recurse=True, ignore_ancestry=False,ignore_content_type=False,
-                                       diff_deleted=True)
-                break
-            except Exception, expinst:
-                logging.error("Error %s" % expinst)
-                continue
+        
+        logging.debug("Trying to get filelevel revision diffs")
+        diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
+                    recurse=True, ignore_ancestry=False,ignore_content_type=False,
+                               diff_deleted=True)
             
         return(diff_log)
     
@@ -249,14 +219,10 @@ class SVNLogClient:
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
         entry_list = None
-        for trycount in range(0, self.maxTryCount):
-            try:
-                logging.debug("Trying (%d) to get file information" % trycount)
-                entry_list = self.svnclient.info2( url,revision=rev,recurse=False)
-                break
-            except Exception, expinst:
-                logging.error("Error %s" % expinst)
-                continue
+        
+        logging.debug("Trying to get file information for %s" % url)
+        entry_list = self.svnclient.info2( url,revision=rev,recurse=False)
+        
         return(entry_list)
     
     def getDiffLineCountForPath(self, revno, filepath, changetype):
@@ -289,20 +255,15 @@ class SVNLogClient:
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(filepath)
         binary = None
-        for trycount in range(0, self.maxTryCount):
-            try:
-                (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
-                binary = False #if explicit mime-type is not found always treat the file as 'text'                
-                if( 'svn:mime-type' in propdict):
-                    fmimetype = propdict['svn:mime-type']
-                    if( fmimetype.find('text') < 0):
-                       #mime type is not a 'text' mime type.
-                       binary = True
-                break
-            except Exception, expinst:
-                logging.error("Error %s" % expinst)
-                continue
         
+        (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
+        binary = False #if explicit mime-type is not found always treat the file as 'text'                
+        if( 'svn:mime-type' in propdict):
+            fmimetype = propdict['svn:mime-type']
+            if( fmimetype.find('text') < 0):
+                #mime type is not a 'text' mime type.
+                binary = True
+               
         return(binary)
     
     def isDirectory(self, revno, changepath, changetype):
@@ -320,20 +281,16 @@ class SVNLogClient:
         
     def _getLineCount(self, filepath, revno):
         linecount = 0
-        for trycount in range(0, self.maxTryCount):
-            try:
-                logging.info("Trying (%d) to get linecount for %s" % (trycount, filepath))
-                rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-                url = self.getUrl(path)
-                contents = self.svnclient.cat(url, revision = rev)
-                matches = re.findall("$", contents, re.M )
-                if( matches != None):
-                    linecount = len(matches)
-                logging.debug("%s linecount : %d" % (filepath, linecount))
-                break
-            except Exception, expinst:
-                logging.error("Error %s" % expinst)
-                continue
+        
+        logging.info("Trying to get linecount for %s" % (filepath))
+        rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+        url = self.getUrl(path)
+        contents = self.svnclient.cat(url, revision = rev)
+        matches = re.findall("$", contents, re.M )
+        if( matches != None):
+            linecount = len(matches)
+        logging.debug("%s linecount : %d" % (filepath, linecount))
+        
         return(linecount)
     
     def getLineCount(self, filepath, revno):
