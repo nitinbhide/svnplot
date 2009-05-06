@@ -20,7 +20,7 @@ import pysvn
 import datetime, time
 import os, re, string
 import StringIO
-import urllib
+import urllib, urlparse
 import logging
 import getpass
 import traceback
@@ -301,8 +301,38 @@ class SVNLogClient:
         return(linecount)
 
     def getRootUrl(self):
-        if( self.svnrooturl == None):
-            self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
+        
+        if( self.svnrooturl == None and self.svnclient.is_url(self.svnrepourl)):
+            # for some reason 'root_url_from_path' crashes Python interpreter
+            # for http:// urls for PySVN 1.6.3 (python 2.5)
+            # hence I need to do jump through hoops to get -- Nitin
+            # self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
+            firstrev = pysvn.Revision( pysvn.opt_revision_kind.number, 1)
+            #remove the trailing '/' if any
+            rooturl = self.svnrepourl.rstrip('/')
+            rooturl_list = [part for part in urlparse.urlsplit(rooturl)]
+
+            bFoundRoot = False            
+            while(bFoundRoot==False):
+                try:
+                    rooturl = urlparse.urlunsplit(rooturl_list)
+                    logging.debug("trying rooturl %s" % rooturl)
+                    revlog = self.svnclient.log(rooturl,
+                         revision_start=firstrev, revision_end=firstrev, discover_changed_paths=False)
+                    self.svnrooturl = rooturl
+                    bFoundRoot = True
+                except:
+                    pass
+                #path is 2nd item in the list. Check the documentation of urlparse.urlsplit.
+                if( rooturl_list[2] == ''):
+                    break
+                (rooturlpath, sep, ignorepart)= rooturl_list[2].rpartition('/')
+                rooturl_list[2] = rooturlpath
+                
+            if( bFoundRoot == False):
+                raise RuntimeError , "Repository Root not found"
+
+            logging.debug("found rooturl %s" % self.svnrooturl)
         return(self.svnrooturl)
     
     def getUrl(self, path):
