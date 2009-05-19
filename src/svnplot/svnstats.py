@@ -221,10 +221,17 @@ class SVNStats:
                          where search_view.revno=SVNLog.revno group by dayofweek")
         weekdaylist=[]
         commits = []
+
+        #calendar.day_abbr starts with Monday while for dayofweek returned by strftime 0 is Sunday.
+        # so to get the correct day of week string, the day names list must be corrected in such a way
+        # that it starts from Sunday
+        daynames = [day for day in calendar.day_abbr]
+        daynames = daynames[6:]+daynames[0:6]
+        
         for dayofweek, commitcount in self.cur:
            commits.append(commitcount)           
-           weekdaylist.append(calendar.day_abbr[int(dayofweek)])
-           
+           weekdaylist.append(daynames[int(dayofweek)])
+
         return(commits, weekdaylist)
 
     def getActivityByTimeOfDay(self):
