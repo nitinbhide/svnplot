@@ -217,7 +217,7 @@ class SVNStats:
         '''
         returns two lists (commit counts and weekday)
         '''
-        self.cur.execute("select strftime('%w', SVNLog.commitdate) as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
+        self.cur.execute("select strftime('%w', SVNLog.commitdate, 'localtime') as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
                          where search_view.revno=SVNLog.revno group by dayofweek")
         weekdaylist=[]
         commits = []
@@ -238,7 +238,7 @@ class SVNStats:
         '''
         returns two lists (commit counts and time of day)
         '''
-        self.cur.execute("select strftime('%H', SVNLog.commitdate) as hourofday, count(SVNLog.revno) from SVNLog, search_view \
+        self.cur.execute("select strftime('%H', SVNLog.commitdate,'localtime') as hourofday, count(SVNLog.revno) from SVNLog, search_view \
                           where search_view.revno=SVNLog.revno group by hourofday")
         commits =[]
         hrofdaylist = []
@@ -251,7 +251,7 @@ class SVNStats:
         '''
         returns two lists (dates and total file count on those dates)
         '''
-        self.cur.execute('select date(SVNLog.commitdate) as "commitdate [date]", sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
+        self.cur.execute('select date(SVNLog.commitdate,"localtime") as "commitdate [date]", sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
                          group by commitdate order by commitdate ASC', (self.sqlsearchpath,))
@@ -290,7 +290,7 @@ class SVNStats:
         get statistics of how average LoC is changing over time.
         returns two lists (dates and average loc on that date)
         '''
-        self.cur.execute("select date(SVNLog.commitdate) as 'commitdate [date]', sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
+        self.cur.execute("select date(SVNLog.commitdate,'localtime') as 'commitdate [date]', sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted), \
                          sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
@@ -397,7 +397,7 @@ class SVNStats:
         '''
         returns two lists (dates and total line count on that date)
         '''
-        self.cur.execute("select date(SVNLog.commitdate) as 'commitdate [date]', sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
+        self.cur.execute("select date(SVNLog.commitdate,'localtime') as 'commitdate [date]', sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
                          group by commitdate order by commitdate ASC", (self.sqlsearchpath,))
@@ -417,7 +417,7 @@ class SVNStats:
         returns two lists (dates and churn data on that date)
         churn - total number of lines modifed (i.e. lines added + lines deleted + lines changed)
         '''
-        self.cur.execute("select date(SVNLog.commitdate) as 'commitdate [date]', sum(SVNLogDetail.linesadded+SVNLogDetail.linesdeleted) as churn \
+        self.cur.execute("select date(SVNLog.commitdate,'localtime') as 'commitdate [date]', sum(SVNLogDetail.linesadded+SVNLogDetail.linesdeleted) as churn \
                          from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
                          group by commitdate order by commitdate ASC", (self.sqlsearchpath,))
@@ -436,7 +436,7 @@ class SVNStats:
         gets LoC trend data for directory 'dirname'.
         returns two lists (dates and total LoC at that date) for the directory 'dirname'
         '''
-        sqlQuery = "select date(SVNLog.commitdate) as 'commitdate [date]', \
+        sqlQuery = "select date(SVNLog.commitdate,'localtime') as 'commitdate [date]', \
                         sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s%%' \
                          group by commitdate order by commitdate ASC" % (dirname)
@@ -458,7 +458,7 @@ class SVNStats:
         get the commit activit by hour of day stats for author 'author'
         returns two lists (dates , time at which commits happened on that date) for author.
         '''
-        self.cur.execute("select strftime('%H', SVNLog.commitdate), date(SVNLog.commitdate) as 'commitdate [date]' \
+        self.cur.execute("select strftime('%H', SVNLog.commitdate,'localtime'), date(SVNLog.commitdate,'localtime') as 'commitdate [date]' \
                     from SVNLog, search_view where search_view.revno=SVNLog.revno and SVNLog.author=? group by commitdate order by commitdate ASC" ,(author,))
 
         dates = []
@@ -473,7 +473,7 @@ class SVNStats:
         get the trend of LoC contributed by the author 'author'
         return two lists (dates and loc on that date) contributed by the author
         '''
-        self.cur.execute("select date(SVNLog.commitdate) as 'commitdate [date]', sum(SVNLogDetail.linesadded), \
+        self.cur.execute("select date(SVNLog.commitdate,'localtime') as 'commitdate [date]', sum(SVNLogDetail.linesadded), \
                         sum(SVNLogDetail.linesdeleted) from SVNLog, SVNLogDetail \
                          where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? and SVNLog.author=? \
                          group by commitdate order by commitdate ASC",(self.sqlsearchpath, author,))
@@ -494,7 +494,7 @@ class SVNStats:
         like 'bug', 'fix' etc.
         returns three lists (dates, total line count on that date, churn count on that date)
         '''
-        sqlquery = "select date(SVNLog.commitdate) as 'commitdate [date]', count(*) as commitfilecount \
+        sqlquery = "select date(SVNLog.commitdate,'localtime') as 'commitdate [date]', count(*) as commitfilecount \
                          from SVNLog, SVNLogDetail where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like '%s' \
                          and %s group by commitdate order by commitdate ASC" % (self.sqlsearchpath, self.__sqlForbugFixKeywordsInMsg())
         
@@ -624,11 +624,11 @@ class SVNStats:
         stats['NumRev'] = numrev
         stats['FirstRev'] = firstrev
         #now get first and last revision dates
-        self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
+        self.cur.execute('select datetime(SVNLog.commitdate,"localtime") as "commitdate [timestamp]" from SVNLog \
                         where SVNLog.revno = ?', (firstrev,))
         row = self.cur.fetchone()
         stats['FirstRevDate'] = row[0]
-        self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
+        self.cur.execute('select datetime(SVNLog.commitdate,"localtime") as "commitdate [timestamp]" from SVNLog \
                         where SVNLog.revno = ?', (lastrev,))
         row = self.cur.fetchone()
         stats['LastRevDate'] = row[0]
