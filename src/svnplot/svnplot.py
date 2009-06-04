@@ -177,9 +177,19 @@ HTMLBasicStatsTmpl = '''
 </table>
 '''
 
-def getTagFontSize(freq, maxFreq):
+MINFONTSIZE=-2
+MAXFONTSIZE=8
+
+def getTagFontSize(freq, minFreqLog, maxFreqLog):
     #change the font size between "-2" to "+8" relative to current font size
-    fontsize = min(-2+math.log(freq)*5/maxFreq+0.5, +8)
+    #change minFreqLog in such a way smallest log(freq)-minFreqLog is greater than 0
+    fontsizevariation = (MAXFONTSIZE-MINFONTSIZE)
+    minFreqLog = minFreqLog-(maxFreqLog-minFreqLog)/fontsizevariation
+    #now calculate the scaling factor for scaling the freq to fontsize.
+    scalingFactor = fontsizevariation/(maxFreqLog-minFreqLog)
+    fontsize = int(MINFONTSIZE+((math.log(freq)-minFreqLog)*scalingFactor)+0.5)
+    #now round off to ensure that font size remains in MINFONTSIZE and MAXFONTSIZE
+    assert(fontsize >= MINFONTSIZE and fontsize <= MAXFONTSIZE)
     return(fontsize)
 
 def getActivityClr(actIdx, clrNorm, cmap):
@@ -456,10 +466,12 @@ class SVNPlot(SVNPlotBase):
             #now extract top 'numWords' from the list and then sort it with alphabetical order.
             tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
             #now calculate the maximum value from the sorted list.
+            minFreq = min(tagWordList, key=operator.itemgetter(1))[1]
+            minFreqLog = math.log(minFreq)
             maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
-            maxFreq = math.log(maxFreq)
+            maxFreqLog = math.log(maxFreq)
             #change the font size between "-2" to "+8" relative to current font size
-            tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(getTagFontSize(freq, maxFreq), x))
+            tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(getTagFontSize(freq, minFreqLog, maxFreqLog), x))
                                        for x,freq in tagWordList])                
         return(tagHtmlStr)
 
@@ -515,8 +527,11 @@ class SVNPlot(SVNPlotBase):
             authTagList = sorted(authCloud, key=operator.itemgetter(2),reverse=True)
             authTagList = authTagList[0:maxAuthCount]
             #now calculate the maximum value from the sorted list.
+            minFreq = min(authTagList, key=operator.itemgetter(1))[1]
+            minFreqLog = math.log(minFreq)
             maxFreq = max(authTagList, key=operator.itemgetter(1))[1]
-            maxFreq = math.log(maxFreq)
+            maxFreqLog = math.log(maxFreq)
+            
             maxActivity = max(authTagList, key=operator.itemgetter(2))[2]
             minActivity = min(authTagList, key=operator.itemgetter(2))[2]
             clrNorm = mpl.colors.LogNorm(vmin=minActivity, vmax=maxActivity)
@@ -527,7 +542,7 @@ class SVNPlot(SVNPlotBase):
             
             #change the font size between "-2" to "+8" relative to current font size
             tagHtmlStr = ' '.join([('<font size="%+d" color="%s">%s</font>\n'%
-                                    (getTagFontSize(freq, maxFreq), getActivityClr(actIdx, clrNorm, cmap), auth))
+                                    (getTagFontSize(freq, minFreqLog, maxFreqLog), getActivityClr(actIdx, clrNorm, cmap), auth))
                                        for auth, freq, actIdx in authTagList])
         return(tagHtmlStr)
     
