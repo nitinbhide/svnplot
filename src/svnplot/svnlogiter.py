@@ -271,12 +271,19 @@ class SVNLogClient:
         logging.debug("path %s change type %s revno %d" % (changepath, changetype, revno))
         if( changetype == 'D'):            
             revno = revno-1
-        entry = self.getInfo(changepath, revno)
-        filename, info_dict = entry[0]
-
         isDir = False            
-        if( info_dict.kind == pysvn.node_kind.dir):
-            isDir = True
+        
+        try:
+            entry = self.getInfo(changepath, revno)
+            filename, info_dict = entry[0]
+            if( info_dict.kind == pysvn.node_kind.dir):
+                isDir = True        
+        except ClientError, expinst:
+            #it is possible that changedpath is deleted (even if changetype is not 'D') and
+            # doesnot exist in the revno. In this case, we will get a ClientError exception.
+            # this case just return isDir as 'False' and let the processing continue
+            pass
+                                                    
         return(isDir)
         
     def _getLineCount(self, filepath, revno):
