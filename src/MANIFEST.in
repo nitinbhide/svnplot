@@ -1,4 +1,3 @@
 include svnplot/*.py
 include svnplot/README.txt
-
-
+include svnplot/svnplot-long.tmpl
