@@ -24,11 +24,22 @@ Quick Start
 
 2. Now generate the graphs.
 
-    svnplot.py [options] <svnsqlitedbpath> <graphdir> 
+    svnplot.py [options] <svnsqlitedbpath> <output directory> 
 
     <graphdir> is local directory on your machine. All the graphs will placed in this directory. 
 
     Following addition options are useful 
 
-    * -n '<reponame> : This is name of repository (e.g. project name). It will use in generating the graph titles
-    * -s '<searchpath> search path in the repository (e.g. /trunk) 
+    * -n '<reponame>' : This is name of repository (e.g. project name). It will use in generating the graph titles
+    * -s '<searchpath>' :search path in the repository (e.g. /trunk) 
+	* -p 'template file path' :  Default svnplot uses its own standard report format. However, you can change report format using -p option. 
+	* -v : verbose output
+	
+3. Generating Graph with your own report template
+   You can use your own report template for the generated graphs. One example of report template is available in 'svnplot-long.tmpl'. This template directly embed the generated graphs images in the report and doesnot use thumbnails. It is useful to get a printed report.
+   
+   For example, 
+   svnplot.py -v --dpi 70 -p svnplot-long.tmpl -n "MyRepo" <sqlitedb path> <output directory>
+   
+   TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
+ 

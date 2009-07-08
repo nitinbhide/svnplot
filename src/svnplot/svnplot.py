@@ -32,9 +32,11 @@ Graph types to be supported
 To use copy the file in Python 'site-packages' directory Setup is not available
 yet.
 '''
+from __future__ import with_statement
 
 __revision__ = '$Revision:$'
 __date__     = '$Date:$'
+
 
 import matplotlib.pyplot as plt
 import matplotlib.mpl as mpl
@@ -205,12 +207,19 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", 
                      FileTypes="filetypes")
                          
 class SVNPlot(SVNPlotBase):
-    def __init__(self, svnstats, dpi=100, format='png'):
+    def __init__(self, svnstats, dpi=100, format='png',template=None):
         SVNPlotBase.__init__(self, svnstats, dpi,format)
         self.commitGraphHtPerAuthor = 2 #In inches
         self.authorsToDisplay = 10
         self.fileTypesToDisplay = 20
         self.dirdepth = 1
+        self.setTemplate(template)
+        
+    def setTemplate(self, template):
+        self.template = HTMLIndexTemplate
+        if( template != None):
+            with open(template, "r") as f:
+                self.template = f.read()
                 
     def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100):
         self.svnstats.SetSearchPath(svnsearchpath)
@@ -234,7 +243,7 @@ class SVNPlot(SVNPlotBase):
         
         graphParamDict = self._getGraphParamDict( thumbsize)
         
-        htmlidxTmpl = string.Template(HTMLIndexTemplate)        
+        htmlidxTmpl = string.Template(self.template)
         htmlidxname = os.path.join(dirpath, "index.htm")
         htmlfile = file(htmlidxname, "w")
         htmlfile.write(htmlidxTmpl.safe_substitute(graphParamDict))
@@ -611,7 +620,10 @@ def RunMain():
     parser.add_option("-r", "--dpi", dest="dpi", default=100, type="int",
                       help="set the dpi of output png images")
     parser.add_option("-t", "--thumbsize", dest="thumbsize", default=100, type="int",
-                      help="set the width and heigth of thumbnail display (pixels)")
+                      help="set the width and heigth of thumbnail display (pixels)")    
+    parser.add_option("-p", "--template", dest="template", default=None,
+                      action="store", type="string", help="template filename (optional)")
+    
     (options, args) = parser.parse_args()
     
     if( len(args) < 2):
@@ -630,9 +642,13 @@ def RunMain():
             print "Repository Name : %s" % options.reponame
             print "Search path inside repository : %s" % options.searchpath
             print "Graph thumbnail size : %s" % options.thumbsize
+            if( options.template== None):
+                print "using default html template"
+            else:
+                print "using template : %s" % options.template
 
         svnstats = SVNStats(svndbpath)     
-        svnplot = SVNPlot(svnstats, dpi=options.dpi)
+        svnplot = SVNPlot(svnstats, dpi=options.dpi, template=options.template)
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
         svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
