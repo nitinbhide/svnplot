@@ -539,16 +539,18 @@ class SVNPlot(SVNPlotBase):
             minFreq = min(authTagList, key=operator.itemgetter(1))[1]
             minFreqLog = math.log(minFreq)
             maxFreq = max(authTagList, key=operator.itemgetter(1))[1]
+            #if there is only one author or minFreq and maxFreq is same, then it will give wrong
+            #results later. So make sure there is some difference between min and max freq.
+            maxFreq = max(minFreq*1.2, maxFreq)
             maxFreqLog = math.log(maxFreq)
-            
-            maxActivity = max(authTagList, key=operator.itemgetter(2))[2]
+                
             minActivity = min(authTagList, key=operator.itemgetter(2))[2]
+            maxActivity = max(authTagList, key=operator.itemgetter(2))[2]
+            maxActivity = max(minActivity*1.2, maxActivity)
             clrNorm = mpl.colors.LogNorm(vmin=minActivity, vmax=maxActivity)
             cmap = mpl.cm.jet
-
             #Now sort the authers by author names
             authTagList = sorted(authTagList, key=operator.itemgetter(0))
-            
             #change the font size between "-2" to "+8" relative to current font size
             tagHtmlStr = ' '.join([('<font size="%+d" color="%s">%s</font>\n'%
                                     (getTagFontSize(freq, minFreqLog, maxFreqLog), getActivityClr(actIdx, clrNorm, cmap), auth))
