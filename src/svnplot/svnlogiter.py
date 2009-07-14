@@ -11,9 +11,6 @@ This is just a convinience interface over the pysvn module.
 
 It is intended to be used in  python script to convert the Subversion log into
 an sqlite database.
-
-To use copy the file in Python 'site-packages' directory Setup is not available
-yet.
 '''
 
 import pysvn
@@ -316,30 +313,30 @@ class SVNLogClient:
             # self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
             firstrev = pysvn.Revision( pysvn.opt_revision_kind.number, 1)
             #remove the trailing '/' if any
-            rooturl = self.svnrepourl.rstrip('/')
-            rooturl_list = [part for part in urlparse.urlsplit(rooturl)]
+            possibleroot = self.svnrepourl.rstrip('/')
 
-            bFoundRoot = False            
-            while(bFoundRoot==False):
-                try:
-                    rooturl = urlparse.urlunsplit(rooturl_list)
-                    logging.debug("trying rooturl %s" % rooturl)
-                    revlog = self.svnclient.log(rooturl,
-                         revision_start=firstrev, revision_end=firstrev, discover_changed_paths=False)
-                    self.svnrooturl = rooturl
-                    bFoundRoot = True
-                except:
-                    pass
-                #path is 2nd item in the list. Check the documentation of urlparse.urlsplit.
-                if( rooturl_list[2] == ''):
-                    break
-                (rooturlpath, sep, ignorepart)= rooturl_list[2].rpartition('/')
-                rooturl_list[2] = rooturlpath
-                
-            if( bFoundRoot == False):
-                raise RuntimeError , "Repository Root not found"
-
+            #get the last log message for the given path.            
+            revlog = self.svnclient.log(possibleroot, limit=1,discover_changed_paths=True)
+            
+            #Now changed path and subtract the common portion of changed path and possibleroot,
+            #Remain ing 'possibleroot' is the actual subversion repository root path                
+            if( len(revlog) > 0):
+                changepathlist = revlog[0].changed_paths
+                assert(len(changepathlist) > 0)
+                changedpath = changepathlist[0]['path']
+                #add the trailing '/' so that while loop works correctly in  all cases.
+                possibleroot = possibleroot + '/'
+                #remove the
+                while(self.svnrooturl==None and len(changedpath) > 0):
+                    if(possibleroot.endswith(changedpath)==True):
+                         self.svnrooturl = possibleroot[0:-len(changedpath)]
+                    changedpath = changedpath[0:-1] #remove the last character and try again                                    
             logging.debug("found rooturl %s" % self.svnrooturl)
+            
+        #if the svnrooturl is None at this point, then raise an exception
+        if( self.svnrooturl == None):
+            raise RuntimeError , "Repository Root not found"
+            
         return(self.svnrooturl)
     
     def getUrl(self, path):
