@@ -152,7 +152,7 @@ class SVNLogClient:
         
         startrevno = 0
         endrevno = 0
-        if( startrev != None and len(startrev[0]) > 0):
+        if( startrev != None and len(startrev) > 0):
             startrevno = startrev[0].revision.number
             endrevno   = headrev.revision.number
             
