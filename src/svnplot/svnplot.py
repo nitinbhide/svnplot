@@ -245,8 +245,9 @@ class SVNPlot(SVNPlotBase):
         
         htmlidxTmpl = string.Template(self.template)
         htmlidxname = os.path.join(dirpath, "index.htm")
+        outstr = htmlidxTmpl.safe_substitute(graphParamDict)
         htmlfile = file(htmlidxname, "w")
-        htmlfile.write(htmlidxTmpl.safe_substitute(graphParamDict))
+        htmlfile.write(outstr.encode('utf-8'))
         htmlfile.close()
                                
     def ActivityByWeekday(self, filename):
