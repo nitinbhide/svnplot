@@ -105,8 +105,15 @@ class SVNLogClient:
     
     def _updateTempPath(self):
         #Get temp directory
-        tempdir = tempfile.gettempdir()
-        self.tmppath = os.path.join(tempdir, "svnplot")
+        self.tmppath = tempfile.gettempdir()
+        #Bugfix for line count update problems.
+        #pysvn Client.diff() call documentation says
+        #diff uses tmp_path to form the filename when creating any temporary files needed. The names are formed using tmp_path + unique_string + ".tmp".
+        #For example tmp_path=/tmp/diff_prefix will create files like /tmp/diff_prefix.tmp and /tmp/diff_prefix1.tmp.
+        #Hence i assumed that passing the temppath as '/tmp/svnplot' will create temporary files like '/tmp/svnplot1.tmp' etc.
+        #However 'diff' function tries to create temporary files as '/tmp/svnplot/tempfile.tmp'. Since '/tmp/svnplot' folder doesnot exist
+        #temporary file cannot be created and the 'diff' call fails. Hence I am changing it just 'tmpdir' path. -- Nitin (20 July 2009)
+        #self.tmppath = os.path.join(self.tmppath, "svnplot")
         
     def getHeadRevNo(self):
         revno = 0
@@ -531,7 +538,7 @@ class SVNRevLog:
         try:
             revdiff_log = self.logclient.getRevDiff(revno)
             diffcountdict = getDiffLineCountDict(revdiff_log)
-        except:
-            pass
+        except Exception, expinst:            
+            logging.error("Error %s" % expinst)
         return(diffcountdict)
                  
