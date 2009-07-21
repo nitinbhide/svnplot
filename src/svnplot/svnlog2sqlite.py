@@ -176,7 +176,7 @@ def RunMain():
     parser.add_option("-l", "--linecount", action="store_true", dest="updlinecount", default=False,
                       help="update changed line count (True/False). Default is False")
     parser.add_option("-g", "--log", action="store_true", dest="enablelogging", default=False,
-                      help="Enable logging during the execution(True/False). Default is False")
+                      help="Enable logging during the execution(True/False). Name of generate logfile is svnlog2sqlite.log.")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="Enable verbose output. Default is False")
     (options, args) = parser.parse_args()
