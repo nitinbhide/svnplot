@@ -18,16 +18,17 @@ yet.
 import svnlogiter
 import datetime
 import sqlite3
-import sys
+import sys,os
 import logging
 import traceback
 from optparse import OptionParser
 
 class SVNLog2Sqlite:
-    def __init__(self, svnrepopath, sqlitedbpath):
+    def __init__(self, svnrepopath, sqlitedbpath,verbose=False):
         self.svnclient = svnlogiter.SVNLogClient(svnrepopath)
         self.dbpath =sqlitedbpath
         self.dbcon =None
+        self.verbose = verbose
         
     def convert(self, bUpdLineCount=True, maxtrycount=3):
         #First check if this a full conversion or a partial conversion
@@ -36,8 +37,10 @@ class SVNLog2Sqlite:
         for trycount in range(0, maxtrycount):
             try:
                 laststoredrev = self.getLastStoredRev()
-                headrev = self.svnclient.getHeadRevNo()
+                rootUrl = self.svnclient.getRootUrl()
+                self.printVerbose("Root url found : %s" % rootUrl)
                 (startrevno, endrevno) = self.svnclient.findStartEndRev()
+                self.printVerbose("Start-End Rev no : %d-%d" % (startrevno, endrevno))
                 startrevno = max(startrevno,laststoredrev+1) 
                 self.ConvertRevs(startrevno, endrevno, bUpdLineCount, maxtrycount)
             except Exception, expinst:
@@ -79,7 +82,7 @@ class SVNLog2Sqlite:
                 lc_updated = 'Y'
             lastrevno = 0
             for revlog in svnloglist:
-                logging.debug("converting revision %d" % revlog.revno)
+                self.printVerbose("converting revision %d" % revlog.revno)                
 ##                logging.debug("Revision author:%s" % revlog.author)
 ##                logging.debug("Revision date:%s" % revlog.date)
 ##                logging.debug("Revision msg:%s" % revlog.message)
@@ -95,7 +98,8 @@ class SVNLog2Sqlite:
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                     lastrevno = revlog.revno
                     #commit after every change
-            print "Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno)                        
+                
+            print "Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno)
             cur.close()
 
     def UpdateLineCountData(self):
@@ -123,7 +127,8 @@ class SVNLog2Sqlite:
         for revno, changedpath, changetype in cur:
             linesadded =0
             linesdeleted = 0
-            print "getting diff count for %d:%s" % (revno, changedpath)
+            self.printVerbose("getting diff count for %d:%s" % (revno, changedpath))
+            
             linesadded, linesdeleted = self.svnclient.getDiffLineCountForPath(revno, changedpath, changetype)
             sqlquery = "Update SVNLogDetail Set linesadded=%d, linesdeleted=%d, lc_updated='Y' \
                     where revno=%d and changedpath='%s'" %(linesadded,linesdeleted, revno,changedpath)
@@ -149,7 +154,20 @@ class SVNLog2Sqlite:
         #Use the following sql to alter the old tables
         #ALTER TABLE SVNLogDetail ADD COLUMN lc_updated char
         #update SVNLogDetail set lc_updated ='Y' ## Use 'Y' or 'N' as appropriate.
-
+        
+    def printVerbose(self, msg):
+        logging.debug(msg)
+        if( self.verbose==True):
+            print msg            
+                    
+def getLogfileName(sqlitedbpath):
+    '''
+    create log file in using the directory path from the sqlitedbpath
+    '''
+    dir, file = os.path.split(sqlitedbpath)
+    logfile = os.path.join(dir, 'svnlog2sqlite.log')
+    return(logfile)
+    
 def RunMain():
     usage = "usage: %prog [options] <svnrepo root url> <sqlitedbpath>"
     parser = OptionParser(usage)
@@ -157,6 +175,10 @@ def RunMain():
 
     parser.add_option("-l", "--linecount", action="store_true", dest="updlinecount", default=False,
                       help="update changed line count (True/False). Default is False")
+    parser.add_option("-g", "--log", action="store_true", dest="enablelogging", default=False,
+                      help="Enable logging during the execution(True/False). Default is False")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                      help="Enable verbose output. Default is False")
     (options, args) = parser.parse_args()
     
     if( len(args) < 2):
@@ -165,13 +187,22 @@ def RunMain():
         svnrepopath = args[0]
         sqlitedbpath = args[1]
 
+
         try:
             print "Updating the subversion log"
             print "Repository : %s" % svnrepopath
             print "Log database filepath : %s" % sqlitedbpath
             print "Update Changed Line Count : %s" % options.updlinecount
             
-            conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath)
+            if(options.enablelogging==True):
+                logfile = getLogfileName(sqlitedbpath)
+                logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(levelname)s %(message)s',
+                        filename=logfile,
+                        filemode='w')
+                print "Logging to file %s" % logfile
+            
+            conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose)
             conv.convert(options.updlinecount)
         except:
             del conv
