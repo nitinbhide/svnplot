@@ -251,10 +251,27 @@ class SVNStats:
         '''
         returns two lists (dates and total file count on those dates)
         '''
-        self.cur.execute('select date(SVNLog.commitdate,"localtime") as "commitdate [date]", sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
-                         from SVNLog, SVNLogDetail \
-                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
-                         group by "commitdate [date]" order by commitdate ASC', (self.sqlsearchpath,))
+##      This sqlquery gives completely wrong results of File Count stats as SVNLogDetail table contains
+##        multiple rows with the same 'revno'. Hence where clause matches to multiple rows and final file
+##        count returned is completely wrong. :-( I am still learning sql. -- Nitin July 23, 2009
+##        self.cur.execute('select date(SVNLog.commitdate,"localtime") as "commitdate [date]", sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
+##                         from SVNLog, SVNLogDetail \
+##                         where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
+##                         group by "commitdate [date]" order by commitdate ASC', (self.sqlsearchpath,))
+
+        #create a temporary view with file counts for given change type for a revision
+        self.cur.execute('DROP TABLE IF EXISTS filestats')
+        self.cur.execute('CREATE TEMP TABLE filestats AS \
+                select SVNLogDetail.revno as revno, count(*) as addcount, 0 as delcount from SVNLogDetail where changetype= "A" and changedpath like "%s" group by revno\
+                UNION \
+                select SVNLogDetail.revno as revno, 0 as addcount, count(*) as delcount from SVNLogDetail where changetype= "D" and changedpath like "%s" group by revno'
+                         % (self.sqlsearchpath,self.sqlsearchpath))
+        self.cur.execute('CREATE INDEX filestatsidx ON filestats(revno)')
+        self.dbcon.commit()
+        self.cur.execute('select date(SVNLog.commitdate,"localtime") as "commitdate [date]", \
+                    total(filestats.addcount), total(filestats.delcount) \
+                    from SVNLog, filestats where SVNLog.revno = filestats.revno \
+                    group by "commitdate [date]" order by commitdate')
         dates = []
         fc = []
         totalfiles = 0
