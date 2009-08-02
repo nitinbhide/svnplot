@@ -1,3 +1,4 @@
+============
 Introduction
 ============
 SVNPlot generates graphs similar to StatSVN. The difference is in how the graphs are generated. SVNPlot generates these graphs in two steps. First it converts the Subversion logs into a 'sqlite3' database. Then it uses sql queries to extract the data from the database and then uses excellent Matplotlib plotting library to plot the graphs.
@@ -11,9 +12,10 @@ You will need following additional libraries for using SVNPlot
    2. http://pysvn.tigris.org/- Python SVN bindings.
    3. http://numpy.scipy.org/- Matplotlib uses NumPy? and SVNPlot uses Matplotlib for plotting.
    4. http://matplotlib.sourforge.net/ - You need at least version 0.98.5.2 
-==========================================================================
-Quick Start
 
+============
+Quick Start
+============
 1. First generate the sqlite database for your project.
 
     svnlog2sqlite.py <svnrepo url> <sqlitedbpath> 
@@ -50,3 +52,7 @@ Quick Start
    
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
  
+============
+License
+============
+SVNPlot is released under New BSD License http://www.opensource.org/licenses/bsd-license.php
