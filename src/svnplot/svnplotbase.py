@@ -64,7 +64,7 @@ class SVNPlotBase:
            ncol = len(labels)
         fig.legend(lnhandles, labels, loc=loc, ncol=ncol, prop=legendfont)
                     
-    def _drawBarGraph(self, data, labels, barwid):
+    def _drawBarGraph(self, data, labels, barwid, **kwargs):
         #create dummy locations based on the number of items in data values
         xlocations = [x*2*barwid+barwid for x in range(len(data))]
         xtickloc = [x+barwid/2.0 for x in xlocations]
@@ -72,7 +72,7 @@ class SVNPlotBase:
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.bar(xlocations, data, width=barwid)
+        ax.bar(xlocations, data, width=barwid, **kwargs)
         ax.set_xticks(xtickloc)
         ax.set_xticklabels(labels)
         
@@ -132,6 +132,12 @@ class SVNPlotBase:
         ax.legend(loc='lower center',ncol=3)        
         ax.set_ybound(ymin, ymax)
         
+        return(ax)
+
+    def _drawHistogram(self, values, bins=10, range=None):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.hist(values, bins=bins,histtype='step',range=range)
         return(ax)
     
     def _drawScatterPlot(self,dates, values, plotidx, plotcount, title, refaxs):
