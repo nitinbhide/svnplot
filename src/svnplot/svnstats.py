@@ -65,11 +65,62 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
             hrsSinceLastTime = 0.0
         tempFactor = -(coolingRate*hrsSinceLastTime)
         temperature = lastTemp*math.exp(tempFactor)        
-    except Exception, expinst:
+    except Exception, expinst:  
         logging.debug("Error %s" % expinst)
         temperature = 0
         
     return(temperature)
+
+class DeltaAvg:
+    '''
+    DeltaAvg class implements a 'delta' average aggregate function. It calculates the
+    average value of difference between consecutive rows.
+    '''
+    def __init__(self):
+        self.delta_sum = 0
+        self.lastval = None
+        self.count = 0
+        
+    def step(self, value):
+        if( self.lastval != None):                
+            self.delta_sum = self.delta_sum+ (value - self.lastval)
+            self.count = self.count+1
+        self.lastval = value
+                
+    def finalize(self):
+        avg = 0.0
+        if( self.count > 0):
+            avg = (float(self.delta_sum)/self.count)
+        return(avg)
+
+class DeltaStdDev:
+    '''
+    tries to calculate standard deviation in single pass.
+    '''
+    def __init__(self):
+        self.delta_sum = 0.0
+        self.delta_sq = 0.0
+        self.lastval = None
+        self.count = 0
+
+    def step(self, value):
+        if( self.lastval != None):            
+            delta = (value - self.lastval)
+            self.delta_sum = self.delta_sum + delta
+            self.delta_sq = self.delta_sq + (delta*delta)
+            self.count = self.count+1
+        self.lastval = value                
+        
+    def finalize(self):
+        stddev = 0.0
+        if( self.count > 0):
+            avg = (float(self.delta_sum)/self.count)
+            stddev = self.delta_sq/self.count- (avg*avg)
+            stddev = math.sqrt(stddev)                        
+        return(stddev)
+
+def timedelta2days(tmdelta):
+    return(tmdelta.days + tmdelta.seconds/(3600.0*24.0))
 
 class SVNStats:
     def __init__(self, svndbpath):
@@ -98,6 +149,9 @@ class SVNStats:
         self.dbcon.create_function("dirname", 3, dirname)
         self.dbcon.create_function("filetype", 1, filetype)
         self.dbcon.create_function("getTemperatureAtTime", 4, getTemperatureAtTime)
+        self.dbcon.create_aggregate("deltaavg", 1, DeltaAvg)
+        self.dbcon.create_aggregate("deltastddev", 1, DeltaStdDev)
+                                    
         self.cur = self.dbcon.cursor()
         
     def closedb(self):
@@ -828,4 +882,44 @@ class SVNStats:
         
         return(hotfileslist)
         
+    def getAuthorsCommitTrendMeanStddev(self):
+        '''
+        Plot of Mean and standard deviation for time between two consecutive commits by authors.
+        '''
+        authList = self.getAuthorList(20)
+        avg_list     = []
+        stddev_list  = []
+        finalAuthList = []
+        
+        for auth in authList:
+            self.cur.execute('select deltaavg(julianday(SVNLog.commitdate)), \
+                    deltastddev(julianday(SVNLog.commitdate)) from SVNLog where SVNLog.author= ? order by SVNLog.commitdate'
+                             ,(auth,))
+            avg, stddev = self.cur.fetchone()
+            if( avg != None and stddev != None):
+                finalAuthList.append(auth)
+                avg_list.append(avg)
+                stddev_list.append(stddev)
+                
+        return(finalAuthList, avg_list, stddev_list)
+
+    def getAuthorsCommitTrendHistorgram(self):
+        '''
+        Histogram of time difference between two consecutive commits by same author.
+        '''
+        authList = self.getAuthorList(20)
+        deltaList = []
+        
+        for auth in authList:
+            self.cur.execute('select SVNLog.commitdate from SVNLog where SVNLog.author= ? order by SVNLog.commitdate'
+                             ,(auth,))
+            prevval = None
+            for cmdate, in self.cur:
+                if( prevval != None):
+                    deltaval = cmdate-prevval
+                    deltaList.append(timedelta2days(deltaval))
+                prevval = cmdate
+            
+        return(deltaList)
+
         

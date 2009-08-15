@@ -204,7 +204,7 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", 
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
-                     FileTypes="filetypes")
+                     FileTypes="filetypes", AuthorsCommitTrend="authorscommit")
                          
 class SVNPlot(SVNPlotBase):
     def __init__(self, svnstats, dpi=100, format='png',template=None):
@@ -229,6 +229,7 @@ class SVNPlot(SVNPlotBase):
         self.AuthorActivityGraph(self._getGraphFileName(dirpath, "AuthActivity"))
         self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"))
         self.CommitActivityIdxGraph(self._getGraphFileName(dirpath, "CommitActivityIdx"))
+        self.AuthorsCommitTrend(self._getGraphFileName(dirpath, "AuthorsCommitTrend"))
         #LoC and FileCount Graphs
         self.LocGraph(self._getGraphFileName(dirpath, "LoC"))
         self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"))
@@ -557,7 +558,42 @@ class SVNPlot(SVNPlotBase):
                                     (getTagFontSize(freq, minFreqLog, maxFreqLog), getActivityClr(actIdx, clrNorm, cmap), auth))
                                        for auth, freq, actIdx in authTagList])
         return(tagHtmlStr)
-    
+
+##    def AuthorsCommitTrend(self, filename):
+##        self._printProgress("Calculating Author commits trend bar graph")
+##        
+##        labels, data, error = self.svnstats.getAuthorsCommitTrendMeanStddev()
+##        
+##        ax = self._drawBarGraph(data, labels,0.5,yerr=error)
+##        ax.set_ylabel('Avg. Time betn consecutive commits')
+##        ax.set_xlabel('Authors')
+##        ax.set_title('Authors Commit Trend')
+##        for label in ax.get_xticklabels():
+##            label.set_rotation(20)
+##            label.set_size('x-small')
+##            label.set_ha('right')
+##            
+##        fig = ax.figure
+##        fig.savefig(filename, dpi=self.dpi, format=self.format)                
+
+    def AuthorsCommitTrend(self, filename):
+        self._printProgress("Calculating Author commits trend histogram graph")
+        
+        data = self.svnstats.getAuthorsCommitTrendHistorgram()
+        #filter the data values. So that 'very high' number of days between two consecutives commits are ignored.
+        range = (min(data), 5)
+        ax = self._drawHistogram(data,50,range)
+        ax.set_xlabel('Time betn consecutive commits (days)')
+        ax.set_ylabel('Number of commits')
+        ax.set_title('Authors Commit Trend')
+        for label in ax.get_xticklabels():
+            label.set_rotation(20)
+            label.set_size('x-small')
+            label.set_ha('right')
+            
+        fig = ax.figure
+        fig.savefig(filename, dpi=self.dpi, format=self.format)                
+
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
         ax = self._drawDateLineGraph(dates, loc)
