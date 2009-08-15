@@ -104,9 +104,10 @@ class SVNPlotBase:
         assert(len(dataList) > 0)
         numDataItems = len(dataList[0])
         #create dummy locations based on the number of items in data values
-        ymin = 0.0        
+        ymin = 0.0
         ylocations = [y*barwid*2+barwid/2 for y in range(numDataItems)]
-        ymax = ylocations[-1]+2.0*barwid
+        #leave some extra position at the top for placing the legend 
+        ymax = ylocations[-1]+4.0*barwid
         ytickloc = [y+barwid/2.0 for y in ylocations]
         ytickloc.append(ytickloc[-1]+barwid)
         
@@ -129,7 +130,7 @@ class SVNPlotBase:
             ax.barh(ylocations, dataList[i], left=leftlist, height=barwid,
                     color=self.clrlist[clridx], label=legendlist[i])
             
-        ax.legend(loc='lower center',ncol=3)        
+        ax.legend(loc='upper center',ncol=3,)     
         ax.set_ybound(ymin, ymax)
         
         return(ax)
