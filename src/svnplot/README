@@ -53,6 +53,32 @@ Quick Start
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
  
 ============
+Options for collecting SVN logs from different dates
+By: Oscar Castaneda
+============
+
+SVNPlot collects SVN logs through svnlog2sqlite.py. This script in turn uses another Python script, svnlogiter.py. Changes can be made to svnlogiter.py to allow collection of SVN logs from different time periods specified through the 'date' of a Revision. This includes specifiying a different date and time for the start and end Revisions of an SVN log being collected. These changes allow specification of time frames for SVN log collection, which can be useful, for instance, when analyzing the evolution of an open source codebase.
+
+For the start Revision, or headrev in svnlogiter.py, the following changes were made to svnlogiter.py:
+
+	headrev = pysvn.Revision( pysvn.opt_revision_kind.head)
+
+to:
+
+	headrev = pysvn.Revision( pysvn.opt_revision_kind.date, calendar.timegm((self.svnrepoyear, self.svnrepomonth, self.svnrepoday, 22, 
+12, 12, 2, 251, 0)) )
+
+This allows specifying the svnrepoyear, svnrepomonth and svnrepoday, followed by a fix time, to a desired value (e.g. 2008-01-01 @ 22.12). The result will be that the Head Revision collected will be that of the date specified. Another way to refer to this is the 'end' Revision, or latter time period of collection. 
+
+For the start Revision, or the earlier period of collection, the following changes were made to svnlogiter.py:
+
+	starttime = calendar.timegm((self.svnrepoyear, self.svnrepomonth, 1, 00, 00, 00, 0,0,0))
+ 
+This will define a starttime for SVN log collection to a date determined by svnrepoyear and svnrepomonth, always on the first day of the month. Further changes can be made along these lines as deemed necessary.
+
+Status in SVNPlot: Currently the changes mentioned above are only implemented by manually changing the code in svnlogiter.py. The plan is to include parameters for these options to make SVNPlot, and more specifically svnlog2sqlite.py, a more flexible tool for collection of SVN logs.
+
+============
 License
 ============
 SVNPlot is released under New BSD License http://www.opensource.org/licenses/bsd-license.php

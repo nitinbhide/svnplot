@@ -11,10 +11,13 @@ This is just a convinience interface over the pysvn module.
 
 It is intended to be used in  python script to convert the Subversion log into
 an sqlite database.
+
+To use copy the file in Python 'site-packages' directory Setup is not available
+yet.
 '''
 
 import pysvn
-import datetime, time
+import calendar, datetime, time
 import os, re, string
 import StringIO
 import urllib, urlparse
@@ -67,8 +70,12 @@ def getDiffLineCountDict(diff_log):
     return(diffCountDict)
     
 class SVNLogClient:
-    def __init__(self, svnrepourl):
+    def __init__(self, svnrepourl, svnrepoyear, svnrepomonth, svnrepoday):
         self.svnrepourl = svnrepourl
+	# Added for date support
+	self.svnrepoyear = svnrepoyear
+	self.svnrepomonth = svnrepomonth
+	self.svnrepoday = svnrepoday
         self.svnrooturl = None
         self.svnclient = pysvn.Client()
         self.tmppath = None
@@ -105,15 +112,8 @@ class SVNLogClient:
     
     def _updateTempPath(self):
         #Get temp directory
-        self.tmppath = tempfile.gettempdir()
-        #Bugfix for line count update problems.
-        #pysvn Client.diff() call documentation says
-        #diff uses tmp_path to form the filename when creating any temporary files needed. The names are formed using tmp_path + unique_string + ".tmp".
-        #For example tmp_path=/tmp/diff_prefix will create files like /tmp/diff_prefix.tmp and /tmp/diff_prefix1.tmp.
-        #Hence i assumed that passing the temppath as '/tmp/svnplot' will create temporary files like '/tmp/svnplot1.tmp' etc.
-        #However 'diff' function tries to create temporary files as '/tmp/svnplot/tempfile.tmp'. Since '/tmp/svnplot' folder doesnot exist
-        #temporary file cannot be created and the 'diff' call fails. Hence I am changing it just 'tmpdir' path. -- Nitin (20 July 2009)
-        #self.tmppath = os.path.join(self.tmppath, "svnplot")
+        tempdir = tempfile.gettempdir()
+        self.tmppath = os.path.join(tempdir, "svnplot")
         
     def getHeadRevNo(self):
         revno = 0
@@ -130,8 +130,17 @@ class SVNLogClient:
     def _getHeadRev(self):
         rooturl = self.getRootUrl()
         headrevlog = None
-        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )                    
+	
+	# OC: Added capability to specify revision date for svn log collection
+
+	# The line below should be (un-)commented to modify behavior while changes are integrated.
+	#headrev = pysvn.Revision( pysvn.opt_revision_kind.head)
+
+	# The line below allows revision date specification.
+	# This date is the date until which the desired log will be collected.
         
+	headrev = pysvn.Revision( pysvn.opt_revision_kind.date, calendar.timegm((self.svnrepoyear, self.svnrepomonth, self.svnrepoday, 22, 12, 12, 2, 251, 0)) )
+
         logging.debug("Trying to get head revision rooturl:%s" % rooturl)
         revlog = self.svnclient.log( rooturl,
              revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
@@ -142,7 +151,7 @@ class SVNLogClient:
             headrevlog = revlog[0]            
             
         return(headrevlog)
-    
+
     def findStartEndRev(self):
         #Find svn-root for the url
         url = self.getUrl('')
@@ -152,14 +161,27 @@ class SVNLogClient:
         #actual start end revision numbers for given URL will be between these two numbers
         #Since svn log doesnot have a direct way of determining the start and end revisions
         #for a given url, I am using headrevision and first revision time to get those
-        starttime = firstrev.date
+        
+	# OC: Commented for modification. The next lines can be used to change behavior while changes are integrated.
+	
+	# First revision date of the SVN repository
+	#starttime = firstrev.date
+	
+	# Revision date as specified through command-line arguments to 'svnlog2sqlite.py'	
+	#starttime = calendar.timegm((self.svnrepoyear, self.svnrepomonth, 1, 00, 00, 00, 0,0,0))
+	
+	# Cummulative collect as specified here below
+	starttime = calendar.timegm((2008, 1, 1, 00, 00, 00, 0,0,0))
+
+	print "This is the starttime %s" %starttime
+	
         revstart = pysvn.Revision(pysvn.opt_revision_kind.date, starttime)
         startrev = self.svnclient.log( url,
                      revision_start=revstart, revision_end=headrev.revision, limit = 1, discover_changed_paths=False)
         
         startrevno = 0
         endrevno = 0
-        if( startrev != None and len(startrev) > 0):
+        if( startrev != None and len(startrev[0]) > 0):
             startrevno = startrev[0].revision.number
             endrevno   = headrev.revision.number
             
@@ -275,19 +297,12 @@ class SVNLogClient:
         logging.debug("path %s change type %s revno %d" % (changepath, changetype, revno))
         if( changetype == 'D'):            
             revno = revno-1
+        entry = self.getInfo(changepath, revno)
+        filename, info_dict = entry[0]
+
         isDir = False            
-        
-        try:
-            entry = self.getInfo(changepath, revno)
-            filename, info_dict = entry[0]
-            if( info_dict.kind == pysvn.node_kind.dir):
-                isDir = True        
-        except pysvn.ClientError, expinst:
-            #it is possible that changedpath is deleted (even if changetype is not 'D') and
-            # doesnot exist in the revno. In this case, we will get a ClientError exception.
-            # this case just return isDir as 'False' and let the processing continue
-            pass
-                                                    
+        if( info_dict.kind == pysvn.node_kind.dir):
+            isDir = True
         return(isDir)
         
     def _getLineCount(self, filepath, revno):
@@ -320,30 +335,30 @@ class SVNLogClient:
             # self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
             firstrev = pysvn.Revision( pysvn.opt_revision_kind.number, 1)
             #remove the trailing '/' if any
-            possibleroot = self.svnrepourl.rstrip('/')
+            rooturl = self.svnrepourl.rstrip('/')
+            rooturl_list = [part for part in urlparse.urlsplit(rooturl)]
 
-            #get the last log message for the given path.            
-            revlog = self.svnclient.log(possibleroot, limit=1,discover_changed_paths=True)
-            
-            #Now changed path and subtract the common portion of changed path and possibleroot,
-            #Remain ing 'possibleroot' is the actual subversion repository root path                
-            if( len(revlog) > 0):
-                changepathlist = revlog[0].changed_paths
-                assert(len(changepathlist) > 0)
-                changedpath = changepathlist[0]['path']
-                #add the trailing '/' so that while loop works correctly in  all cases.
-                possibleroot = possibleroot + '/'
-                #remove the
-                while(self.svnrooturl==None and len(changedpath) > 0):
-                    if(possibleroot.endswith(changedpath)==True):
-                         self.svnrooturl = possibleroot[0:-len(changedpath)]
-                    changedpath = changedpath[0:-1] #remove the last character and try again                                    
+            bFoundRoot = False            
+            while(bFoundRoot==False):
+                try:
+                    rooturl = urlparse.urlunsplit(rooturl_list)
+                    logging.debug("trying rooturl %s" % rooturl)
+                    revlog = self.svnclient.log(rooturl,
+                         revision_start=firstrev, revision_end=firstrev, discover_changed_paths=False)
+                    self.svnrooturl = rooturl
+                    bFoundRoot = True
+                except:
+                    pass
+                #path is 2nd item in the list. Check the documentation of urlparse.urlsplit.
+                if( rooturl_list[2] == ''):
+                    break
+                (rooturlpath, sep, ignorepart)= rooturl_list[2].rpartition('/')
+                rooturl_list[2] = rooturlpath
+                
+            if( bFoundRoot == False):
+                raise RuntimeError , "Repository Root not found"
+
             logging.debug("found rooturl %s" % self.svnrooturl)
-            
-        #if the svnrooturl is None at this point, then raise an exception
-        if( self.svnrooturl == None):
-            raise RuntimeError , "Repository Root not found"
-            
         return(self.svnrooturl)
     
     def getUrl(self, path):
@@ -538,7 +553,7 @@ class SVNRevLog:
         try:
             revdiff_log = self.logclient.getRevDiff(revno)
             diffcountdict = getDiffLineCountDict(revdiff_log)
-        except Exception, expinst:            
-            logging.error("Error %s" % expinst)
+        except:
+            pass
         return(diffcountdict)
                  
