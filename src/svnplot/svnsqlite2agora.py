@@ -1,5 +1,5 @@
 '''
-svnlog2sqlite.py
+svnsqlite2agora.py
 Copyright (C) 2009 Oscar Castaneda (oscar.castaneda@gmail.com)
 
 This module is part of SVNPlot (http://code.google.com/p/svnplot) and is released under
