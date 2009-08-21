@@ -1,0 +1,78 @@
+============
+Introduction
+============
+
+The Python scripts svnsqlite2ora.py and svnsqlite2agora.py convert SVN logs stored in sqlite, and collected through svnlog2sqlite.py, into formats usable by CMU's *ORA tool and Apache Agora. Both scripts take parameters as specified below:
+
+	Usage: svnsqlite2ora.py <sqlitedbpath> <outputfile>
+
+	Usage: svnsqlite2agora.py <sqlitedbpath> <outputfile>
+
+Once the SVN logs have been converted the output files can be used in CMU's *ORA and Apache Agora.
+
+============
+Quick Start
+============
+1. First generate the sqlite database for your project.
+
+    svnlog2sqlite.py <svnrepo url> <sqlitedbpath> 
+
+    <svnrepo url> can be any repository format supported by Subverson. If you are using the local repositories on windows use the file:///d:/... format. <sqlitedbpath> is sqlite database file path. Its a path on your local machine 
+
+    You can run this step multiple times. The new revisions added in the repository will get added to datatbase 
+    
+	Options : 
+    * -l : Update the changed line count data also. By default line count data is NOT updated.     
+    NOTE : for version 0.5.5 -l option works only if svnrepo_url is 'repository root'. It doesn't work if the URL is inside the repository. This a bug. It will be fixed in the next version. 
+
+    * -v : Verbose output
+    * -g : enable logging of intermediate data and errors. Enable this option if you face any problems like line count not getting generated, no data in the generated sqlite database etc. 
+	
+2. Now create the output files.
+
+    svnsqlite2ora.py <sqlitedbpath> <outputfile> 
+		-or- 
+    svnsqlite2agora.py <sqlitedbpath> <outputfile>
+
+3. Use the output files in CMU's *ORA or Apache Agora.
+
+
+============
+Options for collecting SVN logs from different dates
+By: Oscar Castaneda
+============
+
+SVNPlot collects SVN logs through svnlog2sqlite.py. This script in turn uses another Python script, svnlogiter.py. Changes can be made to svnlogiter.py to allow collection of SVN logs from different time periods specified through the 'date' of a Revision. This includes specifiying a different date and time for the start and end Revisions of an SVN log being collected. These changes allow specification of time frames for SVN log collection, which can be useful, for instance, when analyzing the evolution of an open source codebase.
+
+For the start Revision, or headrev in svnlogiter.py, the following changes were made to svnlogiter.py:
+
+	headrev = pysvn.Revision( pysvn.opt_revision_kind.head)
+
+to:
+
+	headrev = pysvn.Revision( pysvn.opt_revision_kind.date, calendar.timegm((self.svnrepoyear, self.svnrepomonth, self.svnrepoday, 22, 
+12, 12, 2, 251, 0)) )
+
+This allows specifying the svnrepoyear, svnrepomonth and svnrepoday, followed by a fix time, to a desired value (e.g. 2008-01-01 @ 22.12). The result will be that the Head Revision collected will be that of the date specified. Another way to refer to this is the 'end' Revision, or latter time period of collection. 
+
+For the start Revision, or the earlier period of collection, the following changes were made to svnlogiter.py:
+
+	starttime = calendar.timegm((self.svnrepoyear, self.svnrepomonth, 1, 00, 00, 00, 0,0,0))
+ 
+This will define a starttime for SVN log collection to a date determined by svnrepoyear and svnrepomonth, always on the first day of the month. Further changes can be made along these lines as deemed necessary.
+
+Status in SVNPlot: Currently the changes mentioned above are only implemented by manually changing the code in svnlogiter.py. The plan is to include parameters for these options to make SVNPlot, and more specifically svnlog2sqlite.py, a more flexible tool for collection of SVN logs.
+
+============
+Acknowledgements
+============
+
+I thank Google and the Google Open Source Programs Office for the support of this work. I would also like to express my gratitute to Nitin Bhide for his valuable and friendly feedback during my Google Summer of Code (2009) project. Lastly, I would like to thank my MSc thesis supervisors, Prof. Michel van Eeten and Dr. Victor Scholten, for their mentoring and friendship.
+
+Oscar Castaneda
+Delft, 2009
+
+============
+License
+============
+SVNPlot is released under New BSD License http://www.opensource.org/licenses/bsd-license.php
