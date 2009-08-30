@@ -311,33 +311,40 @@ class SVNLogClient:
         
         return(linecount)
 
-    def getRootUrl(self):
+    def getRootUrlSlow(self):
+        assert( self.svnrooturl == None)
+        #remove the trailing '/' if any
+        firstrev = pysvn.Revision( pysvn.opt_revision_kind.number, 1)
+        possibleroot = self.svnrepourl.rstrip('/')
+
+        #get the last log message for the given path.            
+        revlog = self.svnclient.log(possibleroot, limit=1,discover_changed_paths=True)
         
+        #Now changed path and subtract the common portion of changed path and possibleroot,
+        #Remain ing 'possibleroot' is the actual subversion repository root path                
+        if( len(revlog) > 0):
+            changepathlist = revlog[0].changed_paths
+            assert(len(changepathlist) > 0)
+            changedpath = changepathlist[0]['path']
+            #add the trailing '/' so that while loop works correctly in  all cases.
+            possibleroot = possibleroot + '/'
+            #remove the
+            while(self.svnrooturl==None and len(changedpath) > 0):
+                if(possibleroot.endswith(changedpath)==True):
+                     self.svnrooturl = possibleroot[0:-len(changedpath)]
+                changedpath = changedpath[0:-1] #remove the last character and try again                                            
+            
+    def getRootUrl(self):        
         if( self.svnrooturl == None and self.svnclient.is_url(self.svnrepourl)):
             # for some reason 'root_url_from_path' crashes Python interpreter
             # for http:// urls for PySVN 1.6.3 (python 2.5)
             # hence I need to do jump through hoops to get -- Nitin
-            # self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
-            firstrev = pysvn.Revision( pysvn.opt_revision_kind.number, 1)
-            #remove the trailing '/' if any
-            possibleroot = self.svnrepourl.rstrip('/')
-
-            #get the last log message for the given path.            
-            revlog = self.svnclient.log(possibleroot, limit=1,discover_changed_paths=True)
+            self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
             
-            #Now changed path and subtract the common portion of changed path and possibleroot,
-            #Remain ing 'possibleroot' is the actual subversion repository root path                
-            if( len(revlog) > 0):
-                changepathlist = revlog[0].changed_paths
-                assert(len(changepathlist) > 0)
-                changedpath = changepathlist[0]['path']
-                #add the trailing '/' so that while loop works correctly in  all cases.
-                possibleroot = possibleroot + '/'
-                #remove the
-                while(self.svnrooturl==None and len(changedpath) > 0):
-                    if(possibleroot.endswith(changedpath)==True):
-                         self.svnrooturl = possibleroot[0:-len(changedpath)]
-                    changedpath = changedpath[0:-1] #remove the last character and try again                                    
+            #Uncomment this line if you face a crash in PySVN (especially version PySVN 1.62 and below)
+            #However it may not work in all cases.
+            #self.getRootUrlSlow()
+            
             logging.debug("found rooturl %s" % self.svnrooturl)
             
         #if the svnrooturl is None at this point, then raise an exception
