@@ -232,20 +232,23 @@ class SVNLogClient:
         added = 0
         deleted = 0
         #print "getting diff count for %d:%s" % (revno, filepath)
-        if( changetype != 'A' and changetype != 'D'):
-            #file or directory is modified
-            diff_log = self.getRevFileDiff(filepath, revno)
-            diffDict = getDiffLineCountDict(diff_log)
-            #The dictionary may not have the filepath key if only properties are modfiied.
-            if(diffDict.has_key(filepath) == True):
-                added, deleted = diffDict[filepath]
-        elif( self.isDirectory(revno, filepath, changetype) == False):
-            #path is added or deleted. First check if the path is a directory. If path is not a directory
-            # then process further.
+        #First check if the path is a directory. If path is not a directory
+        # then process further.
+        if( self.isDirectory(revno, filepath, changetype) == False):
+            #path is added
             if( changetype == 'A'):
                 added = self.getLineCount(filepath, revno)
+            #path is deleted
             elif( changetype == 'D'):
                 deleted = self.getLineCount(filepath, revno-1)
+            #path is modified
+            else:
+                #file is modified
+                diff_log = self.getRevFileDiff(filepath, revno)
+                diffDict = getDiffLineCountDict(diff_log)
+                #The dictionary may not have the filepath key if only properties are modfiied.
+                if(diffDict.has_key(filepath) == True):
+                    added, deleted = diffDict[filepath]            
                 
         logging.debug("Rev:%d Path:%s Lines added %d Lines Deleted %d" % (revno, filepath, added,deleted))
                       
@@ -328,25 +331,36 @@ class SVNLogClient:
         assert( self.svnrooturl == None)
         #remove the trailing '/' if any
         firstrev = pysvn.Revision( pysvn.opt_revision_kind.number, 1)
-        possibleroot = self.svnrepourl.rstrip('/')
+        possibleroot = self.svnrepourl        
+        if( possibleroot.endswith('/') == False):
+            possibleroot = possibleroot+'/'
 
         #get the last log message for the given path.            
         revlog = self.svnclient.log(possibleroot, limit=1,discover_changed_paths=True)
         
         #Now changed path and subtract the common portion of changed path and possibleroot,
-        #Remain ing 'possibleroot' is the actual subversion repository root path                
+        #Remain ing 'possibleroot' is the actual subversion repository root path
+        #This is really a hack. Needs a better/simpler way to do this.
         if( len(revlog) > 0):
             changepathlist = revlog[0].changed_paths
             assert(len(changepathlist) > 0)
-            changedpath = changepathlist[0]['path']
-            #add the trailing '/' so that while loop works correctly in  all cases.
-            possibleroot = possibleroot + '/'
-            #remove the
-            while(self.svnrooturl==None and len(changedpath) > 0):
-                if(possibleroot.endswith(changedpath)==True):
-                     self.svnrooturl = possibleroot[0:-len(changedpath)]
-                changedpath = changedpath[0:-1] #remove the last character and try again                                            
-            
+            #since single revision can contain changes in multiple paths, we need to iterate
+            #over all paths changed in a revision and compare it with possible root path.
+            maxmatchlen = 0
+            for changedpath in changepathlist:
+                changedpath = changedpath['path'].split('/')                
+                #split the path components and join them one by one and then find the
+                #maximum matched size to get the repository root.
+                for cmplen in range(1, len(changedpath)+1):
+                    cpath = '/'.join(changedpath[0:cmplen])
+                    cpath = cpath+'/'
+                    if(possibleroot.endswith(cpath)==True):
+                         maxmatchlen=max(maxmatchlen, len(cpath))
+                         
+            if( maxmatchlen > 0):
+                #remove last 'maxmatch' characters.
+                self.svnrooturl =possibleroot[0:-maxmatchlen]                
+                
     def getRootUrl(self):        
         if( self.svnrooturl == None and self.svnclient.is_url(self.svnrepourl)):
             # for some reason 'root_url_from_path' crashes Python interpreter
@@ -496,7 +510,7 @@ class SVNRevLog:
         """                        
         diffCountDict = None
         if( bUpdLineCount == True):
-            diffCountDict = self._updateDiffCount()
+            diffCountDict = self.__updateDiffCount()
             
         diffCountList = []
         for change in self.revlog.changed_paths:
@@ -568,14 +582,15 @@ class SVNRevLog:
             return(filesadded+fileschanged+filesdeleted)
         return(None)
     
-    def _updateDiffCount(self):
+    def __updateDiffCount(self):
         diffcountdict = None
         changetypes = set([change['action'] for change in self.revlog.changed_paths])
         if( 'M' in changetypes):
             diffcountdict = dict()
             try:
                 #All the changes are 'modifications' (M type) then directly call the 'getRevDiff'.
-                #getRevDiff fails if there are files added or 'deleted'
+                #getRevDiff fails if there are files added or 'deleted' and repository path is not
+                # the root path. 
                 revno = self.getRevNo()            
                 revdiff_log = self.logclient.getRevDiff(revno)                
                 diffcountdict = getDiffLineCountDict(revdiff_log)
