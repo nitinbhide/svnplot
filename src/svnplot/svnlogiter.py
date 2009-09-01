@@ -324,7 +324,7 @@ class SVNLogClient:
         
         return(linecount)
 
-    def getRootUrlSlow(self):
+    def getRootUrl2(self):
         assert( self.svnrooturl == None)
         #remove the trailing '/' if any
         firstrev = pysvn.Revision( pysvn.opt_revision_kind.number, 1)
@@ -352,11 +352,10 @@ class SVNLogClient:
             # for some reason 'root_url_from_path' crashes Python interpreter
             # for http:// urls for PySVN 1.6.3 (python 2.5)
             # hence I need to do jump through hoops to get -- Nitin
-            self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
+            #self.svnrooturl = self.svnclient.root_url_from_path(self.svnrepourl)
             
-            #Uncomment this line if you face a crash in PySVN (especially version PySVN 1.62 and below)
-            #However it may not work in all cases.
-            #self.getRootUrlSlow()
+            #Comment this line if PySVN - root_url_from_path() function works for you.
+            self.getRootUrl2()
             
             logging.debug("found rooturl %s" % self.svnrooturl)
             
