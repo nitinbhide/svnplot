@@ -95,7 +95,7 @@ class SVNLog2Sqlite:
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                     lastrevno = revlog.revno
                     #commit after every change
-                
+                logging.debug("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
             print "Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno)
             cur.close()
 
