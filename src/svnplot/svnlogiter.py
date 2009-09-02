@@ -208,11 +208,12 @@ class SVNLogClient:
         url = self.getUrl(path)
         diff_log = None
         
-        logging.debug("Trying to get filelevel revision diffs")
+        logging.debug("Getting filelevel revision diffs")
+        logging.debug("revision : %d, url=%s" % (revno, url))
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                     recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                diff_deleted=True)
-            
+        
         return(diff_log)
     
     def getInfo(self, path, revno):
@@ -227,33 +228,7 @@ class SVNLogClient:
         entry_list = self.svnclient.info2( url,revision=rev,recurse=False)
         
         return(entry_list)
-    
-    def getDiffLineCountForPath(self, revno, filepath, changetype):
-        added = 0
-        deleted = 0
-        #print "getting diff count for %d:%s" % (revno, filepath)
-        #First check if the path is a directory. If path is not a directory
-        # then process further.
-        if( self.isDirectory(revno, filepath, changetype) == False):
-            #path is added
-            if( changetype == 'A'):
-                added = self.getLineCount(filepath, revno)
-            #path is deleted
-            elif( changetype == 'D'):
-                deleted = self.getLineCount(filepath, revno-1)
-            #path is modified
-            else:
-                #file is modified
-                diff_log = self.getRevFileDiff(filepath, revno)
-                diffDict = getDiffLineCountDict(diff_log)
-                #The dictionary may not have the filepath key if only properties are modfiied.
-                if(diffDict.has_key(filepath) == True):
-                    added, deleted = diffDict[filepath]            
-                
-        logging.debug("Rev:%d Path:%s Lines added %d Lines Deleted %d" % (revno, filepath, added,deleted))
-                      
-        return(added, deleted)
-
+        
     def isChildPath(self, filepath):
         '''
         Check if the given path is a child path of if given svnrepourl. All filepaths are child paths
@@ -288,7 +263,7 @@ class SVNLogClient:
     def isDirectory(self, revno, changepath, changetype):
         #if the file/dir is deleted in the current revision. Then the status needs to be checked for
         # one revision before that
-        logging.debug("path %s change type %s revno %d" % (changepath, changetype, revno))
+        logging.debug("isDirectory: path %s change type %s revno %d" % (changepath, changetype, revno))
         if( changetype == 'D'):            
             revno = revno-1
         isDir = False            
@@ -384,7 +359,13 @@ class SVNLogClient:
         if( path.strip() != ""):
             url = self.getRootUrl() + urllib.pathname2url(path)
         return(url)
-        
+
+    def isRepoUrlSameAsRoot(self):
+        repourl = self.svnrepourl.rstrip('/')
+        rooturl = self.getRootUrl()
+        rooturl = rooturl.rstrip('/')
+        return(repourl == rooturl)
+    
     def __iter__(self):
         return(SVNRevLogIter(self, 1, self.getHeadRevNo()))
 
@@ -498,8 +479,7 @@ class SVNRevLog:
         
         if( diffCountDict!= None and diffCountDict.has_key(filename)):
             linesadded, linesdeleted = diffCountDict[filename]
-        else:
-            linesadded, linesdeleted = self.__getDiffLineCountForPath(change)
+        
         return(filename, changetype, linesadded, linesdeleted)
             
     def getDiffLineCount(self, bUpdLineCount=True):
@@ -513,35 +493,40 @@ class SVNRevLog:
             diffCountDict = self.__updateDiffCount()
             
         diffCountList = []
-        for change in self.revlog.changed_paths:
-            if( self.isValidChange(change) == True):
-                filename, changetype, linesadded, linesdeleted = self.getDiffLineCountForPath(diffCountDict, change)
-                diffCountList.append((filename, changetype,linesadded, linesdeleted))
-                #print "%d : %s : %s : %d : %d " % (self.revno, filename, change['action'], linesadded, linesdeleted)        
+        for change in self.__getValidChangedPaths():
+            filename, changetype, linesadded, linesdeleted = self.getDiffLineCountForPath(diffCountDict, change)
+            diffCountList.append((filename, changetype,linesadded, linesdeleted))
+            logging.debug("%d : %s : %s : %d : %d " % (self.revno, filename, change['action'], linesadded, linesdeleted))
         return(diffCountList)
         
     def __getDiffLineCountForPath(self, change):
         added = 0
         deleted = 0
         revno = self.getRevNo()
-        filename = change['path']
+        filepath = change['path']
         changetype = change['action']
-        
-        if( changetype != 'A' and changetype != 'D'):
-            #file or directory is modified
-            diff_log = self.logclient.getRevFileDiff(filename, revno)
-            diffDict = getDiffLineCountDict(diff_log)
-            #The dictionary may not have the filename key if only properties are modfiied.
-            if(diffDict.has_key(filename) == True):
-                added, deleted = diffDict[filename]
-        elif( self.isDirectory(change) == False):
+
+        if( self.isDirectory(change) == False):
             #path is added or deleted. First check if the path is a directory. If path is not a directory
             # then process further.
             if( changetype == 'A'):
-                added = self.logclient.getLineCount(filename, revno)
+                added = self.logclient.getLineCount(filepath, revno)
             elif( changetype == 'D'):
-                deleted = self.logclient.getLineCount(filename, revno-1)
-            
+                deleted = self.logclient.getLineCount(filepath, revno-1)
+            else:
+                #change type is 'changetype != 'A' and changetype != 'D'
+                #directory is modified
+                diff_log = self.logclient.getRevFileDiff(filepath, revno)
+                diffDict = getDiffLineCountDict(diff_log)
+                #for single files the 'diff_log' contains only the 'name of file' and not full path.
+                #Hence to need to 'extract' the filename from full filepath
+                filename = '/'+filepath.rsplit('/', 2)[-1]
+                #The dictionary may not have the filename key if only properties are modfiied.
+                if(diffDict.has_key(filename) == True):
+                    added, deleted = diffDict[filename]
+                
+        logging.debug("DiffLineCount %d : %s : %s : %d : %d " % (revno, filename, changetype, added, deleted))
+                  
         return(added, deleted)
 
     def getRevNo(self):
@@ -581,22 +566,33 @@ class SVNRevLog:
             filesadded, fileschanged, filesdeleted = self.changedFileCount(True)
             return(filesadded+fileschanged+filesdeleted)
         return(None)
-    
+
+    def __getValidChangedPaths(self):
+        for change in self.revlog.changed_paths:
+            if( self.isValidChange(change) == True):
+                yield change
+        
     def __updateDiffCount(self):
-        diffcountdict = None
-        changetypes = set([change['action'] for change in self.revlog.changed_paths])
-        if( 'M' in changetypes):
-            diffcountdict = dict()
-            try:
-                #All the changes are 'modifications' (M type) then directly call the 'getRevDiff'.
+        diffcountdict = dict()            
+        try:
+            revno = self.getRevNo()                            
+            logging.debug("Updating line count for revision %d" % revno)
+            if( self.logclient.isRepoUrlSameAsRoot()):            
+                #if the svnrepourl and root url are same then we can use 'revision level' diff calls
+                # get 'diff' of multiple files included in a 'revision' by a single svn api call.
+                # As All the changes are 'modifications' (M type) then directly call the 'getRevDiff'.
                 #getRevDiff fails if there are files added or 'deleted' and repository path is not
                 # the root path. 
-                revno = self.getRevNo()            
                 revdiff_log = self.logclient.getRevDiff(revno)                
                 diffcountdict = getDiffLineCountDict(revdiff_log)
-                
-            except Exception, expinst:            
-                logging.error("Error %s" % expinst)
-                
+            else:
+                #if the svnrepourl is not 'root url'. Then we have to get the diff one by one.
+                for change in self.__getValidChangedPaths():
+                    filename = change['path']
+                    diffcountdict[filename] = self.__getDiffLineCountForPath(change)
+        
+        except Exception, expinst:            
+            logging.error("Error %s" % expinst)
+            
         return(diffcountdict)
                  
