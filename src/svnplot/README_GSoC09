@@ -2,6 +2,8 @@
 Introduction
 ============
 
+This project contributed code to SVNPlot (http://code.google.com/p/svnplot/) and open source project hosted on Google Code. I (Oscar) was given commiter rights to SVNPlot's repositories. A new branch (ocastaneda_gsoc09) was created based on the work and research conducted during GSoC09.
+
 The Python scripts svnsqlite2ora.py and svnsqlite2agora.py convert SVN logs stored in sqlite, and collected through svnlog2sqlite.py, into formats usable by CMU's *ORA tool and Apache Agora. Both scripts take parameters as specified below:
 
 	Usage: svnsqlite2ora.py <sqlitedbpath> <outputfile>
