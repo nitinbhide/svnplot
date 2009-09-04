@@ -36,6 +36,13 @@ Quick Start
 
 3. Use the output files in CMU's *ORA or Apache Agora.
 
+============
+Update 4Sep2009
+============
+
+Recently Nitin Bhide fixed a bug in SVNPlot which prevented LoC (Lines of Code) counts to be issued when analyzing SVN logs collected with svnlog2sqlite.py. This bug-fix was further modified by Nitin Bhide to also cover non-root SVN repositories (e.g. Apache Incubator projects for which the non-root SVN repo lives at https://svn.(eu).apache.org/repos/asf/incubator/<projectname>). The bug fix was integrated with the changes described in the section below (ie. Options for collecting SVN logs from different dates) so that time period collection can also benefit from this recent bug-fix.
+
+The old version of the files developed during GSoC'09 have been dated with extension 24Aug2009 (date when the GSoC program ended).Therefore, new and updated files have the original names and extensions (ie. those that will be found in the /trunk). Further changes and updates to this branch (ocastaneda_gsoc09) will be made and announced through separate means (such as a CHANGES file) instead of in this file.
 
 ============
 Options for collecting SVN logs from different dates
@@ -67,7 +74,7 @@ Status in SVNPlot: Currently the changes mentioned above are only implemented by
 Acknowledgements
 ============
 
-I thank Google and the Google Open Source Programs Office for the support of this work. I would also like to express my gratitute to Nitin Bhide for his valuable and friendly feedback during my Google Summer of Code (2009) project. Lastly, I would like to thank my MSc thesis supervisors, Prof. Michel van Eeten and Dr. Victor Scholten, for their mentoring and friendship.
+I thank Google and the Google Open Source Programs Office for the support of this work and my research. I would also like to express my gratitute to Nitin Bhide for his valuable and friendly feedback during my Google Summer of Code (2009) project. Lastly, I would like to thank my MSc thesis supervisors, Prof.dr. Michel van Eeten and Dr. Victor Scholten, for their mentoring and friendship.
 
 Oscar Castaneda
 Delft, 2009
