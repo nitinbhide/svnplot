@@ -90,6 +90,7 @@ class SVNLog2Sqlite:
                                 values(?, ?, ?, ?,?, ?, ?)",
                                 (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
                     for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):                    
+                        filename = svnlogiter.makeunicode(filename)
                         cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted, lc_updated) \
                                     values(?, ?, ?, ?,?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted, lc_updated))
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)

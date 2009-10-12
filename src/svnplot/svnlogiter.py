@@ -28,6 +28,11 @@ def covert2datetime(seconds):
     gmt = time.gmtime(seconds)
     return(datetime.datetime(gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec))
 
+def makeunicode(str):
+    if type(str) == types.StringType: 
+        str = unicode(str, 'utf-8')
+    return(str)
+   
 def getDiffLineCountDict(diff_log):
     diffio = StringIO.StringIO(diff_log)
     addlnCount=0
@@ -505,6 +510,7 @@ class SVNRevLog:
         revno = self.getRevNo()
         filepath = change['path']
         changetype = change['action']
+        filename = filepath
 
         if( self.isDirectory(change) == False):
             #path is added or deleted. First check if the path is a directory. If path is not a directory
@@ -547,10 +553,7 @@ class SVNRevLog:
             msg = None
                 
             try:
-                msg = self.revlog.message
-                if type(msg) == types.StringType: 
-                    msg = unicode(msg, 'utf-8')
-
+                msg = makeunicode(self.revlog.message)
             except:
                 msg = u''
             return(msg)
