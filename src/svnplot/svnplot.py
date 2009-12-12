@@ -141,9 +141,11 @@ HTMLIndexTemplate ='''
     <td align="center" ><h4>Commit Activity By Hour of Day</h4><br/>
     <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay" width="$thumbwid" height="$thumbht"></a>
     </td>
-    
 </tr>
 <tr>
+    <td align="center" ><h4>Developer Commit Trend</h4><br/>
+        <a href="$AuthorsCommitTrend"><img src="$AuthorsCommitTrend" width="$thumbwid" height="$thumbht"></a>
+    </td>
     <td align="center"><h4>Author Activity</h4><br/>
     <a href="$AuthActivity"><img src="$AuthActivity" width="$thumbwid" height="$thumbht"></a>
     </td>
@@ -578,30 +580,17 @@ class SVNPlot(SVNPlotBase):
                                        for auth, freq, actIdx in authTagList])
         return(tagHtmlStr)
 
-##    def AuthorsCommitTrend(self, filename):
-##        self._printProgress("Calculating Author commits trend bar graph")
-##        
-##        labels, data, error = self.svnstats.getAuthorsCommitTrendMeanStddev()
-##        
-##        ax = self._drawBarGraph(data, labels,0.5,yerr=error)
-##        ax.set_ylabel('Avg. Time betn consecutive commits')
-##        ax.set_xlabel('Authors')
-##        ax.set_title('Authors Commit Trend')
-##        for label in ax.get_xticklabels():
-##            label.set_rotation(20)
-##            label.set_size('x-small')
-##            label.set_ha('right')
-##            
-##        fig = ax.figure
-##        fig.savefig(filename, dpi=self.dpi, format=self.format)                
-
-    def AuthorsCommitTrend(self, filename,numbins=20):
+    def AuthorsCommitTrend(self, filename):
         self._printProgress("Calculating Author commits trend histogram graph")
         
-        data = self.svnstats.getAuthorsCommitTrendHistorgram()
+        #hard coded bins based on 'days between two consecutive' commits (approx. log scale)
+        # 0, 1hr, 4hrs, 8hr(1day), 2 days
+        binsList = [0.0, 1.0/24.0,4.0/24.0, 1.0, 2.0, 4.0, 8.0, 16.0]
+        binlabels = ["0-1 hr", "1-4 hrs", "4hrs-1 day", "1-2 days", "2-4 days", "4-8 days", "8-16 days"]
+        data = self.svnstats.getAuthorsCommitTrendHistorgram(binsList)        
+        ax = self._drawAuthorCommitTrendHistogram(data,binsList,binlabels)
         
-        ax = self._drawHistogram(data,numbins=numbins, logbins=True)
-        ax.set_xlabel('Time betn consecutive commits (days)')
+        ax.set_xlabel('Time between consecutive commits by same author(days)')
         ax.set_ylabel('Number of commits')
         ax.set_title('Authors Commit Trend')
         for label in ax.get_xticklabels():
@@ -658,6 +647,23 @@ class SVNPlot(SVNPlotBase):
         
         return(axs)
             
+    def _drawAuthorCommitTrendHistogram(self, binvals, bins, binlabels=None):            
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        
+        assert(len(binvals) == len(bins[:-1]))
+        barloc = range(1, len(binvals)+1)
+        assert(len(barloc) == len(binvals))
+        ax.bar(barloc, binvals, width=0.8,align='center')
+        xticklabels = binlabels
+        if( xticklabels == None):
+            xticklabels = ["%.2f-%.2f" % (binstart,binend) for binstart,binend in zip(bins[:-1], bins[1:])]
+        assert(len(barloc) == len(xticklabels))
+        ax.set_xticks(barloc)
+        ax.set_xticklabels(xticklabels)
+        ax.grid(True)
+        return(ax)
+
     def _drawlocGraphLineByDev(self, devname, ax=None):
         dates, loc = self.svnstats.getLoCTrendForAuthor(devname)        
         ax = self._drawDateLineGraph(dates, loc, ax)
