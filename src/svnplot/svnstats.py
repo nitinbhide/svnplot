@@ -19,6 +19,8 @@ import math
 import operator
 import logging
 
+import numpy
+
 COOLINGRATE = 0.1/24.0 #degree per hour
 TEMPINCREMENT = 10.0 # degrees per commit
 
@@ -927,10 +929,11 @@ class SVNStats:
                 
         return(finalAuthList, avg_list, stddev_list)
 
-    def getAuthorsCommitTrendHistorgram(self):
+    def getAuthorsCommitTrendHistorgram(self, binsList):
         '''
         Histogram of time difference between two consecutive commits by same author.
         '''
+        maxVal = binsList[-1]
         authList = self.getAuthorList(20)
         deltaList = []
         
@@ -940,10 +943,14 @@ class SVNStats:
             prevval = None
             for cmdate, in self.cur:
                 if( prevval != None):
-                    deltaval = cmdate-prevval
-                    deltaList.append(timedelta2days(deltaval))
+                    deltaval = timedelta2days(cmdate-prevval)
+                    if( deltaval <= maxVal):
+                        deltaList.append((deltaval))
                 prevval = cmdate
             
-        return(deltaList)
+        (binvals, binsList) = numpy.histogram(deltaList, bins=binsList,new=True)
 
+        return(binvals)
+    
+    
         
