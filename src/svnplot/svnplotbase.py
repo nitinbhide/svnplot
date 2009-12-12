@@ -10,11 +10,13 @@ SVNPlotBase implementation. Common base class various ploting functions. Stores 
 __revision__ = '$Revision:$'
 __date__     = '$Date:$'
 
+import numpy
 import matplotlib.pyplot as plt
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
 from matplotlib.ticker import FixedLocator, FormatStrFormatter
 from matplotlib.font_manager import FontProperties
 import os.path, sys
+import math
 import string
 import operator
 import logging
@@ -135,20 +137,34 @@ class SVNPlotBase:
         
         return(ax)
 
-    def _drawHistogram(self, values, numbins=10,logbins=False):
+    def _drawHistogram(self, values, numbins=10,minVal=0.0, maxVal=7.0,logbins=False):
         bins=numbins
+        tolerance = 0.0001
+        #filter out values greater than maxVal
+        values = [val for val in values if val <= maxVal+tolerance]
         
         if( logbins==True):
             #create list of bins on a log scale
-            minbinval = min(values)
-            logminbinval = math.log(max(minbinval, 0.0001))
+            #minbinval = min(values)
+            minbinval = minVal
+            logminbinval = math.log(max(minbinval, tolerance))
             fnumbins = float(numbins)
-            logbinstep = (math.log(5)-logminbinval)/fnumbins
+            logbinstep = (math.log(maxVal)-logminbinval)/fnumbins
             bins = [math.exp(logminbinval+val*logbinstep) for val in range(0, numbins)]
             
+        (binvals, bins) = numpy.histogram(values, bins=bins,new=True)
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.hist(values, bins=bins,histtype='bar',rwidth=0.8)
+        
+        #ax.hist(values, bins=bins,histtype='bar',rwidth=0.8)
+        assert(len(binvals) == len(bins[:-1]))
+        bincens = [0.5*(binstart+binend) for binstart, binend in zip(bins[:-1], bins[1:])]
+        barloc = range(1, len(binvals)+1)
+        assert(len(binvals) == len(bincens))
+        ax.bar(barloc, binvals, width=0.8,align='center')
+        xticklabels = ["%.2f"%bincen for bincen in bincens]
+        ax.set_xticks(barloc)
+        ax.set_xticklabels(xticklabels)
         ax.grid(True)
         return(ax)
     
