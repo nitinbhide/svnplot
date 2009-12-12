@@ -191,7 +191,8 @@ def getTagFontSize(freq, minFreqLog, maxFreqLog):
     if maxFreqLog == minFreqLog:
 	    scalingFactor = 1
     else:
-    	scalingFactor = fontsizevariation/(maxFreqLog-minFreqLog)
+        scalingFactor = fontsizevariation/(maxFreqLog-minFreqLog)
+
     fontsize = int(MINFONTSIZE+((math.log(freq)-minFreqLog)*scalingFactor)+0.5)
     #now round off to ensure that font size remains in MINFONTSIZE and MAXFONTSIZE
     assert(fontsize >= MINFONTSIZE and fontsize <= MAXFONTSIZE)
@@ -223,8 +224,9 @@ class SVNPlot(SVNPlotBase):
         if( template != None):
             with open(template, "r") as f:
                 self.template = f.read()
+ 
                 
-    def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100):
+    def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100, maxdircount = 10):
         self.svnstats.SetSearchPath(svnsearchpath)
         #Commit activity graphs
         self.ActivityByWeekday(self._getGraphFileName(dirpath, "ActByWeek"))
@@ -593,7 +595,7 @@ class SVNPlot(SVNPlotBase):
 ##        fig = ax.figure
 ##        fig.savefig(filename, dpi=self.dpi, format=self.format)                
 
-    def AuthorsCommitTrend(self, filename,numbins=50):
+    def AuthorsCommitTrend(self, filename,numbins=20):
         self._printProgress("Calculating Author commits trend histogram graph")
         
         data = self.svnstats.getAuthorsCommitTrendHistorgram()
@@ -704,13 +706,13 @@ def RunMain():
                 print "using default html template"
             else:
                 print "using template : %s" % options.template
-
+                
         svnstats = SVNStats(svndbpath)     
         svnplot = SVNPlot(svnstats, dpi=options.dpi, template=options.template)
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
         svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize, options.maxdircount)
-    
+        
 if(__name__ == "__main__"):
     RunMain()
     
