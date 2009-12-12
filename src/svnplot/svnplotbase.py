@@ -135,10 +135,21 @@ class SVNPlotBase:
         
         return(ax)
 
-    def _drawHistogram(self, values, bins=10, range=None):
+    def _drawHistogram(self, values, numbins=10,logbins=False):
+        bins=numbins
+        
+        if( logbins==True):
+            #create list of bins on a log scale
+            minbinval = min(values)
+            logminbinval = math.log(max(minbinval, 0.0001))
+            fnumbins = float(numbins)
+            logbinstep = (math.log(5)-logminbinval)/fnumbins
+            bins = [math.exp(logminbinval+val*logbinstep) for val in range(0, numbins)]
+            
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.hist(values, bins=bins,histtype='step',range=range)
+        ax.hist(values, bins=bins,histtype='bar',rwidth=0.8)
+        ax.grid(True)
         return(ax)
     
     def _drawScatterPlot(self,dates, values, plotidx, plotcount, title, refaxs):
