@@ -188,7 +188,10 @@ def getTagFontSize(freq, minFreqLog, maxFreqLog):
     fontsizevariation = (MAXFONTSIZE-MINFONTSIZE)
     minFreqLog = minFreqLog-(maxFreqLog-minFreqLog)/fontsizevariation
     #now calculate the scaling factor for scaling the freq to fontsize.
-    scalingFactor = fontsizevariation/(maxFreqLog-minFreqLog)
+    if maxFreqLog == minFreqLog:
+	    scalingFactor = 1
+    else:
+    	scalingFactor = fontsizevariation/(maxFreqLog-minFreqLog)
     fontsize = int(MINFONTSIZE+((math.log(freq)-minFreqLog)*scalingFactor)+0.5)
     #now round off to ensure that font size remains in MINFONTSIZE and MAXFONTSIZE
     assert(fontsize >= MINFONTSIZE and fontsize <= MAXFONTSIZE)
@@ -212,7 +215,7 @@ class SVNPlot(SVNPlotBase):
         self.commitGraphHtPerAuthor = 2 #In inches
         self.authorsToDisplay = 10
         self.fileTypesToDisplay = 20
-        self.dirdepth = 1
+        self.dirdepth = 2
         self.setTemplate(template)
         
     def setTemplate(self, template):
@@ -238,9 +241,9 @@ class SVNPlot(SVNPlotBase):
         self.FileCountGraph(self._getGraphFileName(dirpath, "FileCount"))
         self.FileTypesGraph(self._getGraphFileName(dirpath, "FileTypes"))
         #Directory size graphs
-        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth)
-        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth)
-        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth)
+        self.DirectorySizePieGraph(self._getGraphFileName(dirpath,"DirSizePie"), self.dirdepth, maxdircount)
+        self.DirectorySizeLineGraph(self._getGraphFileName(dirpath, "DirSizeLine"),self.dirdepth, maxdircount)
+        self.DirFileCountPieGraph(self._getGraphFileName(dirpath, "DirFileCountPie"),self.dirdepth, maxdircount)
         
         graphParamDict = self._getGraphParamDict( thumbsize)
         
@@ -422,13 +425,12 @@ class SVNPlot(SVNPlotBase):
         
         self._closeScatterPlot(refaxs, filename, 'Commit Activity')
         
-    def DirectorySizePieGraph(self, filename, depth=2):
+    def DirectorySizePieGraph(self, filename, depth=2, maxdircount=10):
         '''
         depth - depth of directory search relative to search path. Default value is 2
         '''
         self._printProgress("Calculating current Directory size pie graph")
-        
-        dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth)
+        dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
         
         if( len(dirsizelist) > 0):
            axs = self._drawPieGraph(dirsizelist, dirlist)
@@ -436,13 +438,13 @@ class SVNPlot(SVNPlotBase):
            fig = axs.figure
            fig.savefig(filename, dpi=self.dpi, format=self.format)
 
-    def DirFileCountPieGraph(self, filename, depth=2):
+    def DirFileCountPieGraph(self, filename, depth=2, maxdircount=10):
         '''
         depth - depth of directory search relative to search path. Default value is 2
         '''
         self._printProgress("Calculating current Directory File Count pie graph")
 
-        dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth)
+        dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
                 
         if( len(dirsizelist) > 0):
            axs = self._drawPieGraph(dirsizelist, dirlist)
@@ -450,14 +452,21 @@ class SVNPlot(SVNPlotBase):
            fig = axs.figure
            fig.savefig(filename, dpi=self.dpi, format=self.format)
            
-    def DirectorySizeLineGraph(self, filename, depth=2):
+    def DirectorySizeLineGraph(self, filename, depth=2, maxdircount=10):
         '''
         depth - depth of directory search relative to search path. Default value is 2
         '''
         self._printProgress("Calculating Directory size line graph")
         
         ax = None
-        dirlist = self.svnstats.getDirnames(depth)
+        #dirlist = self.svnstats.getDirnames(depth)
+        '''
+        We only want the ten most important directories, the graf gets to blury otherwise
+        '''
+        #dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth)
+
+        dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
+
         for dirname in dirlist:
             ax = self._drawDirectorySizeLineGraphByDir(dirname, ax)
 
@@ -537,6 +546,14 @@ class SVNPlot(SVNPlotBase):
             #activity index
             authTagList = sorted(authCloud, key=operator.itemgetter(2),reverse=True)
             authTagList = authTagList[0:maxAuthCount]
+            #remove elements being zeror or less
+            for x in authTagList[:]:
+                #if less than or equal zero remove, otherwise clrNorm fails 
+                if (x[2] <= 0):
+                    authTagList.remove(x)
+
+
+ 
             #now calculate the maximum value from the sorted list.
             minFreq = min(authTagList, key=operator.itemgetter(1))[1]
             minFreqLog = math.log(minFreq)
@@ -576,13 +593,12 @@ class SVNPlot(SVNPlotBase):
 ##        fig = ax.figure
 ##        fig.savefig(filename, dpi=self.dpi, format=self.format)                
 
-    def AuthorsCommitTrend(self, filename):
+    def AuthorsCommitTrend(self, filename,numbins=50):
         self._printProgress("Calculating Author commits trend histogram graph")
         
         data = self.svnstats.getAuthorsCommitTrendHistorgram()
-        #filter the data values. So that 'very high' number of days between two consecutives commits are ignored.
-        range = (min(data), 5)
-        ax = self._drawHistogram(data,50,range)
+        
+        ax = self._drawHistogram(data,numbins=numbins, logbins=True)
         ax.set_xlabel('Time betn consecutive commits (days)')
         ax.set_ylabel('Number of commits')
         ax.set_title('Authors Commit Trend')
@@ -662,6 +678,8 @@ def RunMain():
                       help="set the width and heigth of thumbnail display (pixels)")    
     parser.add_option("-p", "--template", dest="template", default=None,
                       action="store", type="string", help="template filename (optional)")
+    parser.add_option("-m","--maxdir",dest="maxdircount", default=10, type="int",
+                      help="limit the number of directories on the graph to the x largest directories")
     
     (options, args) = parser.parse_args()
     
@@ -681,6 +699,7 @@ def RunMain():
             print "Repository Name : %s" % options.reponame
             print "Search path inside repository : %s" % options.searchpath
             print "Graph thumbnail size : %s" % options.thumbsize
+            print "Maximum dir count: %d" % options.maxdircount
             if( options.template== None):
                 print "using default html template"
             else:
@@ -690,7 +709,7 @@ def RunMain():
         svnplot = SVNPlot(svnstats, dpi=options.dpi, template=options.template)
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
-        svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize)
+        svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize, options.maxdircount)
     
 if(__name__ == "__main__"):
     RunMain()

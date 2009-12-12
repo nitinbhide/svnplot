@@ -414,11 +414,12 @@ class SVNStats:
                
         return(authlist, addfraclist, changefraclist, delfraclist)
 
-    def getDirFileCountStats(self, dirdepth=2):
+    def getDirFileCountStats(self, dirdepth=2, maxdircount=10):
         '''
         dirdepth - depth of directory search relative to search path. Default value is 2
         returns two lists (directory names upto dirdepth and number of files in that directory (including
         files in subdirectories)        
+        maxdircount - limits the number of directories on the graph to the x largest directories        
         '''
         self.cur.execute("select dirname(?, changedpath, ?) as dirpath, count(*) as filecount \
                     from (select distinct changedpath from SVNLogDetail where SVNLogDetail.changedpath like ?) \
@@ -430,18 +431,31 @@ class SVNStats:
             dirlist.append(dirname)
             dirfilecountlist.append(float(fcount))
             
+        if maxdircount > 0 :   
+            '''
+            Return only <maxdircount> largest directories
+            '''
+            indices = range(len(dirlist))
+            indices.sort(key=lambda i:dirfilecountlist[i], reverse=True)
+            dirlist = [dirlist[i] for i in indices]
+            dirfilecountlist = [dirfilecountlist[i] for i in indices]
+            dirlist = dirlist[0:maxdircount]
+            dirfilecountlist = dirfilecountlist[0:maxdircount]
+
         return(dirlist, dirfilecountlist)
 
-    def getDirLoCStats(self, dirdepth=2):
+    def getDirLoCStats(self, dirdepth=2, maxdircount=10):
         '''
         dirdepth - depth of directory search relative to search path. Default value is 2
         returns two lists (directory names upto dirdepth and total line count of files in that directory (including
         files in subdirectories)        
+        maxdircount - limits the number of directories on the graph to the x largest directories 
         '''
         self.cur.execute("select dirname(?, SVNLogDetail.changedpath, ?) as dirpath, sum(SVNLogDetail.linesadded), sum(SVNLogDetail.linesdeleted) \
                     from SVNLog, SVNLogDetail \
                     where SVNLog.revno = SVNLogDetail.revno and SVNLogDetail.changedpath like ? \
                     group by dirpath", (self.searchpath,dirdepth, self.sqlsearchpath,))
+            
             
         dirlist = []
         dirsizelist = []        
@@ -450,6 +464,16 @@ class SVNStats:
             if( dsize > 0):
                 dirlist.append(dirname)
                 dirsizelist.append(dsize)
+        if maxdircount > 0 :        
+            '''
+            Return only <maxdircount> largest directories
+            '''
+            indices = range(len(dirlist))
+            indices.sort(key=lambda i:dirsizelist[i], reverse=True)
+            dirlist = [dirlist[i] for i in indices]
+            dirsizelist = [dirsizelist[i] for i in indices]
+            dirlist = dirlist[0:maxdircount]
+            dirsizelist = dirsizelist[0:maxdircount]
                 
         return(dirlist, dirsizelist)
 
