@@ -363,6 +363,8 @@ class SVNLogClient:
     def getUrl(self, path):
         url = self.svnrepourl
         if( path.strip() != ""):
+            #remember 'path' can be a unicode string        
+            path = path.encode('utf8')
             url = self.getRootUrl() + urllib.pathname2url(path)
         return(url)
 
