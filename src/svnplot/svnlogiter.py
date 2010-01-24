@@ -208,14 +208,20 @@ class SVNLogClient:
                                diff_deleted=True)
         return diff_log
 
-    def getRevFileDiff(self, path, revno):
-        rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
+    def getRevFileDiff(self, path, revno,prev_path=None,prev_rev=None):
+        if( prev_path == None):
+            prev_path = path
+
+        rev1 = prev_rev or pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
+        prevurl = self.getUrl(prev_path)
         diff_log = None
         
         logging.debug("Getting filelevel revision diffs")
         logging.debug("revision : %d, url=%s" % (revno, url))
+        logging.debug("prev url=%s" % (rev1, prevurl))
+        
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                     recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                diff_deleted=True)
@@ -513,6 +519,8 @@ class SVNRevLog:
         revno = self.getRevNo()
         filepath = change['path']
         changetype = change['action']
+        prev_filepath = change.get('copyfrom_path')
+        prev_revno = change.get('copyfrom_revision')
         filename = filepath
 
         if( self.isDirectory(change) == False):
@@ -525,7 +533,7 @@ class SVNRevLog:
             else:
                 #change type is 'changetype != 'A' and changetype != 'D'
                 #directory is modified
-                diff_log = self.logclient.getRevFileDiff(filepath, revno)
+                diff_log = self.logclient.getRevFileDiff(filepath, revno,prev_filepath, prev_revno)
                 diffDict = getDiffLineCountDict(diff_log)
                 #for single files the 'diff_log' contains only the 'name of file' and not full path.
                 #Hence to need to 'extract' the filename from full filepath
@@ -577,26 +585,44 @@ class SVNRevLog:
         for change in self.revlog.changed_paths:
             if( self.isValidChange(change) == True):
                 yield change
+
+    def __useFileRevDiff(self):
+        '''
+        file level revision diff requires less memory but more calls to repository.
+        Hence for large sized repositories, repository with many large commits, and
+        repositories which are local file system, it is better to use file level revision
+        diff. For other cases it is better to query diff of entire revision at a time.
+        '''
+        # repourl is not same as repository root (e.g. <root>/trunk) then we have to
+        # use the file revision diffs.
+        usefilerevdiff = True
+        if( self.logclient.isRepoUrlSameAsRoot()):
+            usefilerevdiff = False
+        rooturl = self.logclient.getRootUrl()
+        if( rooturl.startswith('file://')):
+            usefilerevdiff=True
+        return(usefilerevdiff)
         
     def __updateDiffCount(self):
         diffcountdict = dict()            
         try:
             revno = self.getRevNo()                            
             logging.debug("Updating line count for revision %d" % revno)
-            if( self.logclient.isRepoUrlSameAsRoot()):            
+            if( self.__useFileRevDiff()):
+                logging.debug("Using file level revision diff")
+                for change in self.__getValidChangedPaths():
+                    filename = change['path']
+                    diffcountdict[filename] = self.__getDiffLineCountForPath(change)
+            else:                
                 #if the svnrepourl and root url are same then we can use 'revision level' diff calls
                 # get 'diff' of multiple files included in a 'revision' by a single svn api call.
                 # As All the changes are 'modifications' (M type) then directly call the 'getRevDiff'.
                 #getRevDiff fails if there are files added or 'deleted' and repository path is not
-                # the root path. 
+                # the root path.
+                logging.debug("Using entire revision diff at a time")
                 revdiff_log = self.logclient.getRevDiff(revno)                
                 diffcountdict = getDiffLineCountDict(revdiff_log)
-            else:
-                #if the svnrepourl is not 'root url'. Then we have to get the diff one by one.
-                for change in self.__getValidChangedPaths():
-                    filename = change['path']
-                    diffcountdict[filename] = self.__getDiffLineCountForPath(change)
-        
+            
         except Exception, expinst:            
             logging.error("Error %s" % expinst)
             
