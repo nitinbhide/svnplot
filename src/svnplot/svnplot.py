@@ -29,8 +29,6 @@ Graph types to be supported
 15. Repository heatmap (treemap)
 16. Tag cloud of words in commit log message.
 
-To use copy the file in Python 'site-packages' directory Setup is not available
-yet.
 '''
 from __future__ import with_statement
 
