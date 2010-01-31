@@ -20,9 +20,15 @@ import logging
 import traceback
 from optparse import OptionParser
 
+BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'ods', 'odm', 'odt', 'ott', 'pdf',
+                 'o', 'a', 'obj', 'lib', 'dll', 'so', 'exe', 'jar', 'zip', 'z', 'gz', 'tar', 
+                 'pdb', 'idb', 'ilk', 'bsc', 'ncb', 
+                 'bmp', 'jpg', 'png', 'gif', 'ico', 'wmf', 'emf', 'xcf', 'wav'
+                 ]
+
 class SVNLog2Sqlite:
     def __init__(self, svnrepopath, sqlitedbpath,verbose=False):
-        self.svnclient = svnlogiter.SVNLogClient(svnrepopath)
+        self.svnclient = svnlogiter.SVNLogClient(svnrepopath,BINARYFILEXT)
         self.dbpath =sqlitedbpath
         self.dbcon =None
         self.verbose = verbose
@@ -89,7 +95,7 @@ class SVNLog2Sqlite:
                     cur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
                                 values(?, ?, ?, ?,?, ?, ?)",
                                 (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
-                    for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):                    
+                    for filename, changetype, linesadded, linesdeleted in revlog.getDiffLineCount(bUpdLineCount):
                         filename = svnlogiter.makeunicode(filename)
                         cur.execute("INSERT into SVNLogDetail(revno, changedpath, changetype, linesadded, linesdeleted, lc_updated) \
                                     values(?, ?, ?, ?,?,?)", (revlog.revno, filename, changetype, linesadded, linesdeleted, lc_updated))
@@ -199,12 +205,14 @@ def RunMain():
                         filename=logfile,
                         filemode='w')
                 print "Logging to file %s" % logfile
-            
+
+            conv = None            
             conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose)
             conv.convert(options.updlinecount)
-        except:
-            del conv
-            raise
+        except Exception, expinst:
+            print "Error "
+            print expinst
+            del conv            
         
 if( __name__ == "__main__"):
     RunMain()
