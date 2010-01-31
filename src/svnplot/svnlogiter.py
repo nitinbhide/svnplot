@@ -73,17 +73,30 @@ def getDiffLineCountDict(diff_log):
     return(diffCountDict)
     
 class SVNLogClient:
-    def __init__(self, svnrepourl):
-        self.svnrepourl = svnrepourl
+    def __init__(self, svnrepourl,binaryext=[]):
         self.svnrooturl = None
-        self.svnclient = pysvn.Client()
         self.tmppath = None
         self._updateTempPath()
+        self.svnrepourl = svnrepourl
+        self.svnclient = pysvn.Client()
         self.svnclient.callback_get_login = self.get_login
         self.svnclient.callback_ssl_server_trust_prompt = self.ssl_server_trust_prompt
         self.svnclient.callback_ssl_client_cert_password_prompt = self.ssl_client_cert_password_prompt
+        self.setbinextlist(binaryext)
         
-    
+    def setbinextlist(self, binextlist):
+        '''
+        set extensionlist for binary files with some cleanup if required.
+        '''
+        binaryextlist = []
+        for binext in binextlist:
+            binext = binext.strip()
+            binext = '.' + binext
+            binaryextlist.append(binext)
+            binext = binext.upper()
+            binaryextlist.append(binext)
+        self.binaryextlist = tuple(binaryextlist)
+        
     def get_login(self, realm, username, may_save):
         logging.debug("This is a svnclient.callback_get_login event. ")
         user = raw_input("username for %s:" % realm)
@@ -251,16 +264,24 @@ class SVNLogClient:
         fullpath = self.svnrooturl + filepath
                 
         return(fullpath.startswith(self.svnrepourl))
-    
-    def isBinaryFile(self, filepath, revno):
+
+    def __isBinaryFileExt(self, filepath):
+        '''
+        check the extension of filepath and see if the extension is in binary files
+        list
+        '''
+        return(filepath.endswith(self.binaryextlist))        
+        
+    def __isBinaryFile(self, filepath, revno):
         '''
         detect if file is a binary file using same heuristic as subversion. If the file
         has no svn:mime-type  property, or has a mime-type that is textual (e.g. text/*),
         Subversion assumes it is text. Otherwise it is treated as binary file.
         '''
-        rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+
+        binary = False        
         url = self.getUrl(filepath)
-        binary = None
+        rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         
         (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
         binary = False #if explicit mime-type is not found always treat the file as 'text'                
@@ -270,6 +291,13 @@ class SVNLogClient:
                 #mime type is not a 'text' mime type.
                 binary = True
                
+        return(binary)
+    
+    def isBinaryFile(self, filepath, revno):
+        binary = self.__isBinaryFileExt(filepath)
+        
+        if( binary == False):
+            binary = self.__isBinaryFile(filepath, revno)
         return(binary)
     
     def isDirectory(self, revno, changepath, changetype):
@@ -308,7 +336,7 @@ class SVNLogClient:
         return(linecount)
     
     def getLineCount(self, filepath, revno):
-        linecount = 0
+        linecount = 0        
         if( self.isBinaryFile(filepath, revno) == False):
             linecount = self._getLineCount(filepath, revno)
         
