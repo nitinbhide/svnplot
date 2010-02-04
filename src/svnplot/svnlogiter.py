@@ -233,7 +233,7 @@ class SVNLogClient:
         
         logging.debug("Getting filelevel revision diffs")
         logging.debug("revision : %d, url=%s" % (revno, url))
-        logging.debug("prev url=%s" % (rev1, prevurl))
+        logging.debug("prev url=%s" % (prevurl))
         
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                     recurse=True, ignore_ancestry=False,ignore_content_type=False,
