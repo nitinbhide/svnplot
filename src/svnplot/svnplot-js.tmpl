@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+	<!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+	<title>Subversion Stats Plot for $RepoName</title>
+    <style type="text/css">
+		h3 {text-align:center;background-color: #F5F5F5;margin:2;border-style:solid}
+		h4 {background-color: transparent;margin:1}
+		td { text-align:justify;}
+		#pb { 	page-break-after: always;	}
+    </style>
+	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
+	<script type="text/javascript" src="jquery.min.js"></script>
+	<script type="text/javascript" src="jquery.jqplot.min.js"></script>	
+	<script type="text/javascript" src="jqplot.dateAxisRenderer.min.js"></script>	
+	<script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
+</head>
+
+<body>
+<h1 align="center">Subversion Statistics for $RepoName</h1>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>General Statistics</h3></th>
+</tr>
+<tr>
+    <td>
+    $BasicStats
+    </td>
+</tr>
+<tr>
+<th align="center"><h3>Top 10 Hot List</h3></th>
+</tr>
+<tr>
+	<td>
+		<table width="100%">
+            <td width="50%">
+            <p align='center'><b>Top 10 Active Files</b></p>
+            $ActiveFiles
+            </td>
+            <td width="50%">
+            <p align='center'><b>Top 10 Active Authors</b></p>
+            $ActiveAuthors
+            </td>
+		</table>
+	</td>
+</tr>
+</table>
+
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Lines of Code Graphs</h3></th>
+</tr>
+<tr>
+    <td align="center">
+	<div id="LoCTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+	$LocTable	
+    </td>
+</tr>
+<tr>
+    <td align="center">
+	<div id="LoCChurnTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+	$LoCChurnTable	
+    </td>
+</tr>
+<tr>
+    <td align="left"><br/>
+	<div id="ContriLoCTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+    $ContriLoCTable
+    </td>
+</tr>
+<tr>
+    <td align="left"><br/>
+	<div id="AvgLoCTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+    $AvgLoCTable
+    </td>    
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>File Count Graphs</h3></th>
+</tr>
+<tr>
+    <td><br/>
+	<div id="FileCountTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+    $FileCountTable
+    </td>
+</tr>
+<tr>
+    <td><br/>
+    <div id="FileTypeCountTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+    $FileTypeCountTable
+    </td>
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Directory Size Graphs</h3></th>
+</tr>
+<tr>
+   <td><br/>
+   <div id="DirSizePie" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+   $DirSizePie
+    </td>
+</tr>
+<tr>	
+    <td><br/>
+    <div id="DirSizeLine" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+   $DirSizeLine
+    </td>
+</tr>
+<tr>	
+    <td><br/>
+	<div id="DirFileCountPie" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+   $DirFileCountPie    
+    </td>
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Commit Activity Graphs</h3></th>
+</tr>
+<tr>
+    <td><br/>
+        <div id="CommitActIdxTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+		$CommitActIdxTable
+    </td>    
+</tr>
+<tr>	
+    <td><br/>
+    <div id="ActivityByWeekdayTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+    $ActivityByWeekdayTable
+    </td>
+</tr>
+<tr>
+    <td><br/>
+    <div id="ActivityByTimeOfDayTable" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+    $ActivityByTimeOfDayTable
+    </td>    
+</tr>
+<tr>
+    <td><br/>	
+    <div id="AuthorsCommitTrend" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+    $AuthorsCommitTrend
+    </td>    
+</tr>
+<tr>
+    <td><h4>Author Activity</h4><br/>
+    <a href="$AuthActivity"><img src="$AuthActivity"></a>
+    </td>    
+</tr>
+</table>
+<table id="pb" width="90%">
+<th align="center"><h3>Log Message Tag Cloud</h3></th>
+</tr>
+<tr id='tagcloud'>
+<td align="center">$TagCloud</td>
+</tr>
+<th align="center"><h3>Author Cloud</h3></th>
+</tr>
+<tr id='authcloud'>
+<td align="center">$AuthCloud</td>
+</tr>
+</table>
+<script type="text/javascript">
+			   $(document).ready(function() {
+				locgraph();
+				locChurnGraph();
+				contri_locgraph();
+				avglocgraph();
+				fileCountGraph();
+				fileTypesGraph();
+				ActivityByWeekday();
+				ActivityByTimeOfDay();
+				CommitActivityIndexGraph();
+				directorySizePieGraph();
+				dirFileCountPieGraph();
+				dirSizeLineGraph();
+				authorsCommitTrend();
+			});
+
+	</script>	
+</body>
+</html>
