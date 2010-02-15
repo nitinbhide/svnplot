@@ -28,7 +28,6 @@ Graph types to be supported
 14. Repository Activity Index (using exponential decay) -- Done
 15. Repository heatmap (treemap)
 16. Tag cloud of words in commit log message.
-
 '''
 from __future__ import with_statement
 
@@ -38,12 +37,14 @@ __date__     = '$Date:$'
 
 import matplotlib.pyplot as plt
 import matplotlib.mpl as mpl
+
 from optparse import OptionParser
 import sqlite3
 import os.path, sys
 import string,StringIO
 import math
-from svnplotbase import *
+
+from svnplotmatplotlib import *
 from svnstats import *
 
 HTMLIndexTemplate ='''
@@ -138,7 +139,7 @@ HTMLIndexTemplate ='''
     </td>
     <td align="center" ><h4>Commit Activity By Hour of Day</h4><br/>
     <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay" width="$thumbwid" height="$thumbht"></a>
-    </td>
+    </td>    
 </tr>
 <tr>
     <td align="center" ><h4>Developer Commit Trend</h4><br/>
@@ -149,7 +150,7 @@ HTMLIndexTemplate ='''
     </td>
     <td align="center" ><h4>Developer Commit Activity</h4><br/>
     <a href="$CommitAct"><img src="$CommitAct" width="$thumbwid" height="$thumbht"></a>
-    </td>        
+    </td>    
 </tr>
 <th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
 </tr>
@@ -179,30 +180,6 @@ HTMLBasicStatsTmpl = '''
 </table>
 '''
 
-MINFONTSIZE=-2
-MAXFONTSIZE=8
-
-def getTagFontSize(freq, minFreqLog, maxFreqLog):
-    #change the font size between "-2" to "+8" relative to current font size
-    #change minFreqLog in such a way smallest log(freq)-minFreqLog is greater than 0
-    fontsizevariation = (MAXFONTSIZE-MINFONTSIZE)
-    minFreqLog = minFreqLog-(maxFreqLog-minFreqLog)/fontsizevariation
-    #now calculate the scaling factor for scaling the freq to fontsize.
-    if maxFreqLog == minFreqLog:
-	    scalingFactor = 1
-    else:
-        scalingFactor = fontsizevariation/(maxFreqLog-minFreqLog)
-
-    fontsize = int(MINFONTSIZE+((math.log(freq)-minFreqLog)*scalingFactor)+0.5)
-    #now round off to ensure that font size remains in MINFONTSIZE and MAXFONTSIZE
-    assert(fontsize >= MINFONTSIZE and fontsize <= MAXFONTSIZE)
-    return(fontsize)
-
-def getActivityClr(actIdx, clrNorm, cmap):
-    rgbclr = clrNorm(actIdx)
-    rgbclr = cmap(rgbclr)
-    clrStr=mpl.colors.rgb2hex(rgbclr[0:3])    
-    return(clrStr)
 
 GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", CommitActivityIdx="cmtactidx",
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
@@ -210,9 +187,9 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", 
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
                      FileTypes="filetypes", AuthorsCommitTrend="authorscommit")
                          
-class SVNPlot(SVNPlotBase):
+class SVNPlot(SVNPlotMatplotLib):
     def __init__(self, svnstats, dpi=100, format='png',template=None):
-        SVNPlotBase.__init__(self, svnstats, dpi,format)
+        SVNPlotMatplotLib.__init__(self, svnstats, dpi,format)
         self.commitGraphHtPerAuthor = 2 #In inches
         self.authorsToDisplay = 10
         self.fileTypesToDisplay = 20
@@ -476,111 +453,11 @@ class SVNPlot(SVNPlotBase):
             
         ax.set_title('Directory Size (Lines of Code)')
         ax.set_ylabel('Lines')        
-        self._closeDateLineGraph(ax, filename)
-            
-    def TagCloud(self, numWords=50):
-        self._printProgress("Calculating tag cloud for log messages")
-        words = self.svnstats.getLogMsgWordFreq(5)
-        tagHtmlStr = ''
-        if( len(words) > 0):
-            #first get sorted wordlist (reverse sorted by frequency)
-            tagWordList = sorted(words.items(), key=operator.itemgetter(1),reverse=True)
-            #now extract top 'numWords' from the list and then sort it with alphabetical order.
-            tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
-            #now calculate the maximum value from the sorted list.
-            minFreq = min(tagWordList, key=operator.itemgetter(1))[1]
-            minFreqLog = math.log(minFreq)
-            maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
-            maxFreqLog = math.log(maxFreq)
-            #change the font size between "-2" to "+8" relative to current font size
-            tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(getTagFontSize(freq, minFreqLog, maxFreqLog), x))
-                                       for x,freq in tagWordList])                
-        return(tagHtmlStr)
-
-    def BasicStats(self, basicStatsTmpl):
-        '''
-        get the html string for basic repository statistics (like last revision, etc)
-        '''
-        self._printProgress("Calculating Basic stats")
-        basestats = self.svnstats.getBasicStats()
-        #replace dates with proper formated date strings
-        basestats['FirstRevDate']= basestats['FirstRevDate'].strftime('%b %d, %Y %I:%M %p')
-        basestats['LastRevDate']= basestats['LastRevDate'].strftime('%b %d, %Y %I:%M %p')
-        statsTmpl = string.Template(basicStatsTmpl)
-        statsStr = statsTmpl.safe_substitute(basestats)
-        
-        return(statsStr)
-
-    def ActiveFiles(self):
-        '''
-        TODO - template for generating the hot files list. Currently format is hard coded as
-        HTML ordered list
-        '''
-        self._printProgress("Calculating Active (hot) files list")
-        hotfiles = self.svnstats.getHotFiles(10)
-        outstr = StringIO.StringIO()
-        outstr.write("<ol>\n")
-        for filepath, temperatur in hotfiles:
-            outstr.write("<li>%s</li>\n"%filepath)
-        outstr.write("</ol>\n")
-        return(outstr.getvalue())
-
-    def ActiveAuthors(self):
-        '''
-        TODO - template for generating the hot files list. Currently format is hard coded as
-        HTML ordered list
-        '''
-        self._printProgress("Calculating Active authors list")
-        hotfiles = self.svnstats.getActiveAuthors(10)
-        outstr = StringIO.StringIO()
-        outstr.write("<ol>\n")
-        for author, temperatur in hotfiles:
-            outstr.write("<li>%s</li>\n"%author)
-        outstr.write("</ol>\n")
-        return(outstr.getvalue())
+        self._closeDateLineGraph(ax, filename)            
     
-    def AuthorCloud(self, maxAuthCount=50):
-        self._printProgress("Calculating Author Tag Cloud")
-        authCloud = self.svnstats.getAuthorCloud()
-        tagHtmlStr = ''
-        if( len(authCloud) > 0):
-            #sort and extract maximum of the "maxAuthCount" number of author based on the
-            #activity index
-            authTagList = sorted(authCloud, key=operator.itemgetter(2),reverse=True)
-            authTagList = authTagList[0:maxAuthCount]
-            #remove elements being zeror or less
-            for x in authTagList[:]:
-                #if less than or equal zero remove, otherwise clrNorm fails 
-                if (x[2] <= 0):
-                    authTagList.remove(x)
-
-
- 
-            #now calculate the maximum value from the sorted list.
-            minFreq = min(authTagList, key=operator.itemgetter(1))[1]
-            minFreqLog = math.log(minFreq)
-            maxFreq = max(authTagList, key=operator.itemgetter(1))[1]
-            #if there is only one author or minFreq and maxFreq is same, then it will give wrong
-            #results later. So make sure there is some difference between min and max freq.
-            maxFreq = max(minFreq*1.2, maxFreq)
-            maxFreqLog = math.log(maxFreq)
-                
-            minActivity = min(authTagList, key=operator.itemgetter(2))[2]
-            maxActivity = max(authTagList, key=operator.itemgetter(2))[2]
-            maxActivity = max(minActivity*1.2, maxActivity)
-            clrNorm = mpl.colors.LogNorm(vmin=minActivity, vmax=maxActivity)
-            cmap = mpl.cm.jet
-            #Now sort the authers by author names
-            authTagList = sorted(authTagList, key=operator.itemgetter(0))
-            #change the font size between "-2" to "+8" relative to current font size
-            tagHtmlStr = ' '.join([('<font size="%+d" color="%s">%s</font>\n'%
-                                    (getTagFontSize(freq, minFreqLog, maxFreqLog), getActivityClr(actIdx, clrNorm, cmap), auth))
-                                       for auth, freq, actIdx in authTagList])
-        return(tagHtmlStr)
-
     def AuthorsCommitTrend(self, filename):
         self._printProgress("Calculating Author commits trend histogram graph")
-        
+
         #hard coded bins based on 'days between two consecutive' commits (approx. log scale)
         # 0, 1hr, 4hrs, 8hr(1day), 2 days
         binsList = [0.0, 1.0/24.0,4.0/24.0, 1.0, 2.0, 4.0, 8.0, 16.0]
@@ -666,7 +543,7 @@ class SVNPlot(SVNPlotBase):
         dates, loc = self.svnstats.getLoCTrendForAuthor(devname)        
         ax = self._drawDateLineGraph(dates, loc, ax)
         return(ax)    
-        
+
 def RunMain():
     usage = "usage: %prog [options] <svnsqlitedbpath> <graphdir>"
     parser = OptionParser(usage)

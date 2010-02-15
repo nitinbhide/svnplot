@@ -10,17 +10,43 @@ SVNPlotBase implementation. Common base class various ploting functions. Stores 
 __revision__ = '$Revision:$'
 __date__     = '$Date:$'
 
-import matplotlib.pyplot as plt
-from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
-from matplotlib.ticker import FixedLocator, FormatStrFormatter
-from matplotlib.font_manager import FontProperties
 import os.path, sys
 import math
 import string
 import operator
 import logging
+import StringIO
+
 import svnstats
-    
+import heatmapclr
+
+MINFONTSIZE=-2
+MAXFONTSIZE=8
+
+def getTagFontSize(freq, minFreqLog, maxFreqLog):
+    #change the font size between "-2" to "+8" relative to current font size
+    #change minFreqLog in such a way smallest log(freq)-minFreqLog is greater than 0
+    fontsizevariation = (MAXFONTSIZE-MINFONTSIZE)
+    minFreqLog = minFreqLog-(maxFreqLog-minFreqLog)/fontsizevariation
+    #now calculate the scaling factor for scaling the freq to fontsize.
+    if maxFreqLog == minFreqLog:
+        scalingFactor = 1
+    else:
+        scalingFactor = fontsizevariation/(maxFreqLog-minFreqLog)
+
+    fontsize = int(MINFONTSIZE+((math.log(freq)-minFreqLog)*scalingFactor)+0.5)
+    #now round off to ensure that font size remains in MINFONTSIZE and MAXFONTSIZE
+    assert(fontsize >= MINFONTSIZE and fontsize <= MAXFONTSIZE)
+    return(fontsize)
+
+
+def getActivityClr(normlizer, actIdx):
+    heatindex = normlizer(actIdx)
+    clrstr = heatmapclr.getHeatColorHex(heatindex)
+    return(clrstr)
+
+
+
 class SVNPlotBase:
     def __init__(self, svnstats, dpi=100,format='png'):
         self.svnstats = svnstats
@@ -41,195 +67,103 @@ class SVNPlotBase:
         if( self.verbose == True):
             print msg
                                                     
-    def _getAuthorLabel(self, author):
+    def BasicStats(self, basicStatsTmpl):
         '''
-        sometimes are author names are email ids. Hence labels have higher width. So split the
-        author names on '@' symbol        
+        get the html string for basic repository statistics (like last revision, etc)
         '''
-        auth = author.replace('@', '@\n')
-        return(auth)
-    
-    def _getLegendFont(self):
-        legendfont = FontProperties(size='x-small')
-        return(legendfont)
-    
-    def _addFigureLegend(self, ax, labels, loc="lower center", ncol=4):
-        fig = ax.figure
-        legendfont = self._getLegendFont()
-        assert(len(labels) > 0)
-        lnhandles =ax.get_lines()
-        assert(len(lnhandles) > 0)
-        #Fix for a bug in matplotlib 0.98.5.2. If the len(labels) < ncol,
-        # then i get an error "range() step argument must not be zero" on line 542 in legend.py
-        if( len(labels) < ncol):
-           ncol = len(labels)
-        fig.legend(lnhandles, labels, loc=loc, ncol=ncol, prop=legendfont)
-                    
-    def _drawBarGraph(self, data, labels, barwid, **kwargs):
-        #create dummy locations based on the number of items in data values
-        xlocations = [x*2*barwid+barwid for x in range(len(data))]
-        xtickloc = [x+barwid/2.0 for x in xlocations]
-        xtickloc.append(xtickloc[-1]+barwid)
+        self._printProgress("Calculating Basic stats")
+        basestats = self.svnstats.getBasicStats()
+        #replace dates with proper formated date strings
+        basestats['FirstRevDate']= basestats['FirstRevDate'].strftime('%b %d, %Y %I:%M %p')
+        basestats['LastRevDate']= basestats['LastRevDate'].strftime('%b %d, %Y %I:%M %p')
+        statsTmpl = string.Template(basicStatsTmpl)
+        statsStr = statsTmpl.safe_substitute(basestats)
         
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.bar(xlocations, data, width=barwid, **kwargs)
-        ax.set_xticks(xtickloc)
-        ax.set_xticklabels(labels)
-        
-        return(ax)
+        return(statsStr)
 
-    def _drawHBarGraph(self, datalist, labels, barwid):
-        assert(len(datalist) > 0)
-        numDataItems = len(datalist)
-        #create dummy locations based on the number of items in data values
-        ymin = 0.0        
-        ylocations = [y*barwid*2+barwid/2 for y in range(numDataItems)]
-        ymax = ylocations[-1]+2.0*barwid
-        ytickloc = [y+barwid/2.0 for y in ylocations]
-        ytickloc.append(ytickloc[-1]+barwid)
-        
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.set_color_cycle(self.clrlist)
-        ax.set_yticks(ytickloc)
-        ax.set_yticklabels(labels)
-        
-        clridx = 0
-        maxclridx = len(self.clrlist)
-        ax.barh(ylocations, datalist, height=barwid, color=self.clrlist[clridx])
-        ax.set_ybound(ymin, ymax)
-        return(ax)
-    
-    def _drawStackedHBarGraph(self, dataList, labels, legendlist, barwid):
-        assert(len(dataList) > 0)
-        numDataItems = len(dataList[0])
-        #create dummy locations based on the number of items in data values
-        ymin = 0.0
-        ylocations = [y*barwid*2+barwid/2 for y in range(numDataItems)]
-        #leave some extra position at the top for placing the legend 
-        ymax = ylocations[-1]+4.0*barwid
-        ytickloc = [y+barwid/2.0 for y in ylocations]
-        ytickloc.append(ytickloc[-1]+barwid)
-        
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.set_color_cycle(self.clrlist)
-        ax.set_yticks(ytickloc)
-        ax.set_yticklabels(labels)
-        
-        clridx = 0
-        maxclridx = len(self.clrlist)
-        ax.barh(ylocations, dataList[0], height=barwid, color=self.clrlist[clridx], label=legendlist[0])
-        leftlist = [0 for x in range(0, numDataItems)]
-        
-        for i in range(1, len(dataList)):
-            clridx=clridx+1
-            if( clridx >= maxclridx):
-                clridx = 0
-            leftlist = [x+y for x,y in zip(leftlist, dataList[i-1])]
-            ax.barh(ylocations, dataList[i], left=leftlist, height=barwid,
-                    color=self.clrlist[clridx], label=legendlist[i])
-            
-        ax.legend(loc='upper center',ncol=3,)     
-        ax.set_ybound(ymin, ymax)
-        
-        return(ax)
-    
-    def _drawScatterPlot(self,dates, values, plotidx, plotcount, title, refaxs):
-        if( refaxs == None):
-            logging.debug("initializing scatter plot")
-            fig = plt.figure()
-            #1 inch height for each author graph. So recalculate with height. Else y-scale get mixed.
-            figHt = float(self.commitGraphHtPerAuthor*plotcount)
-            fig.set_figheight(figHt)
-            #since figureheight is in inches, set around maximum of 0.75 inches margin on top.
-            topmarginfrac = min(0.15, 0.85/figHt)
-            logging.debug("top/bottom margin fraction is %f" % topmarginfrac)
-            fig.subplots_adjust(bottom=topmarginfrac, top=1.0-topmarginfrac, left=0.05, right=0.95)
-        else:
-            fig = refaxs.figure
-            
-        axs = fig.add_subplot(plotcount, 1, plotidx,sharex=refaxs,sharey=refaxs)
-        axs.grid(True)
-        axs.plot_date(dates, values, marker='.', xdate=True, ydate=False)
-        axs.autoscale_view()
-        
-        #Pass None as 'handles' since I want to display just the titles
-        axs.set_title(title, fontsize='small',fontstyle='italic')
-        
-        self._setXAxisDateFormatter(axs)        
-        plt.setp( axs.get_xmajorticklabels(), visible=False)
-        plt.setp( axs.get_xminorticklabels(), visible=False)
-                    
-        return(axs)
-    
-    def _closeScatterPlot(self, refaxs, filename,title):
-        #Do not autoscale. It will reset the limits on the x and y axis
-        #refaxs.autoscale_view()
+    def ActiveFiles(self):
+        '''
+        TODO - template for generating the hot files list. Currently format is hard coded as
+        HTML ordered list
+        '''
+        self._printProgress("Calculating Active (hot) files list")
+        hotfiles = self.svnstats.getHotFiles(10)
+        outstr = StringIO.StringIO()
+        outstr.write("<ol>\n")
+        for filepath, temperatur in hotfiles:
+            outstr.write("<li>%s</li>\n"%filepath)
+        outstr.write("</ol>\n")
+        return(outstr.getvalue())
 
-        fig = refaxs.figure
-        #Update the font size for all subplots y-axis
-        for axs in fig.get_axes():
-            plt.setp( axs.get_yticklabels(), fontsize='x-small')
+    def ActiveAuthors(self):
+        '''
+        TODO - template for generating the hot files list. Currently format is hard coded as
+        HTML ordered list
+        '''
+        self._printProgress("Calculating Active authors list")
+        hotfiles = self.svnstats.getActiveAuthors(10)
+        outstr = StringIO.StringIO()
+        outstr.write("<ol>\n")
+        for author, temperatur in hotfiles:
+            outstr.write("<li>%s</li>\n"%author)
+        outstr.write("</ol>\n")
+        return(outstr.getvalue())
+    
+    def AuthorCloud(self, maxAuthCount=50):
+        self._printProgress("Calculating Author Tag Cloud")
+        authCloud = self.svnstats.getAuthorCloud()
+        tagHtmlStr = ''
+        if( len(authCloud) > 0):
+            #sort and extract maximum of the "maxAuthCount" number of author based on the
+            #activity index
+            authTagList = sorted(authCloud, key=operator.itemgetter(2),reverse=True)
+            authTagList = authTagList[0:maxAuthCount]
+            #remove elements being zeror or less
+            for x in authTagList[:]:
+                #if less than or equal zero remove, otherwise clrNorm fails 
+                if (x[2] <= 0):
+                    authTagList.remove(x)
+ 
+            #now calculate the maximum value from the sorted list.
+            minFreq = min(authTagList, key=operator.itemgetter(1))[1]
+            minFreqLog = math.log(minFreq)
+            maxFreq = max(authTagList, key=operator.itemgetter(1))[1]
+            #if there is only one author or minFreq and maxFreq is same, then it will give wrong
+            #results later. So make sure there is some difference between min and max freq.
+            maxFreq = max(minFreq*1.2, maxFreq)
+            maxFreqLog = math.log(maxFreq)
                 
-        fig.suptitle(title)        
-        fig.savefig(filename, dpi=self.dpi, format=self.format)
-        
-    def _drawPieGraph(self, slicesizes, slicelabels):
-        fig = plt.figure()
-        axs = fig.add_subplot(111, aspect='equal')        
-        (patches, labeltext, autotexts) = axs.pie(slicesizes, labels=slicelabels, autopct='%1.1f%%')
-        #Turn off the labels displayed on the Piechart. 
-        plt.setp(labeltext, visible=False)
-        plt.setp(autotexts, visible=False)
-        axs.autoscale_view()
-        #Reposition the pie chart so that we can place a legend on the right
-        bbox = axs.get_position()        
-        (x,y, wid, ht) = bbox.bounds
-        wid = wid*0.8
-        bbox.bounds = (0, y, wid, ht)
-        axs.set_position(bbox)
-        #Now create a legend and place it on the right of the box.        
-        legendtext=[]
-        for slabel, ssize in zip(slicelabels, autotexts):
-           legendtext.append("%s : %s" % (slabel, ssize.get_text()))
+            minActivity = min(authTagList, key=operator.itemgetter(2))[2]
+            maxActivity = max(authTagList, key=operator.itemgetter(2))[2]
+            maxActivity = max(minActivity*1.2, maxActivity)
+            minActivityLog = math.log(minActivity)
+            maxActivityLog = math.log(maxActivity)
+                        
+            normlizer = lambda actIdx : (math.log(actIdx)-minActivityLog)/(maxActivityLog-minActivityLog)
 
-        fontprop = self._getLegendFont()
-        legend = axs.legend(patches, legendtext, loc=(1, y), prop=fontprop)
-        
-        return(axs)
+            #Now sort the authers by author names
+            authTagList = sorted(authTagList, key=operator.itemgetter(0))
+            #change the font size between "-2" to "+8" relative to current font size
+            tagHtmlStr = ' '.join([('<font size="%+d" color="%s">%s</font>\n'%
+                                    (getTagFontSize(freq, minFreqLog, maxFreqLog), getActivityClr(normlizer, actIdx), auth))
+                                       for auth, freq, actIdx in authTagList])
+        return(tagHtmlStr)             
 
-    def _setXAxisDateFormatter(self, ax):
-##        years    = YearLocator()   # every year
-##        months   = MonthLocator(interval=3)  # every 3 month
-##        yearsFmt = DateFormatter('%Y')
-##        monthsFmt = DateFormatter('%b')
-        # format the ticks
-##        ax.xaxis.set_major_locator(years)
-##        ax.xaxis.set_major_formatter(yearsFmt)
-##        ax.xaxis.set_minor_locator(months)
-##        ax.xaxis.set_minor_formatter(monthsFmt)
-        plt.setp( ax.get_xmajorticklabels(), fontsize='small')
-        plt.setp( ax.get_xminorticklabels(), fontsize='x-small')
-        
-    def _closeDateLineGraph(self, ax, filename):
-        assert(ax != None)
-        ax.autoscale_view()
-        self._setXAxisDateFormatter(ax)
-        ax.grid(True)
-        ax.set_xlabel('Date')
-        fig = ax.figure
-        fig.autofmt_xdate()
-        fig.savefig(filename, dpi=self.dpi, format=self.format)        
-        
-    def _drawDateLineGraph(self, dates, values, axs= None):
-        if( axs == None):
-            fig = plt.figure()            
-            axs = fig.add_subplot(111)
-            axs.set_color_cycle(self.clrlist)
-            
-        axs.plot_date(dates, values, '-', xdate=True, ydate=False)
-        
-        return(axs)
-    
+    def TagCloud(self, numWords=50):
+        self._printProgress("Calculating tag cloud for log messages")
+        words = self.svnstats.getLogMsgWordFreq(5)
+        tagHtmlStr = ''
+        if( len(words) > 0):
+            #first get sorted wordlist (reverse sorted by frequency)
+            tagWordList = sorted(words.items(), key=operator.itemgetter(1),reverse=True)
+            #now extract top 'numWords' from the list and then sort it with alphabetical order.
+            tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
+            #now calculate the maximum value from the sorted list.
+            minFreq = min(tagWordList, key=operator.itemgetter(1))[1]
+            minFreqLog = math.log(minFreq)
+            maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
+            maxFreqLog = math.log(maxFreq)
+            #change the font size between "-2" to "+8" relative to current font size
+            tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(getTagFontSize(freq, minFreqLog, maxFreqLog), x))
+                                       for x,freq in tagWordList])                
+        return(tagHtmlStr)
