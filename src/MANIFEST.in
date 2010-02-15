@@ -2,3 +2,4 @@ include svnplot/*.py
 include svnplot/README
 include svnplot/readme.txt
 include svnplot/svnplot-long.tmpl
+include svnplot/svnplot-js.tmpl
