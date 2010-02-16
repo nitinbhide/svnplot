@@ -18,8 +18,7 @@ import string, re
 import math
 import operator
 import logging
-
-import numpy
+import itertools
 
 COOLINGRATE = 0.1/24.0 #degree per hour
 TEMPINCREMENT = 10.0 # degrees per commit
@@ -73,6 +72,42 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
         
     return(temperature)
 
+def pairwise(iterable):
+    "s -> (0, s0,s1), (1, s1,s2), (2, s2, s3), ..."
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return itertools.izip(itertools.count(0), a, b)
+
+def update_bin(binlist, binvalues, value):
+    '''
+    return the index of bin from the binlist, where the 'value' belongs.
+    '''
+    assert(len(binlist) == len(binvalues)+1)
+    if( value >= binlist[0]):
+        for idx, binmin, binmax in pairwise(binlist):
+            if( value >= binmin and value < binmax):
+                binvalues[idx] = binvalues[idx]+1
+                return
+
+    
+def histogram_data(binlist, indata):
+    '''
+    calculate the histogram data from the binlist and input raw data. Similar to numpy.histogram function.
+    '''
+    try:
+        import numpy
+        logging.debug("Using numpy.histogram for bin data computation")
+        (binvalues, binsList) = numpy.histogram(indata, bins=binsList,new=True)
+    except:
+        #NumPy import failed. Now fall back to replacement function.This will be slower than numpy.histogram
+        logging.debug("Numpy not found. Using replacement function for histogram bin data computation")
+        binvalues = [0]*(len(binlist)-1)
+
+        for value in indata:
+            update_bin(binlist, binvalues, value)
+            
+    return(binvalues)
+    
 class DeltaAvg:
     '''
     DeltaAvg class implements a 'delta' average aggregate function. It calculates the
@@ -948,7 +983,7 @@ class SVNStats:
                         deltaList.append((deltaval))
                 prevval = cmdate
             
-        (binvals, binsList) = numpy.histogram(deltaList, bins=binsList,new=True)
+        binvals = histogram_data(binsList, deltaList)         
 
         return(binvals)
     

@@ -37,9 +37,6 @@ from __future__ import with_statement
 __revision__ = '$Revision:$'
 __date__     = '$Date:$'
 
-
-import matplotlib.pyplot as plt
-import matplotlib.mpl as mpl
 from optparse import OptionParser
 import sqlite3
 import os.path, sys
@@ -240,11 +237,12 @@ class SVNPlotJS(SVNPlotBase):
         '''
         
         authList = self.svnstats.getAuthorList(self.authorsToDisplay)
+        authLabelList = [self._getAuthorLabel(auth) for auth in authList]
         numAuth = len(authList)
         
         outstr = StringIO.StringIO()
         
-        for author, idx in zip(authList, range(0, numAuth)):
+        for author, idx in zip(authLabelList, range(0, numAuth)):
             dates, loc = self.svnstats.getLoCTrendForAuthor(author)
             outstr.write("auth%dLocData = [" % idx)
             for date, lc in zip(dates, loc):
@@ -387,28 +385,65 @@ class SVNPlotJS(SVNPlotBase):
                 
         return(self.__getGraphScript(template, {"LOCDATA":outstr.getvalue()}))
 
-    def AuthorActivityGraph(self, filename):
+    def AuthorActivityGraph(self):
         self._printProgress("Calculating Author Activity graph")
 
         authlist, addfraclist,changefraclist,delfraclist = self.svnstats.getAuthorActivityStats(self.authorsToDisplay)
-        dataList = [addfraclist, changefraclist, delfraclist]
-
         authlabellist = [self._getAuthorLabel(author) for author in authlist]
         
-        barwid = 0.2
         legendlist = ["Adding", "Modifying", "Deleting"]
-        ax = self._drawStackedHBarGraph(dataList, authlabellist, legendlist, barwid)
-        #set the x-axis format.                
-        ax.set_xbound(0, 100)
-        xfmt = FormatStrFormatter('%d%%')
-        ax.xaxis.set_major_formatter(xfmt)
-        #set the y-axis format
-        plt.setp( ax.get_yticklabels(), visible=True, fontsize='x-small')
+        template = '''        
+            function authorActivityGraph() {            
+            var addData = [$ADDDATA];
+            var changeData = [$CHANGEDATA];
+            var delData = [$DELDATA];
+            $.jqplot('AuthorActivityGraph', [addData, changeData, delData], {
+                stackSeries: true,
+                title:'Author Activity',
+                legend: {show: true, location: 'ne'},
+                seriesDefaults:{
+                    renderer:$.jqplot.BarRenderer, 
+                    rendererOptions:{barDirection:'horizontal',barPadding: 6, barMargin:15},                    
+                    },
+                series: [{label: 'Adding', color:'blue'}, {label: 'Modifying', color:'green'}, {label: 'Deleting', color:'red'}],
+                axes:{
+                    yaxis:{
+                    renderer:$.jqplot.CategoryAxisRenderer,
+                    ticks:[$TICKDATA]                    
+                    },
+                    xaxis:{min:0, max:100.0}                 
+                }
+            }
+            );
+        }
+        '''
+        assert(len(authlabellist) == len(addfraclist))
+        assert(len(authlabellist) == len(changefraclist))
+        assert(len(authlabellist) == len(delfraclist))
         
-        ax.set_title('Author Activity')
-        fig = ax.figure
-        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        addData = StringIO.StringIO()
+        changeData = StringIO.StringIO()
+        delData = StringIO.StringIO()
+        ticksData = StringIO.StringIO()
 
+        idx = 1        
+        for author, addfrac, changefrac, delfrac in zip(authlabellist, addfraclist, changefraclist,delfraclist):
+            addData.write('[%.2f,%d],'% (addfrac,idx))
+            changeData.write('[%.2f,%d],'% (changefrac, idx))
+            delData.write('[%.2f,%d],'% (delfrac,idx))
+            if( len(author) == 0):
+                author= " "
+            ticksData.write('"%s",'% author)
+            idx = idx+1
+        
+        addDataStr = addData.getvalue()
+        changeDataStr = changeData.getvalue()
+        delDataStr = delData.getvalue()
+        ticksDataStr = ticksData.getvalue()
+        ticksDataStr = ticksDataStr.replace('\n', '\\n')
+        
+        return(self.__getGraphScript(template, {"TICKDATA":ticksDataStr, "ADDDATA":addDataStr, "CHANGEDATA":changeDataStr,"DELDATA":delDataStr}))
+        
     def CommitActivityGraph(self, filename):
         self._printProgress("Calculating Commit activity graph")
         
@@ -623,6 +658,7 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["DirFileCountPie"] = self.DirFileCountPieGraph(self.dirdepth, maxdircount)
         graphParamDict["DirSizeLine"] = self.DirectorySizeLineGraph(self.dirdepth, maxdircount)
         graphParamDict["AuthorsCommitTrend"] = self.AuthorsCommitTrend()
+        graphParamDict["AuthorActivityGraph"] = self.AuthorActivityGraph()
     
         return(graphParamDict)
 
