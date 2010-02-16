@@ -26,15 +26,7 @@ from svnplotbase import *
 class SVNPlotMatplotLib(SVNPlotBase):
     def __init__(self, svnstats, dpi=100,format='png'):
         SVNPlotBase.__init__(self, svnstats, dpi, format)
-                                                                
-    def _getAuthorLabel(self, author):
-        '''
-        sometimes are author names are email ids. Hence labels have higher width. So split the
-        author names on '@' symbol        
-        '''
-        auth = author.replace('@', '@\n')
-        return(auth)
-    
+                                                                       
     def _getLegendFont(self):
         legendfont = FontProperties(size='x-small')
         return(legendfont)

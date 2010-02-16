@@ -66,7 +66,15 @@ class SVNPlotBase:
     def _printProgress(self, msg):
         if( self.verbose == True):
             print msg
-                                                    
+
+    def _getAuthorLabel(self, author):
+        '''
+        sometimes are author names are email ids. Hence labels have higher width. So split the
+        author names on '@' symbol        
+        '''
+        auth = author.replace('@', '@\n')
+        return(auth)
+    
     def BasicStats(self, basicStatsTmpl):
         '''
         get the html string for basic repository statistics (like last revision, etc)

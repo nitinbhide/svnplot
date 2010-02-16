@@ -147,8 +147,9 @@
     </td>    
 </tr>
 <tr>
-    <td><h4>Author Activity</h4><br/>
-    <a href="$AuthActivity"><img src="$AuthActivity"></a>
+    <td><br/>
+     <div id="AuthorActivityGraph" style="display: block;margin-left:auto;margin-right:auto;height:600px;width:800px;"></div>
+	 $AuthorActivityGraph
     </td>    
 </tr>
 </table>
@@ -179,6 +180,7 @@
 				dirFileCountPieGraph();
 				dirSizeLineGraph();
 				authorsCommitTrend();
+				authorActivityGraph();
 			});
 
 	</script>	
