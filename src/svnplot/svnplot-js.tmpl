@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-	<!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+	<!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->
 	<title>Subversion Stats Plot for $RepoName</title>
     <style type="text/css">
 		h3 {text-align:center;background-color: #F5F5F5;margin:2;border-style:solid}
@@ -166,23 +166,24 @@
 </tr>
 </table>
 <script type="text/javascript">
-			   $(document).ready(function() {
-				locgraph();
-				locChurnGraph();
-				contri_locgraph();
-				avglocgraph();
-				fileCountGraph();
-				fileTypesGraph();
-				ActivityByWeekday();
-				ActivityByTimeOfDay();
-				CommitActivityIndexGraph();
-				directorySizePieGraph();
-				dirFileCountPieGraph();
-				dirSizeLineGraph();
-				authorsCommitTrend();
-				authorActivityGraph();
-			});
-
+			 function showAllGraphs(showLegend) {
+                    locgraph();
+                    locChurnGraph(showLegend);
+                    contri_locgraph(showLegend);
+                    avglocgraph();
+                    fileCountGraph();
+                    fileTypesGraph();
+                    ActivityByWeekday();
+                    ActivityByTimeOfDay();
+                    CommitActivityIndexGraph();
+                    directorySizePieGraph(showLegend);
+                    dirFileCountPieGraph(showLegend);
+                    dirSizeLineGraph(showLegend);
+                    authorsCommitTrend();
+                    authorActivityGraph(showLegend);                    
+                };
+                
+			   $(document).ready(showAllGraphs(true));
 	</script>	
 </body>
 </html>

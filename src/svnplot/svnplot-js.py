@@ -58,22 +58,178 @@ HTMLBasicStatsTmpl = '''
 </table>
 '''
 
+HTMLIndexTemplate ='''
+<html>
+<head><title>Subversion Stats Plot for $RepoName</title>
+    <!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->
+	<style type="text/css">
+	th {background-color: #F5F5F5; text-align:center}
+	/*td {background-color: #FFFFF0}*/
+	h3 {background-color: transparent;margin:2}
+	h4 {background-color: transparent;margin:1}    
+	</style>
+	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
+	<script type="text/javascript" src="jquery.min.js"></script>
+	<script type="text/javascript" src="jquery.jqplot.min.js"></script>	
+	<script type="text/javascript" src="jqplot.dateAxisRenderer.min.js"></script>	
+	<script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
+</head>
+<body>
+<table align="center" frame="box">
+<caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
+<tr>
+<th colspan=3 align="center"><h3>General Statistics</h3></th>
+</tr>
+<tr>
+    <td colspan=3>
+    $BasicStats
+    </td>
+</tr>
+<tr>
+<tr>
+<th colspan=3 align="center"><h3>Top 10 Hot List</h3></th>
+</tr>
+<tr>
+    <td colspan=3>
+        <table width="100%">
+        <tr>
+            <td width="50%">
+            <p align='center'><b>Top 10 Active Files</b></p>
+            $ActiveFiles
+            </td>
+            <td>
+            <p align='center'><b>Top 10 Active Authors</b></p>
+            $ActiveAuthors
+            </td>
+        </tr>
+        </table>
+    </td>
+</tr>
+<tr>
+<th colspan=3 align="center"><h3>Lines of Code Graphs</h3></th>
+</tr>
+<tr>
+    <td align="center">
+    <div id="LoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    $LocTable	
+    </td>
+    <td align="center">
+    <div id="ContriLoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    $ContriLoCTable
+    </td>
+    <td align="center">
+    <div id="AvgLoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    $AvgLoCTable
+    </td>    
+</tr>
+<tr>
+<th colspan=3 align="center"><h3>File Count Graphs</h3></th>
+</tr>
+<tr>
+    <td align="center">
+    <div id="FileCountTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    $FileCountTable
+    </td>
+    <td align="center" >
+    <div id="FileTypeCountTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    $FileTypeCountTable
+    </td>
+    <td>&nbsp</td>
+</tr>
+<tr>
+<th colspan=3 align="center"><h3>Directory Size Graphs</h3></th>
+</tr>
+<tr>
+   <td align="center">
+    <div id="DirSizePie" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+   $DirSizePie
+    </td>
+    <td align="center">
+    <div id="DirSizeLine" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+   $DirSizeLine
+    </td>
+    <td align="center">
+    <div id="DirFileCountPie" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+   $DirFileCountPie  
+    </td>
+</tr>
+<tr>
+<th colspan=3 align="center"><h3>Commit Activity Graphs</h3></th>
+</tr>
+<tr>
+    <td align="center" >
+        <div id="CommitActIdxTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+		$CommitActIdxTable
+    </td>    
+    <td align="center" >
+    <div id="ActivityByWeekdayTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    $ActivityByWeekdayTable
+    </td>
+    <td align="center" >
+    <div id="ActivityByTimeOfDayTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    $ActivityByTimeOfDayTable
+    </td>    
+</tr>
+<tr>
+    <td align="center" >
+        <div id="AuthorsCommitTrend" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    $AuthorsCommitTrend
+    </td>
+    <td align="center">
+    <div id="AuthorActivityGraph" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+	 $AuthorActivityGraph
+    </td>
+    <td align="center" >&nbsp;    
+    </td>    
+</tr>
+<th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
+</tr>
+<tr id='tagcloud'>
+<td colspan=3 align="center">$TagCloud</td>
+</tr>
+<th colspan=3 align="center"><h3>Author Cloud</h3></th>
+</tr>
+<tr id='authcloud'>
+<td colspan=3 align="center">$AuthCloud</td>
+</tr>
+</table>
+<script type="text/javascript">
+                function showAllGraphs(showLegend) {
+                    locgraph();
+                    /*locChurnGraph(showLegend);*/
+                    contri_locgraph();
+                    avglocgraph();
+                    fileCountGraph();
+                    fileTypesGraph();
+                    ActivityByWeekday();
+                    ActivityByTimeOfDay();
+                    CommitActivityIndexGraph();
+                    directorySizePieGraph(showLegend);
+                    dirFileCountPieGraph(showLegend);
+                    dirSizeLineGraph(showLegend);
+                    authorsCommitTrend();
+                    authorActivityGraph(showLegend);                    
+                };
+                
+			   $(document).ready(showAllGraphs(false));
 
-GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", CommitActivityIdx="cmtactidx",
-                     LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
-                     AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
-                     DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
-                     FileTypes="filetypes", AuthorsCommitTrend="authorscommit")
-
+	</script>
+</body>
+</html>
+'''
 
 class SVNPlotJS(SVNPlotBase):
-    def __init__(self, svnstats, dpi=100, format='png',template=None):
-        SVNPlotBase.__init__(self, svnstats, dpi,format)
+    def __init__(self, svnstats, template=None):
+        SVNPlotBase.__init__(self, svnstats)
         self.commitGraphHtPerAuthor = 2 #In inches
         self.authorsToDisplay = 10
         self.fileTypesToDisplay = 20
         self.dirdepth = 2
-        self.setTemplate(template)
+        self.template = HTMLIndexTemplate
+        if( template != None):
+            self.setTemplate(template)
         
     def setTemplate(self, template):
         assert(template != None)
@@ -81,11 +237,11 @@ class SVNPlotJS(SVNPlotBase):
             self.template = f.read()
  
                 
-    def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=100, maxdircount = 10):
+    def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=200, maxdircount = 10):
         self.svnstats.SetSearchPath(svnsearchpath)
         #LoC and FileCount Graphs
-        
-        graphParamDict = self._getGraphParamDict( thumbsize)
+        print "thumbsize = %d" % thumbsize
+        graphParamDict = self._getGraphParamDict(thumbsize)
         
         htmlidxname = os.path.join(dirpath, "index.htm")
         htmlidxTmpl = string.Template(self.template)
@@ -205,8 +361,8 @@ class SVNPlotJS(SVNPlotBase):
                     xaxis:{renderer:$.jqplot.DateAxisRenderer, label:'LoC'},
                     yaxis:{min:0}
                 },
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]})
-                };
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]});                
+             };
         '''
         
         dates, loc = self.svnstats.getLoCStats()
@@ -222,10 +378,10 @@ class SVNPlotJS(SVNPlotBase):
     def LocGraphAllDev(self):
         self._printProgress("Calculating Developer Contribution graph")
         template = '''
-            function contri_locgraph() {
+            function contri_locgraph(showLegend) {
             $LOCDATA
             $.jqplot('ContriLoCTable', locdata, {
-                legend:{show:true}, 
+                legend:{show:showLegend}, 
                 title:'Contributed Lines of Code',
                 axes:
                 {
@@ -233,7 +389,9 @@ class SVNPlotJS(SVNPlotBase):
                     yaxis:{min:0}
                 },
                 series:$SERIESDATA
-                }) };
+                });
+                
+                };
         '''
         
         authList = self.svnstats.getAuthorList(self.authorsToDisplay)
@@ -268,13 +426,13 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating LoC and Churn graph")
 
         template = '''
-            function locChurnGraph() {
+            function locChurnGraph(showLegend) {
             locdata = [$LOCDATA];
             churndata= [$CHURNDATA];
             
             $.jqplot('LoCChurnTable', [locdata, churndata], {
                 title:'Lines of Code and Churn Graph',
-                legend:{show:true},
+                legend:{show:showLegend},
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{label:'LoC', min:0},y2axis:{label:'Churn', min:0} },
                 series:[
                     {label:'LoC', lineWidth:2, markerOptions:{style:'filledCircle',size:2}},
@@ -368,7 +526,7 @@ class SVNPlotJS(SVNPlotBase):
             function avglocgraph() {
             locdata = [$LOCDATA];
             $.jqplot('AvgLoCTable', locdata, {
-                title:'Average Lines of Code',
+                title:'Average File LoC',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]})
                 };
@@ -393,14 +551,14 @@ class SVNPlotJS(SVNPlotBase):
         
         legendlist = ["Adding", "Modifying", "Deleting"]
         template = '''        
-            function authorActivityGraph() {            
+            function authorActivityGraph(showLegend) {            
             var addData = [$ADDDATA];
             var changeData = [$CHANGEDATA];
             var delData = [$DELDATA];
             $.jqplot('AuthorActivityGraph', [addData, changeData, delData], {
                 stackSeries: true,
                 title:'Author Activity',
-                legend: {show: true, location: 'ne'},
+                legend: {show: showLegend, location: 'ne'},
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
                     rendererOptions:{barDirection:'horizontal',barPadding: 6, barMargin:15},                    
@@ -443,42 +601,7 @@ class SVNPlotJS(SVNPlotBase):
         ticksDataStr = ticksDataStr.replace('\n', '\\n')
         
         return(self.__getGraphScript(template, {"TICKDATA":ticksDataStr, "ADDDATA":addDataStr, "CHANGEDATA":changeDataStr,"DELDATA":delDataStr}))
-        
-    def CommitActivityGraph(self, filename):
-        self._printProgress("Calculating Commit activity graph")
-        
-        authList = self.svnstats.getAuthorList(self.authorsToDisplay)
-        authCount = len(authList)
-        
-        authIdx = 1
-        refaxs = None
-        for author in authList:
-            axs = self._drawCommitActivityGraphByAuthor(authCount, authIdx, author, refaxs)
-            authIdx = authIdx+1
-            #first axes is used as reference axes. Since the reference axis limits are shared by
-            #all axes, every autoscale_view call on the new 'axs' will update the limits on the
-            #reference axes. Hence I am storing xmin,xmax limits and calculating the minimum/maximum
-            # limits for reference axis everytime. 
-            if( refaxs == None):
-                refaxs = axs
-
-        #Set the x axis label on the last graph
-        axs.set_xlabel('Date')
-        
-        #Turn on the xtick display only on the last graph
-        plt.setp( axs.get_xmajorticklabels(), visible=True)
-        plt.setp( axs.get_xminorticklabels(), visible=True)
-        
-        #Y axis is always set to 0 to 24 hrs
-        refaxs.set_ybound(0, 24)
-        hrLocator= FixedLocator([0,6,12,18,24])
-        refaxs.yaxis.set_major_locator(hrLocator)
-        #auto format the date.
-        fig = refaxs.figure
-        fig.autofmt_xdate()
-        
-        self._closeScatterPlot(refaxs, filename, 'Commit Activity')
-        
+            
     def DirectorySizePieGraph(self, depth=2, maxdircount=10):
         '''
         depth - depth of directory search relative to search path. Default value is 2
@@ -487,11 +610,11 @@ class SVNPlotJS(SVNPlotBase):
         dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
 
         template = '''        
-            function directorySizePieGraph() {
+            function directorySizePieGraph(showLegend) {
             data = [$DIRSIZEDATA];
             $.jqplot('DirSizePie', [data], {
                     title: 'Directory Size (Pie)',
-                    legend:{show:true},
+                    legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
             });
         }
@@ -518,11 +641,11 @@ class SVNPlotJS(SVNPlotBase):
         dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
                 
         template = '''        
-            function dirFileCountPieGraph() {
+            function dirFileCountPieGraph(showLegend) {
             data = [$DIRSIZEDATA];
             $.jqplot('DirFileCountPie', [data], {
                     title: 'Directory File Count (Pie)',
-                    legend:{show:true},
+                    legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
             });
         }
@@ -547,10 +670,10 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating Directory size line graph")
 
         template = '''
-            function dirSizeLineGraph() {
+            function dirSizeLineGraph(showLegend) {
             $LOCDATA
             $.jqplot('DirSizeLine', locdata, {
-                legend:{show:true}, 
+                legend:{show:showLegend}, 
                 title:'Directory Size(Lines of Code)',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
                 series:$SERIESDATA
@@ -625,20 +748,13 @@ class SVNPlotJS(SVNPlotBase):
         data = outstr.getvalue()
 
         return(self.__getGraphScript(template, {"DATA":data}))
-                
-    def _getGraphFileName(self, dirpath, graphname):
-        filename = os.path.join(dirpath, GraphNameDict[graphname])
-        #now add the extension based on the format
-        filename = "%s.%s" % (filename, self.format)
-        return(filename)
-    
+                    
     def _getGraphParamDict(self, thumbsize, maxdircount = 10):
         graphParamDict = dict()
-        for graphname in GraphNameDict.keys():
-            graphParamDict[graphname] = self._getGraphFileName(".", graphname)
             
-        graphParamDict["thumbwid"]=str(thumbsize)
-        graphParamDict["thumbht"]=str(thumbsize)
+        graphParamDict["thumbwid"]= "%dpx" % thumbsize
+        graphParamDict["thumbht"]="%dpx" % thumbsize
+        
         graphParamDict["RepoName"]=self.reponame
         graphParamDict["TagCloud"] = self.TagCloud()
         graphParamDict["AuthCloud"] = self.AuthorCloud()
@@ -661,14 +777,6 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["AuthorActivityGraph"] = self.AuthorActivityGraph()
     
         return(graphParamDict)
-
-    def _drawCommitActivityGraphByAuthor(self, authIdx, authCount, author, axs=None):
-        dates,committimelist= self.svnstats.getAuthorCommitActivityStats(author)
-        #Plot title
-        plotTitle = "Author : %s" % author
-        axs = self._drawScatterPlot(dates, committimelist, authCount, authIdx, plotTitle, axs)
-        
-        return(axs)
                 
     def printAnomalies(self, searchpath='/%'):
         anomalylist = self.svnstats.getAnomalies(searchpath)
@@ -693,11 +801,9 @@ def RunMain():
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="display verbose progress")
-    parser.add_option("-r", "--dpi", dest="dpi", default=100, type="int",
-                      help="set the dpi of output png images")
-    parser.add_option("-t", "--thumbsize", dest="thumbsize", default=100, type="int",
-                      help="set the width and heigth of thumbnail display (pixels)")    
-    parser.add_option("-p", "--template", dest="template", default="svnplot-js.tmpl",
+    parser.add_option("-t", "--thumbsize", dest="thumbsize", default=200, type="int",
+                      help="set the width and heigth of thumbnail display (pixels). Graphs may get distorted if the value is less than 200 pixels")    
+    parser.add_option("-p", "--template", dest="template", 
                       action="store", type="string", help="template filename (optional)")
     parser.add_option("-m","--maxdir",dest="maxdircount", default=10, type="int",
                       help="limit the number of directories on the graph to the x largest directories")
@@ -727,7 +833,7 @@ def RunMain():
                 print "using template : %s" % options.template
                 
         svnstats = SVNStats(svndbpath)     
-        svnplot = SVNPlotJS(svnstats, dpi=options.dpi, template=options.template)
+        svnplot = SVNPlotJS(svnstats, template=options.template)
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
         svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize, options.maxdircount)
