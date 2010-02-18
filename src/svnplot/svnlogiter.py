@@ -397,8 +397,13 @@ class SVNLogClient:
     def getUrl(self, path):
         url = self.svnrepourl
         if( path.strip() != ""):
-            #remember 'path' can be a unicode string        
-            path = path.encode('utf8')
+            #remember 'path' can be a unicode string            
+            try:
+                path = path.encode('utf8')
+            except:
+                #not possible to encode path as unicode. Probably an latin-1 character with value > 127
+                #keep path as it is.
+                pass
             url = self.getRootUrl() + urllib.pathname2url(path)
         return(url)
 
