@@ -75,6 +75,20 @@ HTMLIndexTemplate ='''
         margin-left:auto;margin-right:auto;
         height:$thumbht;width:$thumbwid;
     }
+    #Graph_big {
+			display: none;
+			position: fixed;
+			top: 20%;
+			left: 20%;
+			width: 60%;
+			height: 60%;
+			padding: 16px;
+			border: 16px solid black;
+			background-color: white;
+			z-index:1002;
+			overflow: auto;
+		}
+		
 	</style>
 	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
 	<script type="text/javascript" src="jquery.min.js"></script>
@@ -99,22 +113,34 @@ HTMLIndexTemplate ='''
 	$AuthorActivityGraph
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
-                    locgraph('LoCGraph');
+                    locgraph('LoCGraph', showLegend);
                     /* Not there in this template
 					locChurnGraph('LoCChurnGraph', showLegend);*/                    
                     contri_locgraph('ContriLoCGraph', showLegend);
-                    avglocgraph('AvgLoCGraph');
-                    fileCountGraph('FileCountGraph');
-                    fileTypesGraph('FileTypeCountGraph');
-                    ActivityByWeekday('ActivityByWeekdayGraph');
-                    ActivityByTimeOfDay('ActivityByTimeOfDayGraph');
-                    CommitActivityIndexGraph('CommitActIdxGraph');
+                    avglocgraph('AvgLoCGraph',showLegend);
+                    fileCountGraph('FileCountGraph',showLegend);
+                    fileTypesGraph('FileTypeCountGraph',showLegend);
+                    ActivityByWeekday('ActivityByWeekdayGraph',showLegend);
+                    ActivityByTimeOfDay('ActivityByTimeOfDayGraph',showLegend);
+                    CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
                     directorySizePieGraph('DirSizePie', showLegend);
-                    dirFileCountPieGraph('DirSizeLine', showLegend);
-                    dirSizeLineGraph('DirFileCountPie', showLegend);
-                    authorsCommitTrend('AuthorsCommitTrend');
+                    dirFileCountPieGraph('DirFileCountPie', showLegend);
+                    dirSizeLineGraph('DirSizeLine', showLegend);
+                    authorsCommitTrend('AuthorsCommitTrend',showLegend);
                     authorActivityGraph('AuthorActivityGraph', showLegend);
-                };                			  
+                };
+                function showGraphBox(graphFunc, showLegend) {
+                var graphboxId = 'Graph_big';
+                var graphBoxElem = document.getElementById(graphboxId);
+                graphBoxElem.style.display='block';
+                var plot = graphFunc(graphboxId, showLegend);
+                plot.redraw(true);
+                };
+                function hideGraphBox() {
+                    var graphboxId = 'Graph_big';
+                    var graphBoxElem = document.getElementById(graphboxId);
+                    graphBoxElem.style.display='none';
+                }
 	</script>	
 </head>
 <body onLoad="showAllGraphs(false);">
@@ -153,13 +179,13 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center">
-    <div id="LoCGraph" class="graph"></div>
+    <div id="LoCGraph" class="graph" onclick ="showGraphBox(locgraph, true);"></div>
     </td>
     <td align="center">
-    <div id="ContriLoCGraph" class="graph"></div>
+    <div id="ContriLoCGraph" class="graph" onclick ="showGraphBox(contri_locgraph, true);"></div>
     </td>
     <td align="center">
-    <div id="AvgLoCGraph" class="graph"></div>
+    <div id="AvgLoCGraph" class="graph" onclick ="showGraphBox(avglocgraph, true);"></div>
     </td>    
 </tr>
 <tr>
@@ -167,10 +193,10 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center">
-    <div id="FileCountGraph" class="graph"></div>
+    <div id="FileCountGraph" class="graph" onclick ="showGraphBox(fileCountGraph, true);"></div>
     </td>
     <td align="center" >
-    <div id="FileTypeCountGraph" class="graph"></div>
+    <div id="FileTypeCountGraph" class="graph" onclick ="showGraphBox(fileTypesGraph, true);"></div>
     </td>
     <td>&nbsp</td>
 </tr>
@@ -179,13 +205,13 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
    <td align="center">
-    <div id="DirSizePie" class="graph"></div>
+    <div id="DirSizePie" class="graph" onclick ="showGraphBox(directorySizePieGraph, true);"></div>
     </td>
     <td align="center">
-    <div id="DirSizeLine" class="graph"></div>
+    <div id="DirSizeLine" class="graph" onclick ="showGraphBox(dirSizeLineGraph, true);"></div>
     </td>
     <td align="center">
-    <div id="DirFileCountPie" class="graph"></div>
+    <div id="DirFileCountPie" class="graph" onclick ="showGraphBox(dirFileCountPieGraph, true);"></div>
     </td>
 </tr>
 <tr>
@@ -193,21 +219,21 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center" >
-        <div id="CommitActIdxGraph" class="graph"></div>
+        <div id="CommitActIdxGraph" class="graph" onclick ="showGraphBox(CommitActivityIndexGraph, true);"></div>
     </td>    
     <td align="center" >
-    <div id="ActivityByWeekdayGraph" class="graph"></div>
+    <div id="ActivityByWeekdayGraph" class="graph" onclick ="showGraphBox(ActivityByWeekday, true);"></div>
     </td>
     <td align="center" >
-    <div id="ActivityByTimeOfDayGraph" class="graph"></div>
+    <div id="ActivityByTimeOfDayGraph" class="graph" onclick ="showGraphBox(ActivityByTimeOfDay, true);"></div>
     </td>    
 </tr>
 <tr>
     <td align="center" >
-        <div id="AuthorsCommitTrend" class="graph"></div>
+        <div id="AuthorsCommitTrend" class="graph" onclick ="showGraphBox(authorsCommitTrend, true);"></div>
     </td>
     <td align="center">
-    <div id="AuthorActivityGraph" class="graph"></div>
+    <div id="AuthorActivityGraph" class="graph" onclick ="showGraphBox(authorActivityGraph, true);"></div>
     </td>
     <td align="center" >&nbsp;    
     </td>    
@@ -223,6 +249,7 @@ HTMLIndexTemplate ='''
 <td colspan=3 align="center">$AuthCloud</td>
 </tr>
 </table>
+<div id="Graph_big" onClick="hideGraphBox();"></div>    
 </body>
 </html>
 '''
@@ -265,9 +292,9 @@ class SVNPlotJS(SVNPlotBase):
         data, labels = self.svnstats.getActivityByWeekday()
         
         template = '''        
-            function ActivityByWeekday(divElemId) {
+            function ActivityByWeekday(divElemId,showLegend) {
             var data = [$DATA];
-            $.jqplot(divElemId, [data], {
+            var plot = $.jqplot(divElemId, [data], {
                 title:'Commit Activity by Day of Week',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
@@ -277,10 +304,11 @@ class SVNPlotJS(SVNPlotBase):
                 xaxis:{
                     renderer:$.jqplot.CategoryAxisRenderer,
                     label:'Day of Week'
-                },
+                    },
                 yaxis:{min:0}                 
-            }
-        });
+                }
+            });
+            return(plot);
         };
         '''
         assert(len(data) == len(labels))
@@ -296,9 +324,9 @@ class SVNPlotJS(SVNPlotBase):
         data, labels = self.svnstats.getActivityByTimeOfDay()
         
         template = '''        
-            function ActivityByTimeOfDay(divElemId) {
+            function ActivityByTimeOfDay(divElemId,showLegend) {
             var data = [$DATA];
-            $.jqplot(divElemId, [data], {
+            var plot = $.jqplot(divElemId, [data], {
                 title:'Commit Activity By Hour of Day',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
@@ -310,8 +338,9 @@ class SVNPlotJS(SVNPlotBase):
                     label:'Time of Day'
                 },
                 yaxis:{min:0}                 
-            }
-        });
+                }
+            });
+            return(plot);
         };
         '''
         assert(len(data) == len(labels))
@@ -332,13 +361,14 @@ class SVNPlotJS(SVNPlotBase):
         cmdates, temperaturelist = self.svnstats.getRevActivityTemperature()
         
         template = '''  
-        function CommitActivityIndexGraph(divElemId) {
+        function CommitActivityIndexGraph(divElemId,showLegend) {
             var locdata = [$DATA];
-            $.jqplot(divElemId, [locdata], {
+            var plot = $.jqplot(divElemId, [locdata], {
                 title:'Commit Activity Index over time',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
                 );
+                return(plot);    
             };
         '''
         
@@ -353,15 +383,17 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating LoC graph")
         
         template = '''  
-            function locgraph(divElemId) {
+            function locgraph(divElemId,showLegend) {
             var locdata = [$DATA];
-            $.jqplot(divElemId, [locdata], {
+            var plot = $.jqplot(divElemId, [locdata], {
                 title:'Lines of Code',
                 axes:{
                     xaxis:{renderer:$.jqplot.DateAxisRenderer, label:'LoC'},
                     yaxis:{min:0}
                 },
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]});
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
+                );
+                return(plot);                   
              };
         '''
         
@@ -377,7 +409,7 @@ class SVNPlotJS(SVNPlotBase):
         template = '''
             function contri_locgraph(divElemId, showLegend) {
             $LOCDATA
-            $.jqplot(divElemId, locdata, {
+             var plot = $.jqplot(divElemId, locdata, {
                 legend:{show:showLegend}, 
                 title:'Contributed Lines of Code',
                 axes:
@@ -386,7 +418,8 @@ class SVNPlotJS(SVNPlotBase):
                     yaxis:{min:0}
                 },
                 series:$SERIESDATA
-                });            
+                });
+              return(plot);
             };
         '''
         
@@ -429,7 +462,7 @@ class SVNPlotJS(SVNPlotBase):
             var locdata = [$LOCDATA];
             var churndata= [$CHURNDATA];
             
-            $.jqplot(divElemId, [locdata, churndata], {
+            var plot = $.jqplot(divElemId, [locdata, churndata], {
                 title:'Lines of Code and Churn Graph',
                 legend:{show:showLegend},
                 axes:{ xaxis:{renderer:$.jqplot.DateAxisRenderer},
@@ -440,6 +473,7 @@ class SVNPlotJS(SVNPlotBase):
                     {label:'Churn',yaxis:'y2axis',lineWidth:2, markerOptions:{style:'filledCircle',size:2}}
                 ]
             });
+            return(plot);
         };
         '''
 
@@ -461,13 +495,14 @@ class SVNPlotJS(SVNPlotBase):
         dates, fc = self.svnstats.getFileCountStats()        
 
         template = '''        
-            function fileCountGraph(divElemId) {
+            function fileCountGraph(divElemId,showLegend) {
             var data = [$DATA];
-            $.jqplot(divElemId, [data], {
+            var plot = $.jqplot(divElemId, [data], {
                 title:'File Count',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
                 );
+              return(plot);
             };
         '''
         
@@ -482,9 +517,9 @@ class SVNPlotJS(SVNPlotBase):
     def FileTypesGraph(self):
         self._printProgress("Calculating File Types graph")
         template = '''        
-            function fileTypesGraph(divElemId) {
+            function fileTypesGraph(divElemId,showLegend) {
             var data = [$DATA];
-            $.jqplot(divElemId, [data], {
+            var plot = $.jqplot(divElemId, [data], {
                 title:'File Types',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
@@ -495,6 +530,7 @@ class SVNPlotJS(SVNPlotBase):
                 yaxis:{renderer:$.jqplot.CategoryAxisRenderer}
                 }
             });
+            return(plot);
         };
         '''
         
@@ -512,13 +548,15 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating Average File Size graph")
             
         template = '''        
-            function avglocgraph(divElemId) {
+            function avglocgraph(divElemId,showLegend) {
             var locdata = [$LOCDATA];
-            $.jqplot(divElemId, [locdata], {
+            var plot = $.jqplot(divElemId, [locdata], {
                 title:'Average File LoC',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]});
-                };
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
+                );
+                return(plot);
+            };
         '''
         
         dates, avgloclist = self.svnstats.getAvgLoC()                
@@ -541,7 +579,7 @@ class SVNPlotJS(SVNPlotBase):
             var addData = [$ADDDATA];
             var changeData = [$CHANGEDATA];
             var delData = [$DELDATA];
-            $.jqplot(divElemId, [addData, changeData, delData], {
+            var plot = $.jqplot(divElemId, [addData, changeData, delData], {
                 stackSeries: true,
                 title:'Author Activity',
                 legend: {show: showLegend, location: 'ne'},
@@ -556,9 +594,10 @@ class SVNPlotJS(SVNPlotBase):
                     ticks:[$TICKDATA]                    
                     },
                     xaxis:{min:0, max:100.0}                 
+                    }
                 }
-            }
             );
+            return(plot);
         }
         '''
         assert(len(authlabellist) == len(addfraclist))
@@ -595,11 +634,12 @@ class SVNPlotJS(SVNPlotBase):
         template = '''        
             function directorySizePieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
-            $.jqplot(divElemId, [data], {
+            var plot = $.jqplot(divElemId, [data], {
                     title: 'Directory Size (Pie)',
                     legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
             });
+            return(plot);
         };
         '''
         
@@ -624,11 +664,12 @@ class SVNPlotJS(SVNPlotBase):
         template = '''        
             function dirFileCountPieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
-            $.jqplot(divElemId, [data], {
+            var plot = $.jqplot(divElemId, [data], {
                     title: 'Directory File Count (Pie)',
                     legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
             });
+            return(plot);
         };
         '''
         
@@ -651,12 +692,13 @@ class SVNPlotJS(SVNPlotBase):
         template = '''
             function dirSizeLineGraph(divElemId, showLegend) {
             $LOCDATA
-            $.jqplot(divElemId, locdata, {
+            var plot = $.jqplot(divElemId, locdata, {
                 legend:{show:showLegend}, 
                 title:'Directory Size(Lines of Code)',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
                 series:[$SERIESDATA]
                 });
+                return(plot);
             };
         '''
         
@@ -696,9 +738,9 @@ class SVNPlotJS(SVNPlotBase):
         data = self.svnstats.getAuthorsCommitTrendHistorgram(binsList)
         
         template = '''        
-            function authorsCommitTrend(divElemId) {
+            function authorsCommitTrend(divElemId,showLegend) {
             var data = [$DATA];
-            $.jqplot(divElemId, [data], {
+            var plot = $.jqplot(divElemId, [data], {
                 title:'Authors Commit Trend Histogram',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
@@ -712,6 +754,7 @@ class SVNPlotJS(SVNPlotBase):
                 yaxis:{min:0}                 
             }
             });
+            return(plot);
         };
         '''
         assert(len(data) == len(binlabels))
