@@ -40,19 +40,19 @@
 	$AuthorActivityGraph
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
-				locgraph('LoCGraph');
+				locgraph('LoCGraph',showLegend);
 				locChurnGraph('LoCChurnGraph', showLegend);
 				contri_locgraph('ContriLoCGraph', showLegend);
-				avglocgraph('AvgLoCGraph');
-				fileCountGraph('FileCountGraph');
-				fileTypesGraph('FileTypeCountGraph');
-				ActivityByWeekday('ActivityByWeekdayGraph');
-				ActivityByTimeOfDay('ActivityByTimeOfDayGraph');
-				CommitActivityIndexGraph('CommitActIdxGraph');
+				avglocgraph('AvgLoCGraph',showLegend);
+				fileCountGraph('FileCountGraph',showLegend);
+				fileTypesGraph('FileTypeCountGraph',showLegend);
+				ActivityByWeekday('ActivityByWeekdayGraph',showLegend);
+				ActivityByTimeOfDay('ActivityByTimeOfDayGraph',showLegend);
+				CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
                 directorySizePieGraph('DirSizePie', showLegend);
-                dirFileCountPieGraph('DirSizeLine', showLegend);
-				dirSizeLineGraph('DirFileCountPie', showLegend);
-				authorsCommitTrend('AuthorsCommitTrend');
+                dirFileCountPieGraph('DirFileCountPie', showLegend);
+				dirSizeLineGraph('DirSizeLine', showLegend);
+				authorsCommitTrend('AuthorsCommitTrend',showLegend);
 				authorActivityGraph('AuthorActivityGraph', showLegend);
             };                			  
 	</script>	
