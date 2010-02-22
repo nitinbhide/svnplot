@@ -61,7 +61,7 @@ HTMLBasicStatsTmpl = '''
 HTMLIndexTemplate ='''
 <html>
 <head><title>Subversion Stats Plot for $RepoName</title>
-    <!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->
+    <!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
 	<style type="text/css">
 	th {background-color: #F5F5F5; text-align:center}
 	/*td {background-color: #FFFFF0}*/
@@ -70,13 +70,44 @@ HTMLIndexTemplate ='''
 	</style>
 	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
 	<script type="text/javascript" src="jquery.min.js"></script>
-	<script type="text/javascript" src="jquery.jqplot.min.js"></script>	
+	<script type="text/javascript" src="jquery.jqplot.js"></script>	
 	<script type="text/javascript" src="jqplot.dateAxisRenderer.min.js"></script>	
 	<script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
 	<script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
 	<script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
+	$LocTable
+	$LoCChurnTable	
+	$ContriLoCTable
+	$AvgLoCTable
+	$FileCountTable
+	$FileTypeCountTable
+	$DirSizePie
+	$DirSizeLine
+	$DirFileCountPie
+	$CommitActIdxTable
+	$AuthorsCommitTrend
+	$ActivityByWeekdayTable
+	$ActivityByTimeOfDayTable
+	$AuthorActivityGraph
+    <script type="text/javascript">
+			 function showAllGraphs(showLegend) {
+					locgraph();
+                    contri_locgraph(showLegend);
+					avglocgraph();
+					fileCountGraph();
+                    fileTypesGraph();
+                    ActivityByWeekday();
+                    ActivityByTimeOfDay();
+                    CommitActivityIndexGraph();
+                    directorySizePieGraph(showLegend);
+                    dirFileCountPieGraph(showLegend);
+                    dirSizeLineGraph(showLegend);
+                    authorsCommitTrend();
+                    authorActivityGraph(showLegend);
+                };                			  
+	</script>	
 </head>
-<body>
+<body onLoad="showAllGraphs(false);">
 <table align="center" frame="box">
 <caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
 <tr>
@@ -113,15 +144,12 @@ HTMLIndexTemplate ='''
 <tr>
     <td align="center">
     <div id="LoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-    $LocTable	
     </td>
     <td align="center">
     <div id="ContriLoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-    $ContriLoCTable
     </td>
     <td align="center">
     <div id="AvgLoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-    $AvgLoCTable
     </td>    
 </tr>
 <tr>
@@ -130,11 +158,9 @@ HTMLIndexTemplate ='''
 <tr>
     <td align="center">
     <div id="FileCountTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-    $FileCountTable
     </td>
     <td align="center" >
     <div id="FileTypeCountTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-    $FileTypeCountTable
     </td>
     <td>&nbsp</td>
 </tr>
@@ -144,15 +170,12 @@ HTMLIndexTemplate ='''
 <tr>
    <td align="center">
     <div id="DirSizePie" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-   $DirSizePie
     </td>
     <td align="center">
     <div id="DirSizeLine" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-   $DirSizeLine
     </td>
     <td align="center">
     <div id="DirFileCountPie" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-   $DirFileCountPie  
     </td>
 </tr>
 <tr>
@@ -161,25 +184,20 @@ HTMLIndexTemplate ='''
 <tr>
     <td align="center" >
         <div id="CommitActIdxTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-		$CommitActIdxTable
     </td>    
     <td align="center" >
     <div id="ActivityByWeekdayTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-    $ActivityByWeekdayTable
     </td>
     <td align="center" >
     <div id="ActivityByTimeOfDayTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-    $ActivityByTimeOfDayTable
     </td>    
 </tr>
 <tr>
     <td align="center" >
         <div id="AuthorsCommitTrend" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-    $AuthorsCommitTrend
     </td>
     <td align="center">
     <div id="AuthorActivityGraph" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
-	 $AuthorActivityGraph
     </td>
     <td align="center" >&nbsp;    
     </td>    
@@ -195,27 +213,6 @@ HTMLIndexTemplate ='''
 <td colspan=3 align="center">$AuthCloud</td>
 </tr>
 </table>
-<script type="text/javascript">
-                function showAllGraphs(showLegend) {
-                    locgraph();
-                    /*locChurnGraph(showLegend);*/
-                    contri_locgraph();
-                    avglocgraph();
-                    fileCountGraph();
-                    fileTypesGraph();
-                    ActivityByWeekday();
-                    ActivityByTimeOfDay();
-                    CommitActivityIndexGraph();
-                    directorySizePieGraph(showLegend);
-                    dirFileCountPieGraph(showLegend);
-                    dirSizeLineGraph(showLegend);
-                    authorsCommitTrend();
-                    authorActivityGraph(showLegend);                    
-                };
-                
-			   $(document).ready(showAllGraphs(false));
-
-	</script>
 </body>
 </html>
 '''
@@ -257,7 +254,7 @@ class SVNPlotJS(SVNPlotBase):
         
         template = '''        
             function ActivityByWeekday() {
-            data = $DATA;
+            var data = [$DATA];
             $.jqplot('ActivityByWeekdayTable', [data], {
                 title:'Commit Activity by Day of Week',
                 seriesDefaults:{
@@ -272,16 +269,12 @@ class SVNPlotJS(SVNPlotBase):
                 yaxis:{min:0}                 
             }
         });
-        }
+        };
         '''
         assert(len(data) == len(labels))
         
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for actdata, wkday in zip(data, labels):
-            outstr.write("['%s',%d]," % (wkday, actdata))
-        outstr.write("]")
-        data = outstr.getvalue()
+        datalist = [ "['%s',%d]" % (wkday, actdata) for actdata, wkday in zip(data, labels)]
+        data = ','.join(datalist)
 
         return(self.__getGraphScript(template, {"DATA":data}))
 
@@ -292,7 +285,7 @@ class SVNPlotJS(SVNPlotBase):
         
         template = '''        
             function ActivityByTimeOfDay() {
-            data = $DATA;
+            var data = [$DATA];
             $.jqplot('ActivityByTimeOfDayTable', [data], {
                 title:'Commit Activity By Hour of Day',
                 seriesDefaults:{
@@ -307,16 +300,13 @@ class SVNPlotJS(SVNPlotBase):
                 yaxis:{min:0}                 
             }
         });
-        }
+        };
         '''
         assert(len(data) == len(labels))
-        
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for actdata, tmofday in zip(data, labels):
-            outstr.write("['%s',%d]," % (tmofday, actdata))
-        outstr.write("]")
-        data = outstr.getvalue()
+
+        datalist = ["['%s',%d]" % (tmofday, actdata)  for actdata, tmofday in zip(data, labels)]
+                    
+        data = ','.join(datalist)
 
         return(self.__getGraphScript(template, {"DATA":data}))
 
@@ -331,22 +321,20 @@ class SVNPlotJS(SVNPlotBase):
         
         template = '''  
         function CommitActivityIndexGraph() {
-            locdata = $DATA;
+            var locdata = [$DATA];
             $.jqplot('CommitActIdxTable', [locdata], {
                 title:'Commit Activity Index over time',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer}},
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]})
-                };
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
+                );
+            };
         '''
         
         assert(len(cmdates) == len(temperaturelist))
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for date, temperature in zip(cmdates, temperaturelist):
-            outstr.write('[\'%s\', %.4f],\n' % (date,temperature))
-        outstr.write("]")
+        datalist = ['[\'%s\', %.4f]' % (date,temperature) for date, temperature in zip(cmdates, temperaturelist)]
+        datastr = ',\n'.join(datalist)
         
-        return(self.__getGraphScript(template, {"DATA":outstr.getvalue()}))        
+        return(self.__getGraphScript(template, {"DATA":datastr}))        
 
         
     def LocGraph(self):
@@ -354,26 +342,23 @@ class SVNPlotJS(SVNPlotBase):
         
         template = '''  
             function locgraph() {
-            locdata = $DATA;
+            var locdata = [$DATA];
             $.jqplot('LoCTable', [locdata], {
                 title:'Lines of Code',
                 axes:{
                     xaxis:{renderer:$.jqplot.DateAxisRenderer, label:'LoC'},
                     yaxis:{min:0}
                 },
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]});                
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]});
              };
         '''
         
         dates, loc = self.svnstats.getLoCStats()
         assert(len(dates) == len(loc))
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for date, lc in zip(dates, loc):
-            outstr.write('[\'%s\', %d],\n' % (date,lc))
-        outstr.write("]")
+        datalist = ['[\'%s\', %d]' % (date,lc) for date, lc in zip(dates, loc)]
+        outstr = ',\n'.join(datalist)
         
-        return(self.__getGraphScript(template, {"DATA":outstr.getvalue()}))        
+        return(self.__getGraphScript(template, {"DATA":outstr}))        
 
     def LocGraphAllDev(self):
         self._printProgress("Calculating Developer Contribution graph")
@@ -389,33 +374,35 @@ class SVNPlotJS(SVNPlotBase):
                     yaxis:{min:0}
                 },
                 series:$SERIESDATA
-                });
-                
-                };
+                });            
+            };
         '''
         
         authList = self.svnstats.getAuthorList(self.authorsToDisplay)
-        authLabelList = [self._getAuthorLabel(auth) for auth in authList]
-        numAuth = len(authList)
+        authLabelList = []
         
         outstr = StringIO.StringIO()
-        
-        for author, idx in zip(authLabelList, range(0, numAuth)):
+        idx =0        
+        for author in authList:
             dates, loc = self.svnstats.getLoCTrendForAuthor(author)
-            outstr.write("auth%dLocData = [" % idx)
-            for date, lc in zip(dates, loc):
-                outstr.write('[\'%s\', %d],\n' % (date,lc))
-            outstr.write("];\n")
-        outstr.write("locdata = [")
-        for idx in range(0, numAuth):
-            outstr.write("auth%dLocData,"% idx)
+            if( len(dates) > 0):
+                outstr.write("var auth%dLocData = [" % idx)
+                datalist = ['[\'%s\', %d]' % (date,lc) for date, lc in zip(dates, loc)]            
+                outstr.write(',\n'.join(datalist))
+                outstr.write("];\n")
+                authLabelList.append(self._getAuthorLabel(author).replace('\n', '\\n'))
+                idx = idx+1
+            
+        outstr.write("var locdata = [")
+        datalist = ["auth%dLocData"% idx for idx in range(0, len(authLabelList))]
+        outstr.write(','.join(datalist))
         outstr.write("];\n")
         locdatastr = outstr.getvalue()
 
         outstr = StringIO.StringIO()
         outstr.write("[")
-        for author, idx in zip(authList, range(0, numAuth)):            
-            outstr.write("{label:'%s', lineWidth:2, markerOptions:{style:'filledCircle',size:2}}," % author)
+        datalist = ["{label:'%s', lineWidth:2, markerOptions:{style:'filledCircle',size:2}}" % author for author in authLabelList]
+        outstr.write(',\n'.join(datalist))            
         outstr.write("]")
             
         seriesdata = outstr.getvalue()            
@@ -427,13 +414,15 @@ class SVNPlotJS(SVNPlotBase):
 
         template = '''
             function locChurnGraph(showLegend) {
-            locdata = [$LOCDATA];
-            churndata= [$CHURNDATA];
+            var locdata = [$LOCDATA];
+            var churndata= [$CHURNDATA];
             
             $.jqplot('LoCChurnTable', [locdata, churndata], {
                 title:'Lines of Code and Churn Graph',
                 legend:{show:showLegend},
-                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{label:'LoC', min:0},y2axis:{label:'Churn', min:0} },
+                axes:{ xaxis:{renderer:$.jqplot.DateAxisRenderer},
+                    yaxis:{label:'LoC', min:0},
+                    y2axis:{label:'Churn', min:0} },
                 series:[
                     {label:'LoC', lineWidth:2, markerOptions:{style:'filledCircle',size:2}},
                     {label:'Churn',yaxis:'y2axis',lineWidth:2, markerOptions:{style:'filledCircle',size:2}}
@@ -444,18 +433,14 @@ class SVNPlotJS(SVNPlotBase):
 
         dates, loc = self.svnstats.getLoCStats()
         assert(len(dates) == len(loc))
-        outstr = StringIO.StringIO()
-        for date, lc in zip(dates, loc):
-            outstr.write('[\'%s\', %d],\n' % (date,lc))
-        locdatastr = outstr.getvalue()
+        datalist = ['[\'%s\', %d]' % (date,lc) for date, lc in zip(dates, loc)]        
+        locdatastr = ',\n'.join(datalist)
         
         dates, churnlist = self.svnstats.getChurnStats()
 
-        outstr = StringIO.StringIO()
-        for date, churn in zip(dates, churnlist):
-            outstr.write('[\'%s\', %d],\n' % (date,churn))
-        churndatastr = outstr.getvalue()
-
+        datalist = ['[\'%s\', %d]' % (date,churn) for date, churn in zip(dates, churnlist)]        
+        churndatastr = ',\n'.join(datalist)
+         
         return(self.__getGraphScript(template, {"LOCDATA":locdatastr, "CHURNDATA":churndatastr}))                
         
     def FileCountGraph(self):
@@ -465,58 +450,50 @@ class SVNPlotJS(SVNPlotBase):
 
         template = '''        
             function fileCountGraph() {
-            data = [$DATA];
-            $.jqplot('FileCountTable', data, {
+            var data = [$DATA];
+            $.jqplot('FileCountTable', [data], {
                 title:'File Count',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]})
-                };
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
+                );
+            };
         '''
         
         dates, fclist = self.svnstats.getFileCountStats()        
         
         assert(len(dates) == len(fclist))
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for date, fc in zip(dates, fclist):
-            outstr.write('[\'%s\', %d],\n' % (date,fc))
-        outstr.write("]")
+        datalist = ['[\'%s\', %d]' % (date,fc) for date, fc in zip(dates, fclist)]            
+        outstr = ',\n'.join(datalist)
         
-        return(self.__getGraphScript(template, {"DATA":outstr.getvalue()}))        
+        return(self.__getGraphScript(template, {"DATA":outstr}))        
 
     def FileTypesGraph(self):
         self._printProgress("Calculating File Types graph")
         template = '''        
             function fileTypesGraph() {
-            data = $DATA;
+            var data = [$DATA];
             $.jqplot('FileTypeCountTable', [data], {
                 title:'File Types',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
                     rendererOptions:{barDirection:'horizontal', barPadding: 6, barMargin:15}, 
-                shadowAngle:135},                
+                shadowAngle:135},
             axes:{
                 xaxis:{min:0}, 
-                yaxis:{
-                    renderer:$.jqplot.CategoryAxisRenderer, 
+                yaxis:{renderer:$.jqplot.CategoryAxisRenderer}
                 }
-            }
-        });
-        }
+            });
+        };
         '''
         
         #first get the file types and
         ftypelist, ftypecountlist = self.svnstats.getFileTypesStats(self.fileTypesToDisplay)
         assert(len(ftypelist) == len(ftypecountlist))
         
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for ftype, ftcount in zip(ftypelist, ftypecountlist):
-            outstr.write("[%d, '%s']," % (ftcount, ftype))
-        outstr.write("]")
-        data = outstr.getvalue()
+        datalist = ["[%d, '%s']" % (ftcount, ftype) for ftype, ftcount in zip(ftypelist, ftypecountlist)]            
+        outstr = ','.join(datalist)
 
-        return(self.__getGraphScript(template, {"DATA":data}))
+        return(self.__getGraphScript(template, {"DATA":outstr}))
         
             
     def AvgFileLocGraph(self):
@@ -524,24 +501,21 @@ class SVNPlotJS(SVNPlotBase):
             
         template = '''        
             function avglocgraph() {
-            locdata = [$LOCDATA];
-            $.jqplot('AvgLoCTable', locdata, {
+            var locdata = [$LOCDATA];
+            $.jqplot('AvgLoCTable', [locdata], {
                 title:'Average File LoC',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]})
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]});
                 };
         '''
         
         dates, avgloclist = self.svnstats.getAvgLoC()                
         
         assert(len(dates) == len(avgloclist))
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for date, lc in zip(dates, avgloclist):
-            outstr.write('[\'%s\', %d],\n' % (date,lc))
-        outstr.write("]")
+        datalist = ['[\'%s\', %d]' % (date,lc) for date, lc in zip(dates, avgloclist)]                
+        outstr = ',\n'.join(datalist)
                 
-        return(self.__getGraphScript(template, {"LOCDATA":outstr.getvalue()}))
+        return(self.__getGraphScript(template, {"LOCDATA":outstr}))
 
     def AuthorActivityGraph(self):
         self._printProgress("Calculating Author Activity graph")
@@ -561,7 +535,7 @@ class SVNPlotJS(SVNPlotBase):
                 legend: {show: showLegend, location: 'ne'},
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
-                    rendererOptions:{barDirection:'horizontal',barPadding: 6, barMargin:15},                    
+                    rendererOptions:{barDirection:'horizontal',barPadding: 6, barMargin:15}
                     },
                 series: [{label: 'Adding', color:'blue'}, {label: 'Modifying', color:'green'}, {label: 'Deleting', color:'red'}],
                 axes:{
@@ -578,26 +552,23 @@ class SVNPlotJS(SVNPlotBase):
         assert(len(authlabellist) == len(addfraclist))
         assert(len(authlabellist) == len(changefraclist))
         assert(len(authlabellist) == len(delfraclist))
-        
-        addData = StringIO.StringIO()
-        changeData = StringIO.StringIO()
-        delData = StringIO.StringIO()
-        ticksData = StringIO.StringIO()
+                
+        addDataList = ['[%.2f,%d]'% (addfrac,idx) for addfrac, idx in zip(addfraclist, itertools.count(1))]
+        addDataStr = ','.join(addDataList)
 
-        idx = 1        
-        for author, addfrac, changefrac, delfrac in zip(authlabellist, addfraclist, changefraclist,delfraclist):
-            addData.write('[%.2f,%d],'% (addfrac,idx))
-            changeData.write('[%.2f,%d],'% (changefrac, idx))
-            delData.write('[%.2f,%d],'% (delfrac,idx))
+        changeDataList = ['[%.2f,%d]'% (changefrac,idx) for changefrac, idx in zip(changefraclist, itertools.count(1))]
+        changeDataStr = ','.join(changeDataList)
+
+        delDataList = ['[%.2f,%d]'% (delfrac,idx) for delfrac, idx in zip(delfraclist, itertools.count(1))]
+        delDataStr = ','.join(changeDataList)
+
+        ticksDataList = []
+
+        for author in authlabellist:
             if( len(author) == 0):
                 author= " "
-            ticksData.write('"%s",'% author)
-            idx = idx+1
-        
-        addDataStr = addData.getvalue()
-        changeDataStr = changeData.getvalue()
-        delDataStr = delData.getvalue()
-        ticksDataStr = ticksData.getvalue()
+            ticksDataList.append('"%s"'% author)        
+        ticksDataStr = ','.join(ticksDataList)
         ticksDataStr = ticksDataStr.replace('\n', '\\n')
         
         return(self.__getGraphScript(template, {"TICKDATA":ticksDataStr, "ADDDATA":addDataStr, "CHANGEDATA":changeDataStr,"DELDATA":delDataStr}))
@@ -611,23 +582,21 @@ class SVNPlotJS(SVNPlotBase):
 
         template = '''        
             function directorySizePieGraph(showLegend) {
-            data = [$DIRSIZEDATA];
+            var data = [$DIRSIZEDATA];
             $.jqplot('DirSizePie', [data], {
                     title: 'Directory Size (Pie)',
                     legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
             });
-        }
+        };
         '''
         
         assert(len(dirlist) == len(dirsizelist))
 
         dirdatastr = ''
         if( len(dirsizelist) > 0):
-            outstr = StringIO.StringIO()
-            for dirname, dirsize in zip(dirlist, dirsizelist):
-                outstr.write("['%s (%d)', %d],\n" % (dirname,dirsize,dirsize))
-            dirdatastr = outstr.getvalue()
+            datalist = ["['%s (%d)', %d]" % (dirname,dirsize,dirsize) for dirname, dirsize in zip(dirlist, dirsizelist)]            
+            dirdatastr = ',\n'.join(datalist)
             
         return(self.__getGraphScript(template, {"DIRSIZEDATA":dirdatastr}))
     
@@ -642,23 +611,21 @@ class SVNPlotJS(SVNPlotBase):
                 
         template = '''        
             function dirFileCountPieGraph(showLegend) {
-            data = [$DIRSIZEDATA];
+            var data = [$DIRSIZEDATA];
             $.jqplot('DirFileCountPie', [data], {
                     title: 'Directory File Count (Pie)',
                     legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
             });
-        }
+        };
         '''
         
         assert(len(dirlist) == len(dirsizelist))
 
         dirdatastr = ''
         if( len(dirsizelist) > 0):
-            outstr = StringIO.StringIO()
-            for dirname, dirsize in zip(dirlist, dirsizelist):
-                outstr.write("['%s (%d)', %d],\n" % (dirname,dirsize,dirsize))
-            dirdatastr = outstr.getvalue()
+            dirdatalist = ["['%s (%d)', %d]" % (dirname,dirsize,dirsize) for dirname, dirsize in zip(dirlist, dirsizelist)]            
+            dirdatastr = ',\n'.join(dirdatalist)
             
         return(self.__getGraphScript(template, {"DIRSIZEDATA":dirdatastr}))
     
@@ -676,8 +643,9 @@ class SVNPlotJS(SVNPlotBase):
                 legend:{show:showLegend}, 
                 title:'Directory Size(Lines of Code)',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
-                series:$SERIESDATA
-                }) };
+                series:[$SERIESDATA]
+                });
+            };
         '''
         
         #We only want the ten most important directories, the graf gets to blury otherwise
@@ -691,23 +659,19 @@ class SVNPlotJS(SVNPlotBase):
         
         for dirname, idx in zip(dirlist, range(0, numDirs)):
             dates, loclist = self.svnstats.getDirLocTrendStats(dirname)
-            outstr.write("dir%dLocData=[" % idx)
-            for date, lc in zip(dates,loclist):
-                outstr.write('[\'%s\', %d],\n' % (date,lc))
+            outstr.write("var dir%dLocData=[" % idx)
+            datalist = ['[\'%s\', %d]' % (date,lc) for date, lc in zip(dates,loclist)]
+            outstr.write(',\n'.join(datalist))
             outstr.write("];\n")
-        outstr.write("locdata = [")
-        for idx in range(0, numDirs):
-            outstr.write("auth%dLocData,"% idx)
+        outstr.write("var locdata = [")
+        datalist = [ "dir%dLocData" % idx for idx in range(0, numDirs)]
+        outstr.write(",".join(datalist))
         outstr.write("];\n")
         locdatastr = outstr.getvalue()
-                
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for dirname, idx in zip(dirlist, range(0, numDirs)):
-            outstr.write("{label:'%s', lineWidth:2, markerOptions:{style:'filledCircle',size:2}}," % dirname)
-        outstr.write("]")
-            
-        seriesdata = outstr.getvalue()            
+
+        datalist = ["{label:'%s', lineWidth:2, markerOptions:{style:'filledCircle',size:2}}" % dirname for dirname, idx in zip(dirlist, itertools.count(0))]            
+        seriesdata = ',\n'.join(datalist)
+        
         return(self.__getGraphScript(template, {"LOCDATA":locdatastr, "SERIESDATA":seriesdata}))    
 
     def AuthorsCommitTrend(self):
@@ -721,13 +685,13 @@ class SVNPlotJS(SVNPlotBase):
         
         template = '''        
             function authorsCommitTrend() {
-            data = $DATA;
+            var data = [$DATA];
             $.jqplot('AuthorsCommitTrend', [data], {
                 title:'Authors Commit Trend Histogram',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
                     rendererOptions:{barPadding: 6, barMargin:15}, 
-                shadowAngle:135},                
+                    shadowAngle:135},                
             axes:{
                 xaxis:{
                     renderer:$.jqplot.CategoryAxisRenderer,
@@ -735,17 +699,12 @@ class SVNPlotJS(SVNPlotBase):
                 },
                 yaxis:{min:0}                 
             }
-        });
-        }
+            });
+        };
         '''
         assert(len(data) == len(binlabels))
-        
-        outstr = StringIO.StringIO()
-        outstr.write("[")
-        for actdata, label in zip(data, binlabels):
-            outstr.write("['%s',%d]," % (label, actdata))
-        outstr.write("]")
-        data = outstr.getvalue()
+        datalist = ["['%s',%d]" % (label, actdata) for actdata, label in zip(data, binlabels)]            
+        data = ','.join(datalist)
 
         return(self.__getGraphScript(template, {"DATA":data}))
                     
