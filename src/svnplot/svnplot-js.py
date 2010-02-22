@@ -69,7 +69,12 @@ HTMLIndexTemplate ='''
 	th {background-color: #F5F5F5; text-align:center}
 	/*td {background-color: #FFFFF0}*/
 	h3 {background-color: transparent;margin:2}
-	h4 {background-color: transparent;margin:1}    
+	h4 {background-color: transparent;margin:1}
+	.graph {
+        display: block;
+        margin-left:auto;margin-right:auto;
+        height:$thumbht;width:$thumbwid;
+    }
 	</style>
 	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
 	<script type="text/javascript" src="jquery.min.js"></script>
@@ -146,13 +151,13 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center">
-    <div id="LoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="LoCTable" class="graph"></div>
     </td>
     <td align="center">
-    <div id="ContriLoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="ContriLoCTable" class="graph"></div>
     </td>
     <td align="center">
-    <div id="AvgLoCTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="AvgLoCTable" class="graph"></div>
     </td>    
 </tr>
 <tr>
@@ -160,10 +165,10 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center">
-    <div id="FileCountTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="FileCountTable" class="graph"></div>
     </td>
     <td align="center" >
-    <div id="FileTypeCountTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="FileTypeCountTable" class="graph"></div>
     </td>
     <td>&nbsp</td>
 </tr>
@@ -172,13 +177,13 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
    <td align="center">
-    <div id="DirSizePie" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="DirSizePie" class="graph"></div>
     </td>
     <td align="center">
-    <div id="DirSizeLine" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="DirSizeLine" class="graph"></div>
     </td>
     <td align="center">
-    <div id="DirFileCountPie" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="DirFileCountPie" class="graph"></div>
     </td>
 </tr>
 <tr>
@@ -186,21 +191,21 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center" >
-        <div id="CommitActIdxTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+        <div id="CommitActIdxTable" class="graph"></div>
     </td>    
     <td align="center" >
-    <div id="ActivityByWeekdayTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="ActivityByWeekdayTable" class="graph"></div>
     </td>
     <td align="center" >
-    <div id="ActivityByTimeOfDayTable" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="ActivityByTimeOfDayTable" class="graph"></div>
     </td>    
 </tr>
 <tr>
     <td align="center" >
-        <div id="AuthorsCommitTrend" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+        <div id="AuthorsCommitTrend" class="graph"></div>
     </td>
     <td align="center">
-    <div id="AuthorActivityGraph" style="display: block;margin-left:auto;margin-right:auto;height:$thumbht;width:$thumbwid;"></div>
+    <div id="AuthorActivityGraph" class="graph"></div>
     </td>
     <td align="center" >&nbsp;    
     </td>    
