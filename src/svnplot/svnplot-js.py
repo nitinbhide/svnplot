@@ -129,13 +129,15 @@ HTMLIndexTemplate ='''
                     authorsCommitTrend('AuthorsCommitTrend',showLegend);
                     authorActivityGraph('AuthorActivityGraph', showLegend);
                 };
+                
                 function showGraphBox(graphFunc, showLegend) {
-                var graphboxId = 'Graph_big';
-                var graphBoxElem = document.getElementById(graphboxId);
-                graphBoxElem.style.display='block';
-                var plot = graphFunc(graphboxId, showLegend);
-                plot.redraw(true);
+                    var graphboxId = 'Graph_big';
+                    var graphBoxElem = document.getElementById(graphboxId);
+                    graphBoxElem.style.display='block';
+                    var plot = graphFunc(graphboxId, showLegend);
+                    plot.redraw(true);                                                    
                 };
+                
                 function hideGraphBox() {
                     var graphboxId = 'Graph_big';
                     var graphBoxElem = document.getElementById(graphboxId);
