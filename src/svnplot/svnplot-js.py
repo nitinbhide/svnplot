@@ -39,9 +39,12 @@ __date__     = '$Date:$'
 
 from optparse import OptionParser
 import sqlite3
-import os.path, sys
-import string,StringIO
+import os.path
+import sys
+import string
+import StringIO
 import math
+import shutil
 from svnstats import *
 from svnplotbase import *
 
@@ -61,7 +64,7 @@ HTMLBasicStatsTmpl = '''
 HTMLIndexTemplate ='''
 <html>
 <head><title>Subversion Stats Plot for $RepoName</title>
-    <!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+    <!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->
 	<style type="text/css">
 	th {background-color: #F5F5F5; text-align:center}
 	/*td {background-color: #FFFFF0}*/
@@ -225,6 +228,7 @@ class SVNPlotJS(SVNPlotBase):
         self.fileTypesToDisplay = 20
         self.dirdepth = 2
         self.template = HTMLIndexTemplate
+        
         if( template != None):
             self.setTemplate(template)
         
@@ -234,10 +238,9 @@ class SVNPlotJS(SVNPlotBase):
             self.template = f.read()
  
                 
-    def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=200, maxdircount = 10):
+    def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=200, maxdircount = 10, copyjs=True):
         self.svnstats.SetSearchPath(svnsearchpath)
         #LoC and FileCount Graphs
-        print "thumbsize = %d" % thumbsize
         graphParamDict = self._getGraphParamDict(thumbsize)
         
         htmlidxname = os.path.join(dirpath, "index.htm")
@@ -246,6 +249,8 @@ class SVNPlotJS(SVNPlotBase):
         htmlfile = file(htmlidxname, "w")
         htmlfile.write(outstr.encode('utf-8'))
         htmlfile.close()
+        if( copyjs == True):
+            self.__copyJSFiles(dirpath)
                                
     def ActivityByWeekday(self):
         self._printProgress("Calculating Activity by day of week graph")
@@ -748,6 +753,31 @@ class SVNPlotJS(SVNPlotBase):
         scriptTmpl = string.Template(tmplstr)
         locgraph_output = scriptTmpl.safe_substitute(paramDict)
         return(locgraph_output)
+
+    def __copyJSFiles(self, outdir):
+        '''
+        copy the neccessary javascript files of jquery, excanvas and jqPlot to the output directory        
+        '''
+        jsFileList = ['excanvas.compiled.js', 'jquery.min.js',
+                      'jqplot/jquery.jqplot.js', 'jqplot/jquery.jqplot.min.css',
+                      'jqplot/plugins/jqplot.dateAxisRenderer.min.js',
+                      'jqplot/plugins/jqplot.categoryAxisRenderer.min.js',
+                      'jqplot/plugins/jqplot.barRenderer.min.js',
+                      'jqplot/plugins/jqplot.dateAxisRenderer.min.js',
+                      'jqplot/plugins/jqplot.pieRenderer.min.js']
+        
+        try:
+            srcdir = os.path.dirname(os.path.abspath(__file__))
+            srcdir = os.path.join(srcdir, 'javascript')
+            outdir = os.path.abspath(outdir)
+            for jsfile in jsFileList:
+                jsfile = os.path.normpath(jsfile)
+                srcfile =os.path.join(srcdir, jsfile)
+                shutil.copy(srcfile, outdir)
+        except Exception, expinst:
+            print "Need jquery, excanvas and jqPlot files couldnot be copied."
+            print "Please copy these files manually at correct location"
+            print expinst
     
 def RunMain():
     usage = "usage: %prog [options] <svnsqlitedbpath> <graphdir>"
@@ -766,6 +796,8 @@ def RunMain():
                       action="store", type="string", help="template filename (optional)")
     parser.add_option("-m","--maxdir",dest="maxdircount", default=10, type="int",
                       help="limit the number of directories on the graph to the x largest directories")
+    parser.add_option("-j", "--copyjs", dest="copyjs", default=True, action="store_true",
+                      help="Copy the required excanvas,jquery and jqPlot javascript and css file to output directory")
     
     (options, args) = parser.parse_args()
     
@@ -795,7 +827,7 @@ def RunMain():
         svnplot = SVNPlotJS(svnstats, template=options.template)
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
-        svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize, options.maxdircount)
+        svnplot.AllGraphs(graphdir, options.searchpath, options.thumbsize, options.maxdircount,copyjs=options.copyjs)
         
 if(__name__ == "__main__"):
     RunMain()
