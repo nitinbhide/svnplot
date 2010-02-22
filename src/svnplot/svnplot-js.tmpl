@@ -40,20 +40,20 @@
 	$AuthorActivityGraph
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
-				locgraph();
-				locChurnGraph(showLegend);
-				contri_locgraph(showLegend);
-				avglocgraph();
-				fileCountGraph();
-				fileTypesGraph();
-				ActivityByWeekday();
-				ActivityByTimeOfDay();
-				CommitActivityIndexGraph();
-                    directorySizePieGraph(showLegend);
-                    dirFileCountPieGraph(showLegend);
-				dirSizeLineGraph(showLegend);
-				authorsCommitTrend();
-				authorActivityGraph(showLegend);
+				locgraph('LoCGraph');
+				locChurnGraph('LoCChurnGraph', showLegend);
+				contri_locgraph('ContriLoCGraph', showLegend);
+				avglocgraph('AvgLoCGraph');
+				fileCountGraph('FileCountGraph');
+				fileTypesGraph('FileTypeCountGraph');
+				ActivityByWeekday('ActivityByWeekdayGraph');
+				ActivityByTimeOfDay('ActivityByTimeOfDayGraph');
+				CommitActivityIndexGraph('CommitActIdxGraph');
+                directorySizePieGraph('DirSizePie', showLegend);
+                dirFileCountPieGraph('DirSizeLine', showLegend);
+				dirSizeLineGraph('DirFileCountPie', showLegend);
+				authorsCommitTrend('AuthorsCommitTrend');
+				authorActivityGraph('AuthorActivityGraph', showLegend);
             };                			  
 	</script>	
 </head>
@@ -94,22 +94,22 @@
 </tr>
 <tr>
     <td align="center">
-	<div id="LoCTable" class="graph"></div>
+	<div id="LoCGraph" class="graph"></div>
     </td>
 </tr>
 <tr>
     <td align="center">
-	<div id="LoCChurnTable" class="graph"></div>
+	<div id="LoCChurnGraph" class="graph"></div>
     </td>
 </tr>
 <tr>
     <td align="left"><br/>
-	<div id="ContriLoCTable" class="graph"></div>
+	<div id="ContriLoCGraph" class="graph"></div>
     </td>
 </tr>
 <tr>
     <td align="left"><br/>
-	<div id="AvgLoCTable" class="graph"></div>    
+	<div id="AvgLoCGraph" class="graph"></div>    
     </td>    
 </tr>
 </table>
@@ -119,12 +119,12 @@
 </tr>
 <tr>
     <td><br/>
-	<div id="FileCountTable" class="graph"></div>    
+	<div id="FileCountGraph" class="graph"></div>    
     </td>
 </tr>
 <tr>
     <td><br/>
-    <div id="FileTypeCountTable" class="graph"></div>    
+    <div id="FileTypeCountGraph" class="graph"></div>    
     </td>
 </tr>
 </table>
@@ -154,17 +154,17 @@
 </tr>
 <tr>
     <td><br/>
-        <div id="CommitActIdxTable" class="graph"></div>		
+        <div id="CommitActIdxGraph" class="graph"></div>		
     </td>    
 </tr>
 <tr>	
     <td><br/>
-    <div id="ActivityByWeekdayTable" class="graph"></div>    
+    <div id="ActivityByWeekdayGraph" class="graph"></div>    
     </td>
 </tr>
 <tr>
     <td><br/>
-    <div id="ActivityByTimeOfDayTable" class="graph"></div>    
+    <div id="ActivityByTimeOfDayGraph" class="graph"></div>    
     </td>    
 </tr>
 <tr>
