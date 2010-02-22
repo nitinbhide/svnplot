@@ -99,19 +99,21 @@ HTMLIndexTemplate ='''
 	$AuthorActivityGraph
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
-					locgraph();
-                    contri_locgraph(showLegend);
-					avglocgraph();
-					fileCountGraph();
-                    fileTypesGraph();
-                    ActivityByWeekday();
-                    ActivityByTimeOfDay();
-                    CommitActivityIndexGraph();
-                    directorySizePieGraph(showLegend);
-                    dirFileCountPieGraph(showLegend);
-                    dirSizeLineGraph(showLegend);
-                    authorsCommitTrend();
-                    authorActivityGraph(showLegend);
+                    locgraph('LoCGraph');
+                    /* Not there in this template
+					locChurnGraph('LoCChurnGraph', showLegend);*/                    
+                    contri_locgraph('ContriLoCGraph', showLegend);
+                    avglocgraph('AvgLoCGraph');
+                    fileCountGraph('FileCountGraph');
+                    fileTypesGraph('FileTypeCountGraph');
+                    ActivityByWeekday('ActivityByWeekdayGraph');
+                    ActivityByTimeOfDay('ActivityByTimeOfDayGraph');
+                    CommitActivityIndexGraph('CommitActIdxGraph');
+                    directorySizePieGraph('DirSizePie', showLegend);
+                    dirFileCountPieGraph('DirSizeLine', showLegend);
+                    dirSizeLineGraph('DirFileCountPie', showLegend);
+                    authorsCommitTrend('AuthorsCommitTrend');
+                    authorActivityGraph('AuthorActivityGraph', showLegend);
                 };                			  
 	</script>	
 </head>
@@ -151,13 +153,13 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center">
-    <div id="LoCTable" class="graph"></div>
+    <div id="LoCGraph" class="graph"></div>
     </td>
     <td align="center">
-    <div id="ContriLoCTable" class="graph"></div>
+    <div id="ContriLoCGraph" class="graph"></div>
     </td>
     <td align="center">
-    <div id="AvgLoCTable" class="graph"></div>
+    <div id="AvgLoCGraph" class="graph"></div>
     </td>    
 </tr>
 <tr>
@@ -165,10 +167,10 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center">
-    <div id="FileCountTable" class="graph"></div>
+    <div id="FileCountGraph" class="graph"></div>
     </td>
     <td align="center" >
-    <div id="FileTypeCountTable" class="graph"></div>
+    <div id="FileTypeCountGraph" class="graph"></div>
     </td>
     <td>&nbsp</td>
 </tr>
@@ -191,13 +193,13 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
     <td align="center" >
-        <div id="CommitActIdxTable" class="graph"></div>
+        <div id="CommitActIdxGraph" class="graph"></div>
     </td>    
     <td align="center" >
-    <div id="ActivityByWeekdayTable" class="graph"></div>
+    <div id="ActivityByWeekdayGraph" class="graph"></div>
     </td>
     <td align="center" >
-    <div id="ActivityByTimeOfDayTable" class="graph"></div>
+    <div id="ActivityByTimeOfDayGraph" class="graph"></div>
     </td>    
 </tr>
 <tr>
@@ -263,9 +265,9 @@ class SVNPlotJS(SVNPlotBase):
         data, labels = self.svnstats.getActivityByWeekday()
         
         template = '''        
-            function ActivityByWeekday() {
+            function ActivityByWeekday(divElemId) {
             var data = [$DATA];
-            $.jqplot('ActivityByWeekdayTable', [data], {
+            $.jqplot(divElemId, [data], {
                 title:'Commit Activity by Day of Week',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
@@ -294,9 +296,9 @@ class SVNPlotJS(SVNPlotBase):
         data, labels = self.svnstats.getActivityByTimeOfDay()
         
         template = '''        
-            function ActivityByTimeOfDay() {
+            function ActivityByTimeOfDay(divElemId) {
             var data = [$DATA];
-            $.jqplot('ActivityByTimeOfDayTable', [data], {
+            $.jqplot(divElemId, [data], {
                 title:'Commit Activity By Hour of Day',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
@@ -330,9 +332,9 @@ class SVNPlotJS(SVNPlotBase):
         cmdates, temperaturelist = self.svnstats.getRevActivityTemperature()
         
         template = '''  
-        function CommitActivityIndexGraph() {
+        function CommitActivityIndexGraph(divElemId) {
             var locdata = [$DATA];
-            $.jqplot('CommitActIdxTable', [locdata], {
+            $.jqplot(divElemId, [locdata], {
                 title:'Commit Activity Index over time',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
@@ -351,9 +353,9 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating LoC graph")
         
         template = '''  
-            function locgraph() {
+            function locgraph(divElemId) {
             var locdata = [$DATA];
-            $.jqplot('LoCTable', [locdata], {
+            $.jqplot(divElemId, [locdata], {
                 title:'Lines of Code',
                 axes:{
                     xaxis:{renderer:$.jqplot.DateAxisRenderer, label:'LoC'},
@@ -373,9 +375,9 @@ class SVNPlotJS(SVNPlotBase):
     def LocGraphAllDev(self):
         self._printProgress("Calculating Developer Contribution graph")
         template = '''
-            function contri_locgraph(showLegend) {
+            function contri_locgraph(divElemId, showLegend) {
             $LOCDATA
-            $.jqplot('ContriLoCTable', locdata, {
+            $.jqplot(divElemId, locdata, {
                 legend:{show:showLegend}, 
                 title:'Contributed Lines of Code',
                 axes:
@@ -423,11 +425,11 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating LoC and Churn graph")
 
         template = '''
-            function locChurnGraph(showLegend) {
+            function locChurnGraph(divElemId, showLegend) {
             var locdata = [$LOCDATA];
             var churndata= [$CHURNDATA];
             
-            $.jqplot('LoCChurnTable', [locdata, churndata], {
+            $.jqplot(divElemId, [locdata, churndata], {
                 title:'Lines of Code and Churn Graph',
                 legend:{show:showLegend},
                 axes:{ xaxis:{renderer:$.jqplot.DateAxisRenderer},
@@ -459,9 +461,9 @@ class SVNPlotJS(SVNPlotBase):
         dates, fc = self.svnstats.getFileCountStats()        
 
         template = '''        
-            function fileCountGraph() {
+            function fileCountGraph(divElemId) {
             var data = [$DATA];
-            $.jqplot('FileCountTable', [data], {
+            $.jqplot(divElemId, [data], {
                 title:'File Count',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
@@ -480,9 +482,9 @@ class SVNPlotJS(SVNPlotBase):
     def FileTypesGraph(self):
         self._printProgress("Calculating File Types graph")
         template = '''        
-            function fileTypesGraph() {
+            function fileTypesGraph(divElemId) {
             var data = [$DATA];
-            $.jqplot('FileTypeCountTable', [data], {
+            $.jqplot(divElemId, [data], {
                 title:'File Types',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
@@ -510,9 +512,9 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating Average File Size graph")
             
         template = '''        
-            function avglocgraph() {
+            function avglocgraph(divElemId) {
             var locdata = [$LOCDATA];
-            $.jqplot('AvgLoCTable', [locdata], {
+            $.jqplot(divElemId, [locdata], {
                 title:'Average File LoC',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]});
@@ -535,11 +537,11 @@ class SVNPlotJS(SVNPlotBase):
         
         legendlist = ["Adding", "Modifying", "Deleting"]
         template = '''        
-            function authorActivityGraph(showLegend) {            
+            function authorActivityGraph(divElemId, showLegend) {            
             var addData = [$ADDDATA];
             var changeData = [$CHANGEDATA];
             var delData = [$DELDATA];
-            $.jqplot('AuthorActivityGraph', [addData, changeData, delData], {
+            $.jqplot(divElemId, [addData, changeData, delData], {
                 stackSeries: true,
                 title:'Author Activity',
                 legend: {show: showLegend, location: 'ne'},
@@ -591,9 +593,9 @@ class SVNPlotJS(SVNPlotBase):
         dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
 
         template = '''        
-            function directorySizePieGraph(showLegend) {
+            function directorySizePieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
-            $.jqplot('DirSizePie', [data], {
+            $.jqplot(divElemId, [data], {
                     title: 'Directory Size (Pie)',
                     legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
@@ -620,9 +622,9 @@ class SVNPlotJS(SVNPlotBase):
         dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
                 
         template = '''        
-            function dirFileCountPieGraph(showLegend) {
+            function dirFileCountPieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
-            $.jqplot('DirFileCountPie', [data], {
+            $.jqplot(divElemId, [data], {
                     title: 'Directory File Count (Pie)',
                     legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
@@ -647,9 +649,9 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating Directory size line graph")
 
         template = '''
-            function dirSizeLineGraph(showLegend) {
+            function dirSizeLineGraph(divElemId, showLegend) {
             $LOCDATA
-            $.jqplot('DirSizeLine', locdata, {
+            $.jqplot(divElemId, locdata, {
                 legend:{show:showLegend}, 
                 title:'Directory Size(Lines of Code)',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
@@ -694,9 +696,9 @@ class SVNPlotJS(SVNPlotBase):
         data = self.svnstats.getAuthorsCommitTrendHistorgram(binsList)
         
         template = '''        
-            function authorsCommitTrend() {
+            function authorsCommitTrend(divElemId) {
             var data = [$DATA];
-            $.jqplot('AuthorsCommitTrend', [data], {
+            $.jqplot(divElemId, [data], {
                 title:'Authors Commit Trend Histogram',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
