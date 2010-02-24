@@ -4,3 +4,6 @@ include svnplot/readme.txt
 include svnplot/svnplot-long.tmpl
 include svnplot/svnplot-js.tmpl
 include svnplot/javascript/*
+prune svnplot/javascript/.svn/*
+prune svnplot/javascript/jqplot/.svn/*
+prune svnplot/javascript/jqplot/plugins/.svn/*

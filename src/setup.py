@@ -10,7 +10,7 @@ Setup file for installing svnplot
 
 from distutils.core import setup
 
-setup(name='SVNPlot', version ='0.5.14',
+setup(name='SVNPlot', version ='0.6.0',
       description='python module to generate graphs and statistics from Subversion repository data',
       author='Nitin Bhide',
       author_email='nitinbhide@gmail.com',
@@ -19,5 +19,6 @@ setup(name='SVNPlot', version ='0.5.14',
       requires = ['matplotlib', 'numpy', 'pysvn'],
       packages=['svnplot'],
       package_dir = {'svnplot': 'svnplot'},
-      package_data= {'svnplot':['README.txt'], 'svnplot/javascript':['*']}
+      package_data= {'svnplot':['README.txt', 'javascript/*.js', 'javascript/jqplot/*.*',
+                     'javascript/jqplot/plugins/*.js']}
      )
