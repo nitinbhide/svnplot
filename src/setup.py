@@ -19,6 +19,6 @@ setup(name='SVNPlot', version ='0.6.0',
       requires = ['matplotlib', 'numpy', 'pysvn'],
       packages=['svnplot'],
       package_dir = {'svnplot': 'svnplot'},
-      package_data= {'svnplot':['README.txt', 'javascript/*.js', 'javascript/jqplot/*.*',
+      package_data= {'svnplot':['readme.txt', 'README', 'javascript/*.js', 'javascript/jqplot/*.*',
                      'javascript/jqplot/plugins/*.js']}
      )
