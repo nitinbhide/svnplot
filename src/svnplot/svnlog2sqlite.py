@@ -21,9 +21,11 @@ import traceback
 from optparse import OptionParser
 
 BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'ods', 'odm', 'odt', 'ott', 'pdf',
-                 'o', 'a', 'obj', 'lib', 'dll', 'so', 'exe', 'jar', 'zip', 'z', 'gz', 'tar', 
-                 'pdb', 'idb', 'ilk', 'bsc', 'ncb', 
-                 'bmp', 'jpg', 'png', 'gif', 'ico', 'wmf', 'emf', 'xcf', 'wav'
+                 'o', 'a', 'obj', 'lib', 'dll', 'so', 'exe',
+                 'jar', 'zip', 'z', 'gz', 'tar', 'rar','7z',
+                 'pdb', 'idb', 'ilk', 'bsc', 'ncb', 'sbr', 'pch', 'ilk',
+                 'bmp', 'dib', 'jpg', 'jpeg', 'png', 'gif', 'ico', 'pcd', 'wmf', 'emf', 'xcf', 'tiff',
+                 'gho', 'mp3', 'wma', 'wmv','wav','avi'
                  ]
 
 class SVNLog2Sqlite:
