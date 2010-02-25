@@ -75,20 +75,39 @@ HTMLIndexTemplate ='''
         margin-left:auto;margin-right:auto;
         height:$thumbht;width:$thumbwid;
     }
+    #GraphPopBox {
+        display: none;
+		position: fixed;
+		top: 15%;
+		left: 15%;
+		right: 15%;
+		bottom: 15%;
+		margin:0px;
+		padding:0px;
+        background-color:#778899;
+		z-index:1002;		
+		overflow: none;
+		#overflow: auto;		
+    }
     #Graph_big {
-			display: none;
-			position: fixed;
-			top: 20%;
-			left: 20%;
-			width: 60%;
-			height: 60%;
-			padding: 16px;
-			border: 16px solid black;
-			background-color: white;
-			z-index:1002;
-			overflow: auto;
+        position:absolute;
+        top:40px;
+        left:5px;
+        bottom:5px;
+        right:5px;
+        border : 2px solid black;
+        padding: 10px;
+        background-color: white;
+		#border: 16px solid black;		
 		}
-		
+	#closebtn {
+        display:block;
+        color:white;
+        float:right;
+        z-index:1005;
+        margin:5px;
+        padding:5px;
+	}	
 	</style>
 	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
 	<script type="text/javascript" src="jquery.min.js"></script>
@@ -131,15 +150,16 @@ HTMLIndexTemplate ='''
                 };
                 
                 function showGraphBox(graphFunc, showLegend) {
-                    var graphboxId = 'Graph_big';
+                    var graphboxId = 'GraphPopBox';
                     var graphBoxElem = document.getElementById(graphboxId);
                     graphBoxElem.style.display='block';
-                    var plot = graphFunc(graphboxId, showLegend);
+                    var graphCanvasId = 'Graph_big'
+                    var plot = graphFunc(graphCanvasId, showLegend);
                     plot.redraw(true);                                                    
                 };
                 
                 function hideGraphBox() {
-                    var graphboxId = 'Graph_big';
+                    var graphboxId = 'GraphPopBox';
                     var graphBoxElem = document.getElementById(graphboxId);
                     graphBoxElem.style.display='none';
                 }
@@ -251,7 +271,10 @@ HTMLIndexTemplate ='''
 <td colspan=3 align="center">$AuthCloud</td>
 </tr>
 </table>
-<div id="Graph_big" onClick="hideGraphBox();"></div>    
+    <div id="GraphPopBox">
+        <h2 id="closebtn" onClick="hideGraphBox();">Close X</h2>
+        <div id="Graph_big"></div>
+    </div>    
 </body>
 </html>
 '''
