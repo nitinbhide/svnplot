@@ -42,7 +42,7 @@ def getHeatColor(heatindex):
     r = __getHeatColor('red', heatindex)
     g = __getHeatColor('green', heatindex)
     b = __getHeatColor('blue', heatindex)
-    print "heatindex %f colors = (%d, %d, %d)" % (heatindex, r, g, b)
+    #print "heatindex %f colors = (%d, %d, %d)" % (heatindex, r, g, b)
     return((r,g,b))
 
 def getHeatColorHex(heatindex):
