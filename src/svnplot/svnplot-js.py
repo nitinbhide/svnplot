@@ -272,7 +272,7 @@ HTMLIndexTemplate ='''
 </tr>
 </table>
     <div id="GraphPopBox">
-        <h2 id="closebtn" onClick="hideGraphBox();">Close X</h2>
+        <h3 id="closebtn" onClick="hideGraphBox();">Close[X]</h3>
         <div id="Graph_big"></div>
     </div>    
 </body>
