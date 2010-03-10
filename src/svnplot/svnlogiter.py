@@ -478,6 +478,9 @@ class SVNChangeEntry:
         if( 'isdir' not in self.changedpath):
             isDir = self.logclient.isDirectory(self.revno, path, action)
             self.changedpath['isdir'] = isDir
+            if( isDir and not path.endswith('/')):
+                #if it is directory then add trailing '/' to the path to denote the directory.
+                self.changedpath['path'] = path + '/'
         else:
             isDir = self.changedpath['isdir']
         
