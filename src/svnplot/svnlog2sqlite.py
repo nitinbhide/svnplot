@@ -131,7 +131,12 @@ class SVNLog2Sqlite:
                                             linesadded, linesdeleted, lc_updated, pathtype, entry_type))
 
                         if( bUpdLineCount == True):
-                            self.addDummyLogDetail(change,querycur,updcur)
+                            #dummy entries may add additional added/deleted file entries.
+                            (addedfiles1, deletedfiles1) = self.addDummyLogDetail(change,querycur,updcur)
+                            addedfiles = addedfiles+addedfiles1
+                            deletedfiles = deletedfiles+deletedfiles1
+                            updcur.execute("UPDATE SVNLog SET addedfiles=?, deletedfiles=? where revno=?",(addedfiles,deletedfiles,revlog.revno))
+                            
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                     lastrevno = revlog.revno
                     #commit after every change
@@ -150,6 +155,8 @@ class SVNLog2Sqlite:
         changetype = change.change_type()
         entry_type = 'D'
         lc_updated = 'Y'
+        addedfiles = 0
+        deletedfiles = 0
         if( changetype == 'D' or changetype=='A'):
             #since we may have to query the existing data. Commit the changes first.
             self.dbcon.commit()
@@ -176,6 +183,7 @@ class SVNLog2Sqlite:
                                             linesadded, linesdeleted, entrytype, pathtype, lc_updated) \
                                     values(?, ?, ?, ?,?,?, ?,?,?,?)", (change.revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                             lc_added, lc_deleted, entry_type,path_type,lc_updated))
+                    addedfiles = addedfiles+1
                         
                     #print row
             elif( changetype == 'D' and change.lc_added()== 0 and change.lc_deleted() == 0):                
@@ -200,8 +208,9 @@ class SVNLog2Sqlite:
                                             linesadded, linesdeleted, entrytype, pathtype, lc_updated) \
                                     values(?, ?, ?, ?,?,?, ?,?,?,?)", (change.revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                             lc_added, lc_deleted, entry_type,path_type,lc_updated))
+                    deletedfiles = deletedfiles+1
                     
-            
+        return(addedfiles, deletedfiles)
             
     def UpdateLineCountData(self):
         self.initdb()
@@ -251,8 +260,9 @@ class SVNLog2Sqlite:
         #lc_updated - Y means line count data is updated.
         #lc_updated - N means line count data is not updated. This flag can be used to update
         #line count data later        
-        cur.execute("CREATE  INDEX if not exists svnlogrevnoidx ON SVNLog (revno ASC)")
-        cur.execute("CREATE  INDEX if not exists svnlogdtlrevnoidx ON SVNLogDetail (revno ASC)")
+        cur.execute("CREATE INDEX if not exists svnlogrevnoidx ON SVNLog (revno ASC)")
+        cur.execute("CREATE INDEX if not exists svnlogdtlrevnoidx ON SVNLogDetail (revno ASC)")
+        cur.execute("CREATE INDEX IF NOT EXISTS svnpathidx ON SVNPaths (path ASC)")
         self.dbcon.commit()
         
         #Table structure is changed slightly. I have added a new column in SVNLogDetail table.
