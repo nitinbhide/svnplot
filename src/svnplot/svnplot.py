@@ -444,7 +444,7 @@ class SVNPlot(SVNPlotMatplotLib):
         '''
         #dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth)
 
-        dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
+        dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
 
         for dirname in dirlist:
             ax = self._drawDirectorySizeLineGraphByDir(dirname, ax)

@@ -35,6 +35,7 @@ def dirname(searchpath, path, depth):
     get directory name till given depth (relative to searchpath) from the full file path
     '''
     assert(searchpath != None and searchpath != "")
+    assert(path.startswith(searchpath) == True)
     #replace the search path and then compare the depth
     path = path.replace(searchpath, "", 1)
     #first split the path and remove the filename
@@ -43,7 +44,6 @@ def dirname(searchpath, path, depth):
     dirpath = '/'.join(pathcomp[0:depth])
     #Now add the dirpath to searchpath to get the final directory path
     dirpath = searchpath+dirpath
-    #print "%s : [%s]" %(path, dirpath)
     return(dirpath)
 
 def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
@@ -405,6 +405,7 @@ class SVNStats:
         #first get the file types and         
         self.cur.execute("select filetype(changedpath) as ftype, count(*) as typecount\
                          from (select distinct changedpath from SVNLogDetailVw where SVNLogDetailVw.changedpath like ? \
+                         and pathtype == 'F' \
                          ) group by ftype order by typecount DESC limit 0,?"
                          , (self.sqlsearchpath,numTypes,))
 
@@ -412,6 +413,8 @@ class SVNStats:
         ftypecountlist = []
         
         for ftype, typecount in self.cur:
+            if( ftype==''):
+                ftype = '{no ext}'
             ftypelist.append(ftype)
             ftypecountlist.append(float(typecount))
         return(ftypelist, ftypecountlist)
@@ -529,6 +532,7 @@ class SVNStats:
             if( dsize > 0):
                 dirlist.append(dirname)
                 dirsizelist.append(dsize)
+                
         if maxdircount > 0 :        
             '''
             Return only <maxdircount> largest directories
@@ -619,11 +623,21 @@ class SVNStats:
         dates = []
         dirsizelist = []
         dirsize = 0
+        lastdateadded = None
+        prev_dirsize= 0
+        onedaydiff = datetime.timedelta(1)
         for commitdate, locadded, locdeleted in self.cur:
             dirsize= dirsize+locadded-locdeleted
             if( self.isDateInRange(commitdate) == True):            
+                if( lastdateadded != None and (commitdate-lastdateadded).days > 1):
+                    dates.append(commitdate-onedaydiff)
+                    dirsizelist.append(float(prev_dirsize))
+                
                 dates.append(commitdate)
-                dirsizelist.append(max(0, float(dirsize)))
+                dirsize = max(0, float(dirsize))
+                dirsizelist.append(dirsize)
+                prev_dirsize = dirsize
+                lastdateadded = commitdate
             
         assert(len(dates) == len(dirsizelist))
         if( len(dates) > 0 and dates[-1] < self.__endDate):

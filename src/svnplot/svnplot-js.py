@@ -731,7 +731,7 @@ class SVNPlotJS(SVNPlotBase):
         #dirlist = self.svnstats.getDirnames(depth)
         #dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth)
 
-        dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
+        dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
         numDirs = len(dirlist)
 
         outstr = StringIO.StringIO()
