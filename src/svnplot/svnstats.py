@@ -470,16 +470,18 @@ class SVNStats:
         for author, filesadded, fileschanged, filesdeleted,commitcount in self.cur:
             authlist.append(author)
             activitytotal = float(filesadded+fileschanged+filesdeleted)
-            
+
+            addfrac = 0.0
+            changefrac = 0.0
+            delfrac = 0.0
             if( activitytotal > 0.0):
-               addfraclist.append(float(filesadded)/activitytotal*100)
-               changefraclist.append(float(fileschanged)/activitytotal*100)
-               delfraclist.append(float(filesdeleted)/activitytotal*100)
-            else:
-               addfraclist.append(0.0)
-               changefraclist.append(0.0)
-               delfraclist.append(0.0)
-               
+                addfrac = 100.0*float(filesadded)/activitytotal
+                changefrac = 100.0*float(fileschanged)/activitytotal
+                delfrac = 100.0*float(filesdeleted)/activitytotal                
+            addfraclist.append(addfrac)
+            changefraclist.append(changefrac)
+            delfraclist.append(delfrac)            
+
         return(authlist, addfraclist, changefraclist, delfraclist)
 
     def getDirFileCountStats(self, dirdepth=2, maxdircount=10):
