@@ -177,6 +177,9 @@ class SVNLog2Sqlite:
                     lc_deleted = 0
 
                     filename = row[0].replace(copyfrompath, change.filepath_unicode(), 1)
+                    pathtype = 'F'
+                    if(filename.endswith('/'):
+                       pathtype = 'D'
                     changedpathid = self.getFilePathId(filename, updcur)
                     copyfrompathid = self.getFilePathId(row[0], updcur)
                     updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
@@ -202,6 +205,9 @@ class SVNLog2Sqlite:
                         lc_deleted = 0
                     #set lines added to 0
                     lc_added = 0
+                    pathtype = 'F'
+                    if(row[0].endswith('/'):
+                       pathtype = 'D'                    
                     changedpathid = self.getFilePathId(row[0], updcur)
                     copyfrompathid = self.getFilePathId(copyfrompath, updcur)
                     updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
