@@ -636,7 +636,7 @@ class SVNPlotJS(SVNPlotBase):
         changeDataStr = ','.join(changeDataList)
 
         delDataList = ['[%.2f,%d]'% (delfrac,idx) for delfrac, idx in zip(delfraclist, itertools.count(1))]
-        delDataStr = ','.join(changeDataList)
+        delDataStr = ','.join(delDataList)
 
         ticksDataList = []
 
