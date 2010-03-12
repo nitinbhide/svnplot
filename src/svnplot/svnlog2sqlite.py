@@ -178,7 +178,7 @@ class SVNLog2Sqlite:
 
                     filename = row[0].replace(copyfrompath, change.filepath_unicode(), 1)
                     pathtype = 'F'
-                    if(filename.endswith('/'):
+                    if(filename.endswith('/')):
                        pathtype = 'D'
                     changedpathid = self.getFilePathId(filename, updcur)
                     copyfrompathid = self.getFilePathId(row[0], updcur)
@@ -206,7 +206,7 @@ class SVNLog2Sqlite:
                     #set lines added to 0
                     lc_added = 0
                     pathtype = 'F'
-                    if(row[0].endswith('/'):
+                    if(row[0].endswith('/')):
                        pathtype = 'D'                    
                     changedpathid = self.getFilePathId(row[0], updcur)
                     copyfrompathid = self.getFilePathId(copyfrompath, updcur)
@@ -260,9 +260,14 @@ class SVNLog2Sqlite:
         cur.execute("create table if not exists SVNLogDetail(revno integer, changedpathid integer, changetype text, copyfrompathid integer, copyfromrev integer, \
                     pathtype text, linesadded integer, linesdeleted integer, lc_updated char, entrytype char)")
         cur.execute("CREATE TABLE IF NOT EXISTS SVNPaths(id INTEGER PRIMARY KEY AUTOINCREMENT, path text)")
-        cur.execute("CREATE VIEW IF NOT EXISTS SVNLogDetailVw AS select SVNLogDetail.*, ChangedPaths.path as changedpath, CopyFromPaths.path as copyfrompath \
+        try:
+                #create VIEW IF NOT EXISTS was not supported in default sqlite version with Python 2.5
+                cur.execute("CREATE VIEW SVNLogDetailVw AS select SVNLogDetail.*, ChangedPaths.path as changedpath, CopyFromPaths.path as copyfrompath \
                     from SVNLogDetail LEFT JOIN SVNPaths as ChangedPaths on SVNLogDetail.changedpathid=ChangedPaths.id \
                     LEFT JOIN SVNPaths as CopyFromPaths on SVNLogDetail.copyfrompathid=CopyFromPaths.id")
+        except:
+                #you will get an exception if the view exists. In that case nothing to do. Just continue.
+                pass
         #lc_updated - Y means line count data is updated.
         #lc_updated - N means line count data is not updated. This flag can be used to update
         #line count data later        
