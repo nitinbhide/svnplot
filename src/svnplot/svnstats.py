@@ -432,7 +432,7 @@ class SVNStats:
                              (select date(SVNLog.commitdate,"localtime") as commitdate, count(*) as addedfiles, 0 as deletedfiles from SVNLog, SVNLogDetailVw \
                              where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="A" group by commitdate \
                             union all \
-                            select date(SVNLog.commitdate,"localtime") as commitdate, 0 as addedfiles, count(*) as deletedfile from SVNLog, SVNLogDetailVw \
+                            select date(SVNLog.commitdate,"localtime") as commitdate, 0 as addedfiles, count(*) as deletedfiles from SVNLog, SVNLogDetailVw \
                              where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="D" group by commitdate) group by commitdate) \
                             group by commitdate order by commitdate ASC', (self.sqlsearchpath,self.sqlsearchpath,self.sqlsearchpath))
         dates = []
