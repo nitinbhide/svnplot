@@ -362,9 +362,9 @@ class SVNStats:
         #create a temporary view with file counts for given change type for a revision
         self.cur.execute('DROP TABLE IF EXISTS filestats')
         self.cur.execute('CREATE TEMP TABLE filestats AS \
-                select SVNLogDetailVw.revno as revno, count(*) as addcount, 0 as delcount from SVNLogDetailVw where changetype= "A" and changedpath like "%s" group by revno\
+                select SVNLogDetailVw.revno as revno, count(*) as addcount, 0 as delcount from SVNLogDetailVw where changetype= "A" and changedpath like "%s" and pathtype= "F" group by revno\
                 UNION \
-                select SVNLogDetailVw.revno as revno, 0 as addcount, count(*) as delcount from SVNLogDetailVw where changetype= "D" and changedpath like "%s" group by revno'
+                select SVNLogDetailVw.revno as revno, 0 as addcount, count(*) as delcount from SVNLogDetailVw where changetype= "D" and changedpath like "%s" and pathtype= "F" group by revno'
                          % (self.sqlsearchpath,self.sqlsearchpath))
         self.cur.execute('CREATE INDEX filestatsidx ON filestats(revno)')
         self.dbcon.commit()
@@ -444,7 +444,6 @@ class SVNStats:
             totalLoc = totalLoc + locadded-locdeleted
             totalFileCnt = totalFileCnt + filesadded - filesdeleted
             avgloc = 0.0
-            print "%s : total loc=%d filecount = %d" % (commitdate, totalLoc, totalFileCnt)
             if( totalFileCnt > 0.0):
                 avgloc = float(totalLoc)/float(totalFileCnt)
             if( self.isDateInRange(commitdate) == True):
