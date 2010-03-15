@@ -409,6 +409,15 @@ class SVNStats:
                          ) group by ftype order by typecount DESC limit 0,?"
                          , (self.sqlsearchpath,numTypes,))
 
+        self.cur.execute("select ftype, (total(addedfiles)-total(deletedfiles)) as typecount from \
+                         (select filetype(changedpath) as ftype, count(*) as addedfiles, 0 as deletedfiles from SVNLogDetailVw \
+                         where SVNLogDetailVw.changedpath like ? and pathtype == 'F' and changetype= 'A' group by ftype\
+                         UNION ALL \
+                         select filetype(changedpath) as ftype, 0 as addedfiles, count(*) as deletedfiles from SVNLogDetailVw \
+                         where SVNLogDetailVw.changedpath like ? and pathtype == 'F' and changetype= 'D' group by ftype\
+                         ) group by ftype order by typecount DESC limit 0,?"
+                         , (self.sqlsearchpath,self.sqlsearchpath,numTypes))
+
         ftypelist = []
         ftypecountlist = []
         
@@ -500,12 +509,20 @@ class SVNStats:
         self.cur.execute("select dirname(?, changedpath, ?) as dirpath, count(*) as filecount \
                     from (select distinct changedpath from SVNLogDetailVw where SVNLogDetailVw.changedpath like ?) \
                     group by dirpath", (self.searchpath,dirdepth, self.sqlsearchpath,))
-            
+
+        self.cur.execute('select dirpath, total(addedfiles) as addedfiles, total(deletedfiles) as deletedfiles from \
+                             (select dirname(?, changedpath, ?) as dirpath, count(*) as addedfiles, 0 as deletedfiles from SVNLog, SVNLogDetailVw \
+                             where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="A" and SVNLogDetailVw.pathtype= "F" group by dirpath \
+                            union all \
+                            select dirname(?, changedpath, ?) as dirpath, 0 as addedfiles, count(*) as deletedfiles from SVNLog, SVNLogDetailVw \
+                             where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="D" and SVNLogDetailVw.pathtype= "F" group by dirpath) \
+                            group by dirpath',(self.searchpath,dirdepth, self.sqlsearchpath,self.searchpath,dirdepth, self.sqlsearchpath))
+        
         dirlist = []
         dirfilecountlist = []        
-        for dirname, fcount in self.cur:
+        for dirname, addedfiles,deletedfiles in self.cur:
             dirlist.append(dirname)
-            dirfilecountlist.append(float(fcount))
+            dirfilecountlist.append(float(addedfiles-deletedfiles))
             
         if maxdircount > 0 :   
             '''
