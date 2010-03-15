@@ -20,17 +20,24 @@ HEATMAP_CLRDATA =   {'red':   ((0., 0, 0), (0.35, 0, 0), (0.66, 1.0, 1.0), (0.89
 def __getHeatColor(clrname, heatindex):
     assert(clrname in HEATMAP_CLRDATA)
     clrdata = HEATMAP_CLRDATA[clrname]
-    clr = 1.0
-    for idx in range(0, len(clrdata)-2):
+    clr = 5.0
+    #clamped heatindex to (0.0, 1.0) to ensure that colormapping works properly
+    heatindex = max(heatindex, 0.0000001)
+    heatindex = min(heatindex, 1.0)
+    
+    for idx in range(0, len(clrdata)-1):
         heat1 = clrdata[idx][0]
         heat2 = clrdata[idx+1][0]
         if( heatindex > heat1 and heatindex <= heat2):
             clr1 = clrdata[idx][2]
             clr2 = clrdata[idx+1][1]
             clr = clr1+((clr2-clr1)*((heatindex-heat1)/(heat2-heat1)))
+            #print "clr = %.2f (%.2f-%.2f)" % (clr, clr1, clr2)
+            assert((clr >= clr1 and clr <=clr2) or (clr >= clr2 and clr <=clr1))
             break
+        
     assert(clr >= 0.0 and clr <= 1.0)
-    clr = int(255*clr+0.5)
+    clr = int(255*clr+0.5)    
     return(clr)
     
 def getHeatColor(heatindex):
