@@ -424,11 +424,17 @@ class SVNStats:
         get statistics of how average LoC is changing over time.
         returns two lists (dates and average loc on that date)
         '''
-        self.cur.execute('select date(SVNLog.commitdate,"localtime") as "commitdate [date]", sum(SVNLogDetailVw.linesadded), sum(SVNLogDetailVw.linesdeleted), \
-                         sum(SVNLog.addedfiles), sum(SVNLog.deletedfiles) \
-                         from SVNLog, SVNLogDetailVw \
-                         where SVNLog.revno = SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? \
-                         group by "commitdate [date]" order by commitdate ASC', (self.sqlsearchpath,))
+        self.cur.execute('select commitdate as "commitdate [date]", sum(linesadded), sum(linesdeleted), total(addedfiles), total(deletedfiles) from \
+                    (select date(SVNLog.commitdate,"localtime") as commitdate, total(SVNLogDetailVw.linesadded) as LinesAdded, total(SVNLogDetailVw.linesdeleted) as LinesDeleted, \
+                        0 as addedfiles, 0 as deletedfiles from SVNLogDetailVw, SVNLog where SVNLog.revno = SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? group by commitdate \
+                        UNION ALL \
+                         select commitdate, 0 as linesadded, 0 as linesdeleted, total(addedfiles) as addedfiles, total(deletedfiles) as deletedfiles from \
+                             (select date(SVNLog.commitdate,"localtime") as commitdate, count(*) as addedfiles, 0 as deletedfiles from SVNLog, SVNLogDetailVw \
+                             where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="A" group by commitdate \
+                            union all \
+                            select date(SVNLog.commitdate,"localtime") as commitdate, 0 as addedfiles, count(*) as deletedfile from SVNLog, SVNLogDetailVw \
+                             where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="D" group by commitdate) group by commitdate) \
+                            group by commitdate order by commitdate ASC', (self.sqlsearchpath,self.sqlsearchpath,self.sqlsearchpath))
         dates = []
         avgloclist = []
         avgloc = 0
