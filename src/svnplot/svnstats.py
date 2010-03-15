@@ -849,11 +849,11 @@ class SVNStats:
         stats['LastRevDate'] = row[0]
         #get number of unique paths(files) (added and deleted)
         self.cur.execute('select count(*) from SVNLogDetailVw where SVNLogDetailVw.changetype = "A" \
-                        and SVNLogDetailVw.changedpath like ?', (self.sqlsearchpath,))
+                        and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.pathtype="F"', (self.sqlsearchpath,))
         row = self.cur.fetchone()
         filesAdded = row[0]
         self.cur.execute('select count(*) from SVNLogDetailVw where SVNLogDetailVw.changetype = "D" \
-                        and SVNLogDetailVw.changedpath like ?', (self.sqlsearchpath,))
+                        and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.pathtype="F"', (self.sqlsearchpath,))
         row = self.cur.fetchone()
         filesDeleted = row[0]
         stats['NumFiles'] = filesAdded-filesDeleted
