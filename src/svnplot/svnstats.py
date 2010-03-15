@@ -430,10 +430,10 @@ class SVNStats:
                         UNION ALL \
                          select commitdate, 0 as linesadded, 0 as linesdeleted, total(addedfiles) as addedfiles, total(deletedfiles) as deletedfiles from \
                              (select date(SVNLog.commitdate,"localtime") as commitdate, count(*) as addedfiles, 0 as deletedfiles from SVNLog, SVNLogDetailVw \
-                             where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="A" group by commitdate \
+                             where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="A" and SVNLogDetailVw.pathtype= "F" group by commitdate \
                             union all \
                             select date(SVNLog.commitdate,"localtime") as commitdate, 0 as addedfiles, count(*) as deletedfiles from SVNLog, SVNLogDetailVw \
-                             where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="D" group by commitdate) group by commitdate) \
+                             where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="D" and SVNLogDetailVw.pathtype= "F" group by commitdate) group by commitdate) \
                             group by commitdate order by commitdate ASC', (self.sqlsearchpath,self.sqlsearchpath,self.sqlsearchpath))
         dates = []
         avgloclist = []
@@ -444,6 +444,7 @@ class SVNStats:
             totalLoc = totalLoc + locadded-locdeleted
             totalFileCnt = totalFileCnt + filesadded - filesdeleted
             avgloc = 0.0
+            print "%s : total loc=%d filecount = %d" % (commitdate, totalLoc, totalFileCnt)
             if( totalFileCnt > 0.0):
                 avgloc = float(totalLoc)/float(totalFileCnt)
             if( self.isDateInRange(commitdate) == True):
