@@ -506,9 +506,9 @@ class SVNStats:
         files in subdirectories)        
         maxdircount - limits the number of directories on the graph to the x largest directories        
         '''
-        self.cur.execute("select dirname(?, changedpath, ?) as dirpath, count(*) as filecount \
-                    from (select distinct changedpath from SVNLogDetailVw where SVNLogDetailVw.changedpath like ?) \
-                    group by dirpath", (self.searchpath,dirdepth, self.sqlsearchpath,))
+##        self.cur.execute("select dirname(?, changedpath, ?) as dirpath, count(*) as filecount \
+##                    from (select distinct changedpath from SVNLogDetailVw where SVNLogDetailVw.changedpath like ?) \
+##                    group by dirpath", (self.searchpath,dirdepth, self.sqlsearchpath,))
 
         self.cur.execute('select dirpath, total(addedfiles) as addedfiles, total(deletedfiles) as deletedfiles from \
                              (select dirname(?, changedpath, ?) as dirpath, count(*) as addedfiles, 0 as deletedfiles from SVNLog, SVNLogDetailVw \
