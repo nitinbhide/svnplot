@@ -403,11 +403,11 @@ class SVNStats:
         returns two lists (file types and number of files of that type. 
         '''
         #first get the file types and         
-        self.cur.execute("select filetype(changedpath) as ftype, count(*) as typecount\
-                         from (select distinct changedpath from SVNLogDetailVw where SVNLogDetailVw.changedpath like ? \
-                         and pathtype == 'F' \
-                         ) group by ftype order by typecount DESC limit 0,?"
-                         , (self.sqlsearchpath,numTypes,))
+##        self.cur.execute("select filetype(changedpath) as ftype, count(*) as typecount\
+##                         from (select distinct changedpath from SVNLogDetailVw where SVNLogDetailVw.changedpath like ? \
+##                         and pathtype == 'F' \
+##                         ) group by ftype order by typecount DESC limit 0,?"
+##                         , (self.sqlsearchpath,numTypes,))
 
         self.cur.execute("select ftype, (total(addedfiles)-total(deletedfiles)) as typecount from \
                          (select filetype(changedpath) as ftype, count(*) as addedfiles, 0 as deletedfiles from SVNLogDetailVw \
