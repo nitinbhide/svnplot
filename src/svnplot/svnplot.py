@@ -117,7 +117,7 @@ HTMLIndexTemplate ='''
 <th colspan=3 align="center"><h3>Directory Size Graphs</h3></th>
 </tr>
 <tr>
-   <td align="center"><h4>Current Directory Size</h4><br/>
+   <td align="center"><h4>Current Directory Size in LoC</h4><br/>
     <a href="$DirSizePie"><img src="$DirSizePie" width="$thumbwid" height="$thumbht"></a>
     </td>
     <td align="center"><h4>Directory Size</h4><br/>

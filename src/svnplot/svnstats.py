@@ -46,6 +46,12 @@ def dirname(searchpath, path, depth):
     dirpath = searchpath+dirpath
     return(dirpath)
 
+def parent_dirname(path):
+    '''
+    get parent directory name.
+    '''
+    return(os.path.dirname(path))
+
 def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
     '''
     calculate the new temparature at time 'tm'. given the
@@ -240,6 +246,15 @@ class SVNStats:
         self.__endDate = enddate
         self.__createSearchParamView()
 
+    def getSearchPathRelName(self, filename):
+        '''
+        calculate the file name relative to search path (if possible). Basically remove the searchpath from start of filename
+        '''
+        relfilename = filename
+        if( self.__searchpath !=None and self.__searchpath != '/' and filename.startswith(self.__searchpath)):
+            relfilename = filename[len(self.__searchpath):]
+        return(relfilename)
+    
     def __createSearchParamView(self):
         '''
         create temporary view with only the revisions matching the search parameters.
