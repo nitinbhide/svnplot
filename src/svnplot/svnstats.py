@@ -198,6 +198,8 @@ class SVNStats:
         self.dbcon.create_aggregate("deltastddev", 1, DeltaStdDev)
                                     
         self.cur = self.dbcon.cursor()
+        #set the LIKE operator to case sensitive behavior
+        self.cur.execute("pragma case_sensitive_like(TRUE)")
         #set the start date and end date to min and maxium dates in database table.
         self.cur.execute("select min(commitdate), max(commitdate) from SVNLog")
         onedaydiff = datetime.timedelta(1)
