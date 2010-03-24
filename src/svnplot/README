@@ -1,18 +1,31 @@
 ============
 Introduction
 ============
-SVNPlot generates graphs similar to StatSVN. The difference is in how the graphs are generated. SVNPlot generates these graphs in two steps. First it converts the Subversion logs into a 'sqlite3' database. Then it uses sql queries to extract the data from the database and then uses excellent Matplotlib plotting library to plot the graphs.
+SVNPlot generates graphs similar to StatSVN. The difference is in how the graphs are generated. SVNPlot
+generates these graphs in two steps. First it converts the Subversion logs into a 'sqlite3' database. Then
+it uses sql queries to extract the data from the database and then uses excellent Matplotlib plotting
+library to plot the graphs.
 
-I believe using SQL queries to query the necessary data results in great flexibility in data extraction. Also since the sqlite3 is quite fast, it is possible to generate these graphs on demand.
-Installation
+I believe using SQL queries to query the necessary data results in great flexibility in data extraction.
+Also since the sqlite3 is quite fast, it is possible to generate these graphs on demand.
 
+==========================
+Installation prerequisites
+==========================
 You will need following additional libraries for using SVNPlot
 
    1. sqlite3 - is default installed with python
    2. http://pysvn.tigris.org/- Python SVN bindings.
-   3. http://numpy.scipy.org/- Matplotlib uses NumPy? and SVNPlot uses Matplotlib for plotting.
+   
+   If you are going to use Javascript canvas based graphs (svnplot-js.py), 
+   3. JqPlot (http://www.jqplot.com/) - Excellent Javascript canvas based plotting library. It is included 	
+	  in the svnplot installation
+   
+   If you want to use Matplotlib based SVNPlot (svnplot.py) then you will need.
+   3. http://numpy.scipy.org/- Matplotlib uses NumPy and SVNPlot uses Matplotlib for plotting.
    4. http://matplotlib.sourforge.net/ - You need at least version 0.98.5.2 
 
+	
 ============
 Quick Start
 ============
@@ -34,6 +47,8 @@ Quick Start
 2. Now generate the graphs.
 
     svnplot.py [options] <svnsqlitedbpath> <output directory> 
+	OR
+	svnplot-js.py [options] <svnsqlitedbpath> <output directory> 
 
     <graphdir> is local directory on your machine. All the graphs will placed in this directory. 
 
@@ -49,6 +64,8 @@ Quick Start
    
    For example, 
    svnplot.py -v --dpi 70 -p svnplot-long.tmpl -n "MyRepo" <sqlitedb path> <output directory>
+   or
+   svnplot-js.py [options] <svnsqlitedbpath> <output directory> 
    
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
  
