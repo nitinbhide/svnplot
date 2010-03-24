@@ -1,3 +1,6 @@
+
+SVNPlot - Ver 0.6
+
 ============
 Introduction
 ============
@@ -68,8 +71,21 @@ Quick Start
    svnplot-js.py [options] <svnsqlitedbpath> <output directory> 
    
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
- 
+
+==============================================
+Changes from 0.5.x to 0.6
+==============================================
+1. Many bug fixes especially related to linecount and file count when folders are deleted or renamed.
+2. Support to Javascript canvas based charts using JqPlot.
+3. 
+
+==============================================
+IMPORTANT NOTE for migrating from 0.5.x to 0.6
+==============================================
+SVNPlot ver 0.6 sqlite database schema is different than 0.5.x schema. Hence for migrating from 0.5.x to 0.6 you will need to regenerate the sqlite database.
+
 ============
 License
 ============
 SVNPlot is released under New BSD License http://www.opensource.org/licenses/bsd-license.php
+
