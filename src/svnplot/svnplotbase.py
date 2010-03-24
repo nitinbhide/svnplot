@@ -99,7 +99,7 @@ class SVNPlotBase:
         outstr = StringIO.StringIO()
         outstr.write("<ol>\n")
         for filepath, temperatur in hotfiles:
-            outstr.write("<li>%s</li>\n"%filepath)
+            outstr.write("<li>%s</li>\n"% self.svnstats.getSearchPathRelName(filepath))
         outstr.write("</ol>\n")
         return(outstr.getvalue())
 

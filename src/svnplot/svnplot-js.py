@@ -178,7 +178,7 @@ HTMLIndexTemplate ='''
 </tr>
 <tr>
 <tr>
-<th colspan=3 align="center"><h3>Top 10 Hot List</h3></th>
+<th colspan=3 align="center"><h3>Top 10 Hot List $SEARCHPATH</h3></th>
 </tr>
 <tr>
     <td colspan=3>
@@ -197,7 +197,7 @@ HTMLIndexTemplate ='''
     </td>
 </tr>
 <tr>
-<th colspan=3 align="center"><h3>Lines of Code Graphs</h3></th>
+<th colspan=3 align="center"><h3>Lines of Code Graphs $SEARCHPATH</h3></th>
 </tr>
 <tr>
     <td align="center">
@@ -211,7 +211,7 @@ HTMLIndexTemplate ='''
     </td>    
 </tr>
 <tr>
-<th colspan=3 align="center"><h3>File Count Graphs</h3></th>
+<th colspan=3 align="center"><h3>File Count Graphs $SEARCHPATH</h3></th>
 </tr>
 <tr>
     <td align="center">
@@ -223,7 +223,7 @@ HTMLIndexTemplate ='''
     <td>&nbsp</td>
 </tr>
 <tr>
-<th colspan=3 align="center"><h3>Directory Size Graphs</h3></th>
+<th colspan=3 align="center"><h3>Directory Size Graphs $SEARCHPATH</h3></th>
 </tr>
 <tr>
    <td align="center">
@@ -660,7 +660,7 @@ class SVNPlotJS(SVNPlotBase):
             function directorySizePieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
             var plot = $.jqplot(divElemId, [data], {
-                    title: 'Directory Size (Pie)',
+                    title: 'Current Directory Size in LoC(Pie)',
                     legend:{show:showLegend},
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:8}}                    
             });
@@ -670,9 +670,13 @@ class SVNPlotJS(SVNPlotBase):
         
         assert(len(dirlist) == len(dirsizelist))
 
+        searchpath=""
+        if( self.svnstats.searchpath != None and self.svnstats.searchpath != "/"):
+            searchpath = "<br/>for %s" % self.svnstats.searchpath
+                
         dirdatastr = ''
         if( len(dirsizelist) > 0):
-            datalist = ["['%s (%d)', %d]" % (dirname,dirsize,dirsize) for dirname, dirsize in zip(dirlist, dirsizelist)]            
+            datalist = ["['%s (%d)', %d]" % (self.svnstats.getSearchPathRelName(dirname),dirsize,dirsize) for dirname, dirsize in zip(dirlist, dirsizelist)]            
             dirdatastr = ',\n'.join(datalist)
             
         return(self.__getGraphScript(template, {"DIRSIZEDATA":dirdatastr}))
@@ -685,7 +689,7 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating current Directory File Count pie graph")
 
         dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
-                
+
         template = '''        
             function dirFileCountPieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
@@ -699,10 +703,10 @@ class SVNPlotJS(SVNPlotBase):
         '''
         
         assert(len(dirlist) == len(dirsizelist))
-
+        
         dirdatastr = ''
         if( len(dirsizelist) > 0):
-            dirdatalist = ["['%s (%d)', %d]" % (dirname,dirsize,dirsize) for dirname, dirsize in zip(dirlist, dirsizelist)]            
+            dirdatalist = ["['%s (%d)', %d]" % (self.svnstats.getSearchPathRelName(dirname),dirsize,dirsize) for dirname, dirsize in zip(dirlist, dirsizelist)]            
             dirdatastr = ',\n'.join(dirdatalist)
             
         return(self.__getGraphScript(template, {"DIRSIZEDATA":dirdatastr}))
@@ -748,7 +752,7 @@ class SVNPlotJS(SVNPlotBase):
         outstr.write("];\n")
         locdatastr = outstr.getvalue()
 
-        datalist = ["{label:'%s', lineWidth:2, markerOptions:{style:'filledCircle',size:2}}" % dirname for dirname, idx in zip(dirlist, itertools.count(0))]            
+        datalist = ["{label:'%s', lineWidth:2, markerOptions:{style:'filledCircle',size:2}}" % self.svnstats.getSearchPathRelName(dirname) for dirname, idx in zip(dirlist, itertools.count(0))]            
         seriesdata = ',\n'.join(datalist)
         
         return(self.__getGraphScript(template, {"LOCDATA":locdatastr, "SERIESDATA":seriesdata}))    
@@ -795,6 +799,10 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["thumbht"]="%dpx" % thumbsize
         
         graphParamDict["RepoName"]=self.reponame
+        graphParamDict["SEARCHPATH"]=""
+        if( self.svnstats.searchpath != None and self.svnstats.searchpath != '/'):
+            graphParamDict["SEARCHPATH"]= "(%s)" % self.svnstats.searchpath
+        
         graphParamDict["TagCloud"] = self.TagCloud()
         graphParamDict["AuthCloud"] = self.AuthorCloud()
         graphParamDict["BasicStats"] = self.BasicStats(HTMLBasicStatsTmpl)
