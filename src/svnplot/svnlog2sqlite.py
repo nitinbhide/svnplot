@@ -24,7 +24,7 @@ BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'od
                  'o', 'a', 'obj', 'lib', 'dll', 'so', 'exe',
                  'jar', 'zip', 'z', 'gz', 'tar', 'rar','7z',
                  'pdb', 'idb', 'ilk', 'bsc', 'ncb', 'sbr', 'pch', 'ilk',
-                 'bmp', 'dib', 'jpg', 'jpeg', 'png', 'gif', 'ico', 'pcd', 'wmf', 'emf', 'xcf', 'tiff',
+                 'bmp', 'dib', 'jpg', 'jpeg', 'png', 'gif', 'ico', 'pcd', 'wmf', 'emf', 'xcf', 'tiff', 'xpm',
                  'gho', 'mp3', 'wma', 'wmv','wav','avi'
                  ]
 
