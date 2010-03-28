@@ -63,6 +63,9 @@ Quick Start
 	* -p 'template file path' :  Default svnplot uses its own standard report format. However, you can change report format using -p option. 
 	* -v : verbose output
 	
+	For svnplot-js.py,
+	* -j or --copyjs : Copy the required excanvas,jquery and jqPlot javascript and css file to output directory
+	
 3. Generating Graph with your own report template
    You can use your own report template for the generated graphs. One example of report template is available in 'svnplot-long.tmpl'. This template directly embed the generated graphs images in the report and doesnot use thumbnails. It is useful to get a printed report.
    
