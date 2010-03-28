@@ -38,12 +38,13 @@ Quick Start
 
     <svnrepo url> can be any repository format supported by Subverson. If you are using the local repositories on windows use the file:///d:/... format. <sqlitedbpath> is sqlite database file path. Its a path on your local machine 
 
+	NOTE : For example, updating the SVN graphs for SVNPlot project use http://svnplot.googlecode.com/svn/. Using other urls like http://svnplot.googlecode.com/svn/trunk/ will result in error. (Upto version 0.5.4. This issue is fixed version 0.5.5, now svnrepo_url can be any url inside the repository)
+
     You can run this step multiple times. The new revisions added in the repository will get added to datatbase 
     
 	Options : 
     * -l : Update the changed line count data also. By default line count data is NOT updated.     
-    NOTE : for version 0.5.5 -l option works only if svnrepo_url is 'repository root'. It doesn't work if the URL is inside the repository. This a bug. It will be fixed in the next version. 
-
+    
     * -v : Verbose output
     * -g : enable logging of intermediate data and errors. Enable this option if you face any problems like line count not getting generated, no data in the generated sqlite database etc. 
 	
