@@ -535,23 +535,31 @@ class SVNStats:
                              where SVNLog.revno=SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? and SVNLogDetailVw.changetype="D" and SVNLogDetailVw.pathtype= "F" group by dirpath) \
                             group by dirpath',(self.searchpath,dirdepth, self.sqlsearchpath,self.searchpath,dirdepth, self.sqlsearchpath))
         
-        dirlist = []
-        dirfilecountlist = []        
+        dirinfolist = []
         for dirname, addedfiles,deletedfiles in self.cur:
-            dirlist.append(dirname)
-            dirfilecountlist.append(float(addedfiles-deletedfiles))
+            fcount = float(addedfiles-deletedfiles)
+            dirinfolist.append((dirname, fcount))
             
-        if maxdircount > 0 :   
+        if maxdircount > 0 and len(dirinfolist) > maxdircount:   
             '''
             Return only <maxdircount> largest directories
             '''
-            indices = range(len(dirlist))
-            indices.sort(key=lambda i:dirfilecountlist[i], reverse=True)
-            dirlist = [dirlist[i] for i in indices]
-            dirfilecountlist = [dirfilecountlist[i] for i in indices]
-            dirlist = dirlist[0:maxdircount]
-            dirfilecountlist = dirfilecountlist[0:maxdircount]
-
+            dirinfolist.sort(key=lambda dinfo:dinfo[1], reverse=True)
+                        
+            remainingcount = sum(map(lambda dinfo:dinfo[1], dirinfolist[maxdircount:]), 0)
+            dirinfolist = dirinfolist[0:maxdircount]
+            dirinfolist.append(('others', remainingcount))
+        
+        #sort the directories in such a way that similar paths are together
+        dirinfolist.sort(key=lambda dinfo:dinfo[0])
+        
+        #now split in two lists
+        dirlist = []
+        dirfilecountlist = []
+        for name, fcount in dirinfolist:
+            dirlist.append(name)
+            dirfilecountlist.append(fcount)
+        
         return(dirlist, dirfilecountlist)
 
     def getDirLoCStats(self, dirdepth=2, maxdircount=10):
@@ -561,31 +569,37 @@ class SVNStats:
         files in subdirectories)        
         maxdircount - limits the number of directories on the graph to the x largest directories 
         '''
-        self.cur.execute("select dirname(?, SVNLogDetailVw.changedpath, ?) as dirpath, sum(SVNLogDetailVw.linesadded), sum(SVNLogDetailVw.linesdeleted) \
-                    from SVNLog, SVNLogDetailVw \
+        self.cur.execute("select dirname(?, SVNLogDetailVw.changedpath, ?) as dirpath, sum(SVNLogDetailVw.linesadded), \
+                         sum(SVNLogDetailVw.linesdeleted) from SVNLog, SVNLogDetailVw \
                     where SVNLog.revno = SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? \
                     group by dirpath", (self.searchpath,dirdepth, self.sqlsearchpath,))
             
             
-        dirlist = []
-        dirsizelist = []        
+        dirinfolist = []
         for dirname, linesadded, linesdeleted in self.cur:
             dsize = linesadded-linesdeleted
             if( dsize > 0):
-                dirlist.append(dirname)
-                dirsizelist.append(dsize)
+                dirinfolist.append((dirname, dsize))
                 
-        if maxdircount > 0 :        
+        if maxdircount > 0 and len(dirinfolist) > maxdircount: 
             '''
             Return only <maxdircount> largest directories
             '''
-            indices = range(len(dirlist))
-            indices.sort(key=lambda i:dirsizelist[i], reverse=True)
-            dirlist = [dirlist[i] for i in indices]
-            dirsizelist = [dirsizelist[i] for i in indices]
-            dirlist = dirlist[0:maxdircount]
-            dirsizelist = dirsizelist[0:maxdircount]
-                
+            dirinfolist.sort(key=lambda dinfo:dinfo[1], reverse=True)
+            
+            remainingcount = sum(map(lambda dinfo:dinfo[1], dirinfolist[maxdircount:]), 0)
+            dirinfolist = dirinfolist[0:maxdircount]
+            dirinfolist.append(('others', remainingcount))
+        
+        #sort the directories in such a way that similar paths are together
+        dirinfolist.sort(key=lambda dinfo:dinfo[0])
+        #now split in two lists
+        dirlist = []
+        dirsizelist = []
+        for name, size in dirinfolist:
+            dirlist.append(name)
+            dirsizelist.append(size)
+            
         return(dirlist, dirsizelist)
 
     def getDirnames(self, dirdepth=2):
