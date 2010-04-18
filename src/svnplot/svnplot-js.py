@@ -300,7 +300,7 @@ class SVNPlotJS(SVNPlotBase):
     def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=200, maxdircount = 10, copyjs=True):
         self.svnstats.SetSearchPath(svnsearchpath)
         #LoC and FileCount Graphs
-        graphParamDict = self._getGraphParamDict(thumbsize)
+        graphParamDict = self._getGraphParamDict(thumbsize, maxdircount)
         
         htmlidxname = os.path.join(dirpath, "index.htm")
         htmlidxTmpl = string.Template(self.template)
@@ -355,7 +355,7 @@ class SVNPlotJS(SVNPlotBase):
                 title:'Commit Activity By Hour of Day',
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
-                    rendererOptions:{barPadding: 6, barMargin:15}, 
+                    rendererOptions:{barPadding: 6, barMargin:10}, 
                 shadowAngle:135},                
             axes:{
                 xaxis:{
