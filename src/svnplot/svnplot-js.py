@@ -130,6 +130,7 @@ HTMLIndexTemplate ='''
 	$ActivityByWeekdayTable
 	$ActivityByTimeOfDayTable
 	$AuthorActivityGraph
+	$DailyCommitCountGraph
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
                     locgraph('LoCGraph', showLegend);
@@ -147,6 +148,7 @@ HTMLIndexTemplate ='''
                     dirSizeLineGraph('DirSizeLine', showLegend);
                     authorsCommitTrend('AuthorsCommitTrend',showLegend);
                     authorActivityGraph('AuthorActivityGraph', showLegend);
+                    dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
                 };
                 
                 function showGraphBox(graphFunc, showLegend) {
@@ -257,7 +259,8 @@ HTMLIndexTemplate ='''
     <td align="center">
     <div id="AuthorActivityGraph" class="graph" onclick ="showGraphBox(authorActivityGraph, true);"></div>
     </td>
-    <td align="center" >&nbsp;    
+    <td align="center" >
+    <div id="DailyCommitCountGraph" class="graph" onclick ="showGraphBox(dailyCommitCountGraph, true);"></div>
     </td>    
 </tr>
 <th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
@@ -516,9 +519,7 @@ class SVNPlotJS(SVNPlotBase):
         
     def FileCountGraph(self):
         self._printProgress("Calculating File Count graph")
-
-        dates, fc = self.svnstats.getFileCountStats()        
-
+        
         template = '''        
             function fileCountGraph(divElemId,showLegend) {
             var data = [$DATA];
@@ -791,7 +792,30 @@ class SVNPlotJS(SVNPlotBase):
         data = ','.join(datalist)
 
         return(self.__getGraphScript(template, {"DATA":data}))
-                    
+    
+    def DailyCommitCountGraph(self):
+        self._printProgress("Calculating Daily commit count graph")
+        
+        template = '''        
+            function dailyCommitCountGraph(divElemId,showLegend) {
+            var data = [$DATA];
+            var plot = $.jqplot(divElemId, [data], {
+                title:'Daily Commit Count',
+                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
+                );
+              return(plot);
+            };
+        '''
+        
+        datelist, cmitcountlist = self.svnstats.getDailyCommitCount()        
+        
+        assert(len(datelist) == len(cmitcountlist))
+        datalist = ['[\'%s\', %d]' % (date,fc) for date, fc in zip(datelist, cmitcountlist)]            
+        outstr = ',\n'.join(datalist)
+        
+        return(self.__getGraphScript(template, {"DATA":outstr}))
+    
     def _getGraphParamDict(self, thumbsize, maxdircount = 10):
         graphParamDict = dict()
             
@@ -822,6 +846,7 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["DirSizeLine"] = self.DirectorySizeLineGraph(self.dirdepth, maxdircount)
         graphParamDict["AuthorsCommitTrend"] = self.AuthorsCommitTrend()
         graphParamDict["AuthorActivityGraph"] = self.AuthorActivityGraph()
+        graphParamDict["DailyCommitCountGraph"] = self.DailyCommitCountGraph()
     
         return(graphParamDict)
                 
