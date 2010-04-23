@@ -271,8 +271,17 @@ class SVNLogClient:
         list
         '''
         return(filepath.endswith(self.binaryextlist))        
-        
-    def __isBinaryFile(self, filepath, revno):
+
+    def __isTextMimeType(self, fmimetype):
+        '''
+        check if the mime-type is a text mime-type based on the standard svn text file logic.        
+        '''
+        textMimeType = False
+        if( fmimetype.startswith('text/') or fmimetype == 'image/x-xbitmap' or fmimetype == 'image/x-xpixmap'):
+            textMimeType = True
+        return(textMimeType)
+            
+    def __isBinaryFile(self,):
         '''
         detect if file is a binary file using same heuristic as subversion. If the file
         has no svn:mime-type  property, or has a mime-type that is textual (e.g. text/*),
@@ -283,11 +292,12 @@ class SVNLogClient:
         url = self.getUrl(filepath)
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         
-        (revision, propdict) = self.svnclient.revproplist(url, revision=rev)
+        (path, propdict) = self.svnclient.proplist(url, revision=rev)
         binary = False #if explicit mime-type is not found always treat the file as 'text'                
         if( 'svn:mime-type' in propdict):
             fmimetype = propdict['svn:mime-type']
-            if( fmimetype.find('text') < 0):
+            binary = True
+            if( self.__isTextMimeType(fmimetype)==False):
                 #mime type is not a 'text' mime type.
                 binary = True
                
