@@ -152,6 +152,14 @@ HTMLIndexTemplate ='''
     <a href="$CommitAct"><img src="$CommitAct" width="$thumbwid" height="$thumbht"></a>
     </td>    
 </tr>
+<tr>
+    <td align="center" ><h4>Daily Commits</h4><br/>
+        <a href="$DailyCommitTrend"><img src="$DailyCommitTrend" width="$thumbwid" height="$thumbht"></a>
+    </td>
+    <td align="center">&nbsp;</td>
+    <td align="center" >&nbsp;</td>    
+</tr>
+
 <th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
 </tr>
 <tr id='tagcloud'>
@@ -185,7 +193,8 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", 
                      LoC="loc", LoCChurn="churnloc", FileCount="filecount", LoCByDev="localldev",
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
-                     FileTypes="filetypes", AuthorsCommitTrend="authorscommit")
+                     FileTypes="filetypes", AuthorsCommitTrend="authorscommit",
+                     DailyCommitTrend='dailycommits')
                          
 class SVNPlot(SVNPlotMatplotLib):
     def __init__(self, svnstats, dpi=100, format='png',template=None):
@@ -212,6 +221,7 @@ class SVNPlot(SVNPlotMatplotLib):
         self.CommitActivityGraph(self._getGraphFileName(dirpath, "CommitAct"))
         self.CommitActivityIdxGraph(self._getGraphFileName(dirpath, "CommitActivityIdx"))
         self.AuthorsCommitTrend(self._getGraphFileName(dirpath, "AuthorsCommitTrend"))
+        self.DailyCommitCountGraph(self._getGraphFileName(dirpath, "DailyCommitTrend"))
         #LoC and FileCount Graphs
         self.LocGraph(self._getGraphFileName(dirpath, "LoC"))
         self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"))
@@ -476,6 +486,14 @@ class SVNPlot(SVNPlotMatplotLib):
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)                
 
+    def DailyCommitCountGraph(self, filename):
+        self._printProgress("Calculating Daily commit count graph")
+        datelist, cmitcountlist = self.svnstats.getDailyCommitCount()
+        
+        ax = self._drawDateLineGraph(datelist, cmitcountlist, ax)
+        fig = ax.figure
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
+                        
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
         ax = self._drawDateLineGraph(dates, loc)
