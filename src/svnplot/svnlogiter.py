@@ -292,7 +292,7 @@ class SVNLogClient:
         url = self.getUrl(filepath)
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         
-        (path, propdict) = self.svnclient.proplist(url, revision=rev)
+        path, propdict = self.svnclient.proplist(url, revision=rev)
         binary = False #if explicit mime-type is not found always treat the file as 'text'                
         if( 'svn:mime-type' in propdict):
             fmimetype = propdict['svn:mime-type']
