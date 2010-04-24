@@ -490,9 +490,10 @@ class SVNPlot(SVNPlotMatplotLib):
         self._printProgress("Calculating Daily commit count graph")
         datelist, cmitcountlist = self.svnstats.getDailyCommitCount()
         
-        ax = self._drawDateLineGraph(datelist, cmitcountlist, ax)
-        fig = ax.figure
-        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        ax = self._drawDateLineGraph(datelist, cmitcountlist)
+        ax.set_ylabel('Commit Count')        
+        ax.set_title('Daily Commit Count Trend')
+        self._closeDateLineGraph(ax, filename)        
                         
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
