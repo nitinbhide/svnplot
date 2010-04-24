@@ -1122,7 +1122,7 @@ class SVNStats:
         '''
         plot daily commit count graph.
         '''
-        self.cur.execute('select date(commitdate,"localtime") as "cmdate [date]", count(revno) from search_view group by "cmdate [date]" order by "cmdate [date]" ASC')
+        self.cur.execute('select date(commitdate,"localtime") as "cmdate [date]", count(revno) from SVNLog group by "cmdate [date]" order by "cmdate [date]" ASC')
 
         datelist = []
         commitcountlist = []
