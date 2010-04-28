@@ -336,8 +336,6 @@ class SVNStats:
         '''
         self.cur.execute("select strftime('%w', SVNLog.commitdate, 'localtime') as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
                          where search_view.revno=SVNLog.revno group by dayofweek")
-        weekdaylist=[]
-        commits = []
 
         #calendar.day_abbr starts with Monday while for dayofweek returned by strftime 0 is Sunday.
         # so to get the correct day of week string, the day names list must be corrected in such a way
@@ -345,11 +343,19 @@ class SVNStats:
         daynames = [day for day in calendar.day_abbr]
         daynames = daynames[6:]+daynames[0:6]
         
+        commits = dict()
         for dayofweek, commitcount in self.cur:
-           commits.append(commitcount)           
+            commits[int(dayofweek)] = commitcount            
+
+        weekdaylist=[]
+        commits_list = []
+        
+        for dayofweek in range(0,7):
+            commitcount = commits.get(dayofweek, 0)
+            commits_list.append(commitcount)           
            weekdaylist.append(daynames[int(dayofweek)])
 
-        return(commits, weekdaylist)
+        return(commits_list, weekdaylist)
 
     def getActivityByTimeOfDay(self):
         '''
@@ -357,12 +363,18 @@ class SVNStats:
         '''
         self.cur.execute("select strftime('%H', SVNLog.commitdate,'localtime') as hourofday, count(SVNLog.revno) from SVNLog, search_view \
                           where search_view.revno=SVNLog.revno group by hourofday")
-        commits =[]
-        hrofdaylist = []
+        commits = dict()
         for hourofday, commitcount in self.cur:
-           commits.append(commitcount)           
+            commits[int(hourofday)] = commitcount
+                      
+        commitlist =[]
+        hrofdaylist = []
+        for hourofday in range(0,24):
+            commitcount = commits.get(hourofday, 0)
+            commitlist.append(commitcount)           
            hrofdaylist.append(int(hourofday))
-        return(commits, hrofdaylist)
+                
+        return(commitlist, hrofdaylist)
 
     def getFileCountStats(self):
         '''
