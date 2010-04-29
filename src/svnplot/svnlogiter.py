@@ -535,7 +535,18 @@ class SVNChangeEntry:
         if( isdir == True):
             pathtype = 'D'
         return(pathtype)
-               
+
+    def isBinaryFile(self):
+        '''
+        if the change is in a binary file.
+        '''
+        revno = self.revno
+        if( self.change_type() == 'D'):
+            #if change type is 'D' then reduce the 'revno' to appropriately detect the binary file type.
+            revno = revno - 1
+        binary = self.logclient.isBinaryFile(self.filepath(), revno)
+        return(binary)    
+                                           
     def updateDiffLineCountFromDict(self, diffCountDict):        
         if( 'lc_added' not in self.changedpath):        
             linesadded=0
@@ -543,7 +554,7 @@ class SVNChangeEntry:
             filename = self.changedpath['path']
             changetype = self.changedpath['action']
             
-            if( diffCountDict!= None and diffCountDict.has_key(filename)):
+            if( diffCountDict!= None and not self.isBinaryFile() and diffCountDict.has_key(filename)):
                 linesadded, linesdeleted = diffCountDict[filename]
                 self.changedpath['lc_added'] = linesadded
                 self.changedpath['lc_deleted'] = linesdeleted
@@ -561,7 +572,7 @@ class SVNChangeEntry:
             prev_revno = self.changedpath.get('copyfrom_revision')
             filename = filepath
 
-            if( self.isDirectory() == False):
+            if( self.isDirectory() == False and not self.isBinaryFile() ):
                 #path is added or deleted. First check if the path is a directory. If path is not a directory
                 # then process further.
                 if( changetype == 'A'):
