@@ -353,7 +353,7 @@ class SVNStats:
         for dayofweek in range(0,7):
             commitcount = commits.get(dayofweek, 0)
             commits_list.append(commitcount)           
-           weekdaylist.append(daynames[int(dayofweek)])
+            weekdaylist.append(daynames[int(dayofweek)])
 
         return(commits_list, weekdaylist)
 
@@ -372,7 +372,7 @@ class SVNStats:
         for hourofday in range(0,24):
             commitcount = commits.get(hourofday, 0)
             commitlist.append(commitcount)           
-           hrofdaylist.append(int(hourofday))
+            hrofdaylist.append(int(hourofday))
                 
         return(commitlist, hrofdaylist)
 
