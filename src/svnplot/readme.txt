@@ -1,5 +1,5 @@
 
-SVNPlot - Ver 0.6
+SVNPlot - Ver 0.6.1
 
 ============
 Introduction
@@ -77,11 +77,12 @@ Quick Start
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
 
 ==============================================
-Changes from 0.5.x to 0.6
+Changes from 0.5.x to 0.6.1
 ==============================================
 1. Many bug fixes especially related to linecount and file count when folders are deleted or renamed.
-2. Support to Javascript canvas based charts using JqPlot.
-3. 
+2. Bug fixes related to binary files detection.
+3. NEW FEATURE : Support to Javascript canvas based charts using JqPlot.
+4. New chart type : Daily commits count
 
 ==============================================
 IMPORTANT NOTE for migrating from 0.5.x to 0.6
