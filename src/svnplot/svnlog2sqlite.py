@@ -18,7 +18,6 @@ import sqlite3
 import logging
 import traceback
 from optparse import OptionParser
-import urllib
 
 import svnlogiter
 
@@ -32,7 +31,6 @@ BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'od
 
 class SVNLog2Sqlite:
     def __init__(self, svnrepopath, sqlitedbpath,verbose=False):
-        svnrepopath = urllib.quote(svnrepopath)
         self.svnclient = svnlogiter.SVNLogClient(svnrepopath,BINARYFILEXT)
         self.dbpath =sqlitedbpath
         self.dbcon =None
