@@ -38,6 +38,7 @@
 	$ActivityByWeekdayTable
 	$ActivityByTimeOfDayTable
 	$AuthorActivityGraph
+	$DailyCommitCountGraph
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
 				locgraph('LoCGraph',showLegend);
@@ -54,6 +55,7 @@
 				dirSizeLineGraph('DirSizeLine', showLegend);
 				authorsCommitTrend('AuthorsCommitTrend',showLegend);
 				authorActivityGraph('AuthorActivityGraph', showLegend);
+				dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
             };                			  
 	</script>	
 </head>
@@ -175,6 +177,9 @@
 <tr>
     <td><br/>
      <div id="AuthorActivityGraph" class="graph"></div>	 
+    </td>
+    <td align="center" >
+    <div id="DailyCommitCountGraph" class="graph"></div>
     </td>    
 </tr>
 </table>
