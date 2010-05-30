@@ -30,8 +30,8 @@ BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'od
                  ]
 
 class SVNLog2Sqlite:
-    def __init__(self, svnrepopath, sqlitedbpath,verbose=False):
-        self.svnclient = svnlogiter.SVNLogClient(svnrepopath,BINARYFILEXT)
+    def __init__(self, svnrepopath, sqlitedbpath,verbose=False,username=None, password=None):
+        self.svnclient = svnlogiter.SVNLogClient(svnrepopath,BINARYFILEXT,username=username, password=password)
         self.dbpath =sqlitedbpath
         self.dbcon =None
         self.verbose = verbose
@@ -306,6 +306,10 @@ def RunMain():
                       help="Enable logging during the execution(True/False). Name of generate logfile is svnlog2sqlite.log.")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="Enable verbose output. Default is False")
+    parser.add_option("-u", "--username", dest="username",default=None, action="store", type="string",
+                      help="username to be used for repository authentication")
+    parser.add_option("-p", "--password", dest="password",default=None, action="store", type="string",
+                      help="password to be used for repository authentication")
     (options, args) = parser.parse_args()
     
     if( len(args) < 2):
@@ -330,7 +334,7 @@ def RunMain():
                 print "Logging to file %s" % logfile
 
             conv = None            
-            conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose)
+            conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose, username=options.username, password=options.password)
             conv.convert(options.updlinecount)
         except Exception, expinst:
             print "Error "

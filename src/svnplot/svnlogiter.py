@@ -73,9 +73,11 @@ def getDiffLineCountDict(diff_log):
     return(diffCountDict)
     
 class SVNLogClient:
-    def __init__(self, svnrepourl,binaryext=[]):
+    def __init__(self, svnrepourl,binaryext=[], username=None,password=None):
         self.svnrooturl = None
         self.tmppath = None
+        self.username = None
+        self.password = None
         self._updateTempPath()
         self.svnrepourl = svnrepourl
         self.svnclient = pysvn.Client()
@@ -83,6 +85,7 @@ class SVNLogClient:
         self.svnclient.callback_ssl_server_trust_prompt = self.ssl_server_trust_prompt
         self.svnclient.callback_ssl_client_cert_password_prompt = self.ssl_client_cert_password_prompt
         self.setbinextlist(binaryext)
+        self.set_user_password(username, password)
         
     def setbinextlist(self, binextlist):
         '''
@@ -97,16 +100,26 @@ class SVNLogClient:
             binaryextlist.append(binext)
         self.binaryextlist = tuple(binaryextlist)
         
+    def set_user_password(self,username, password):
+        if( username != None and username != ''):
+            self.username = username
+            self.svnclient.set_default_username(self.username)
+        if( password != None):
+            self.password = password
+            self.svnclient.set_default_password(self.password)
+        
     def get_login(self, realm, username, may_save):
         logging.debug("This is a svnclient.callback_get_login event. ")
-        user = raw_input("username for %s:" % realm)
+        if( self.username == None):
+            self.username = raw_input("username for %s:" % realm)
         #save = True
-        password = getpass.getpass()
-        if(user==''): 
+        if( self.password == None):
+            self.password = getpass.getpass()
+        if(self.username== None or self.username ==''): 
             retcode = False
         else:
             retcode = True
-        return retcode, user, password, may_save
+        return retcode, self.username, self.password, may_save
 
     def ssl_server_trust_prompt( self, trust_dict ):
         retcode=True
