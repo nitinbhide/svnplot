@@ -99,7 +99,7 @@ class SVNLogClient:
             binext = binext.upper()
             binaryextlist.append(binext)
         self.binaryextlist = tuple(binaryextlist)
-        
+
     def set_user_password(self,username, password):
         if( username != None and username != ''):
             self.username = username
@@ -175,27 +175,42 @@ class SVNLogClient:
             
         return(headrevlog)
     
+    def getStartEndRevForRepo(self):
+        '''
+        find the start and end revision data for the entire repository.
+        '''
+        headrev = self._getHeadRev()
+        firstrev = self.getLog(1, url=self.getRootUrl(), detailedLog=False)
+        
+        return(firstrev, headrev)
+        
     def findStartEndRev(self):
         #Find svn-root for the url
         url = self.getUrl('')
-        headrev = self._getHeadRev()
-        firstrev = self.getLog(1, url=self.getRootUrl(), detailedLog=False)
-        #headrev and first revision of the repository is found
-        #actual start end revision numbers for given URL will be between these two numbers
-        #Since svn log doesnot have a direct way of determining the start and end revisions
-        #for a given url, I am using headrevision and first revision time to get those
-        starttime = firstrev.date
-        revstart = pysvn.Revision(pysvn.opt_revision_kind.date, starttime)
-        startrev = self.svnclient.log( url,
-                     revision_start=revstart, revision_end=headrev.revision, limit = 1, discover_changed_paths=False)
         
-        startrevno = 0
-        endrevno = 0
-        if( startrev != None and len(startrev) > 0):
-            startrevno = startrev[0].revision.number
-            endrevno   = headrev.revision.number
+        #find the start and end revision numbers for the entire repository.
+        firstrev, headrev = self.getStartEndRevForRepo()
+        startrevno = firstrev.revision.number
+        endrevno = headrev.revision.number
+        
+        if( not self.isRepoUrlSameAsRoot()):
+            #if the url is not same as 'root' url. Then we need to find first revision for
+            #given URL.        
+        
+            #headrev and first revision of the repository is found
+            #actual start end revision numbers for given URL will be between these two numbers
+            #Since svn log doesnot have a direct way of determining the start and end revisions
+            #for a given url, I am using headrevision and first revision time to get those
+            starttime = firstrev.date
+            revstart = pysvn.Revision(pysvn.opt_revision_kind.date, starttime)
+            logging.debug("finding start end revision for %s" % url)
+            startrev = self.svnclient.log( url,
+                         revision_start=revstart, revision_end=headrev.revision, limit = 1, discover_changed_paths=False)
             
-        return(startrevno, endrevno)        
+            if( startrev != None and len(startrev) > 0):
+                startrevno = startrev[0].revision.number
+                
+        return(startrevno, endrevno)
         
     def getLog(self, revno, url=None, detailedLog=False):
         log=None
