@@ -61,11 +61,14 @@ HTMLBasicStatsTmpl = '''
 </table>
 '''
 
-HTMLIndexTemplate ='''
-<html>
-<head><title>Subversion Stats Plot for $RepoName</title>
-    <!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->
-	<style type="text/css">
+HTMLIndexTemplate =
+'''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->	
+    <title>Subversion Stats Plot for $RepoName</title>
+    <style type="text/css">
 	th {background-color: #F5F5F5; text-align:center}
 	/*td {background-color: #FFFFF0}*/
 	h3 {background-color: transparent;margin:2}
