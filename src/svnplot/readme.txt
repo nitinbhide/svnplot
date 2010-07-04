@@ -77,6 +77,15 @@ Quick Start
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
 
 ==============================================
+Changes from 0.6.1 to 0.6.2
+==============================================
+1. Fixed XHTML template for svnplot-js.
+2. LocChurn graph added for matplot lib based svnplot (svnplot.py)
+3. Better start/end revision detection.
+4. Command line parameters for specifying Username/password  for repository authentication.
+5. Some basic support for exporting the stats in CSV format (svnstatscsv.py)
+
+==============================================
 Changes from 0.5.x to 0.6.1
 ==============================================
 1. Many bug fixes especially related to linecount and file count when folders are deleted or renamed.
