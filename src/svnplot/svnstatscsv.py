@@ -51,7 +51,7 @@ class SVNStatsCSV:
         if( self.verbose == True):
             print msg
 
-    def basicstats(self, csvwriter):
+    def basicStats(self, csvwriter):
         '''
         export basic stats
         '''
@@ -71,7 +71,7 @@ class SVNStatsCSV:
         csvwriter.writerow(["Number of authors", basestats['NumAuthors']])
         csvwriter.writerow(["Total Number of Lines", basestats['LoC']])
         
-    def active_authors(self, csvwriter):
+    def activeAuthors(self, csvwriter):
         '''
         get the active authors and its temperature statistics.
         '''
@@ -81,7 +81,7 @@ class SVNStatsCSV:
         for author, temperatur in hotauthors:
             csvwriter.writerow([author, temperatur])
         
-    def active_files(self, csvwriter):
+    def activeFiles(self, csvwriter):
         '''
         get the active filename and its temperature statistics.
         '''
@@ -91,10 +91,25 @@ class SVNStatsCSV:
         for filepath, temperatur in hotfiles:
             csvwriter.writerow([self.svnstats.getSearchPathRelName(filepath), temperatur])
         
-    def basicstats_author(self, csvwriter):
+    def activityByWeekday(self, csvwriter):
         '''
-        basic stats of top 'n' authors.
+        update the stats for the activity by week day 
         '''
+        addcsvcomment(csvwriter, "SECTION:Activity by Weekday")
+        addcsvcomment(csvwriter, "FORMAT:day of week, number of commits")
+        commitcountlist, weekdaylist = self.svnstats.getActivityByWeekday()
+        for commitcount, weekday in zip(commitcountlist,weekdaylist):
+            csvwriter.writerow([weekday, commitcount])
+            
+    def activityByTimeOfDay(self, csvwriter):
+        '''
+        update the stats for the activity by time of the day
+        '''
+        addcsvcomment(csvwriter, "SECTION:Activity by Time of Day")
+        addcsvcomment(csvwriter, "FORMAT:hr, number of commits")
+        commitcountlist, hrofdaylist = self.svnstats.getActivityByTimeOfDay()
+        for commitcount, hr in zip(commitcountlist,hrofdaylist):
+            csvwriter.writerow([hr, commitcount])
         
     def AllStats(self, csvfilename, searchpath, maxdircount):
         '''
@@ -103,9 +118,11 @@ class SVNStatsCSV:
         self.svnstats.SetSearchPath(searchpath)
         with open(csvfilename, "wb") as csvfile:        
             csvwriter = csv.writer(csvfile)
-            self.basicstats(csvwriter)
-            self.active_authors(csvwriter)
-            self.active_files(csvwriter)
+            self.basicStats(csvwriter)
+            self.activeAuthors(csvwriter)
+            self.activeFiles(csvwriter)            
+            self.activityByWeekday(csvwriter)
+            self.activityByTimeOfDay(csvwriter)
             
     
 def RunMain():
