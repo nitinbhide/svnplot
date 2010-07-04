@@ -112,6 +112,9 @@ HTMLIndexTemplate ='''
     <td align="center" ><h4>File Types</h4><br/>
     <a href="$FileTypes"><img src="$FileTypes" width="$thumbwid" height="$thumbht"></a>
     </td>
+    <td align="center" ><h4>File Changes</h4><br/>
+    <a href="$LoCChurn"><img src="$LoCChurn" width="$thumbwid" height="$thumbht"></a>
+    </td>
 </tr>
 <tr>
 <th colspan=3 align="center"><h3>Directory Size Graphs</h3></th>
