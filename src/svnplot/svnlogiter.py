@@ -14,7 +14,7 @@ an sqlite database.
 '''
 
 import pysvn
-import datetime, time
+import calendar, datetime, time
 import os, re, string
 import StringIO
 import urllib, urlparse
@@ -73,19 +73,18 @@ def getDiffLineCountDict(diff_log):
     return(diffCountDict)
     
 class SVNLogClient:
-    def __init__(self, svnrepourl,binaryext=[], username=None,password=None):
+    def __init__(self, svnrepourl, svnrevstartdate, svnrevenddate, binaryext=[]):
         self.svnrooturl = None
         self.tmppath = None
-        self.username = None
-        self.password = None
         self._updateTempPath()
         self.svnrepourl = svnrepourl
+        self.svnrevstartdate = svnrevstartdate
+        self.svnrevenddate = svnrevenddate
         self.svnclient = pysvn.Client()
         self.svnclient.callback_get_login = self.get_login
         self.svnclient.callback_ssl_server_trust_prompt = self.ssl_server_trust_prompt
         self.svnclient.callback_ssl_client_cert_password_prompt = self.ssl_client_cert_password_prompt
         self.setbinextlist(binaryext)
-        self.set_user_password(username, password)
         
     def setbinextlist(self, binextlist):
         '''
@@ -99,27 +98,17 @@ class SVNLogClient:
             binext = binext.upper()
             binaryextlist.append(binext)
         self.binaryextlist = tuple(binaryextlist)
-
-    def set_user_password(self,username, password):
-        if( username != None and username != ''):
-            self.username = username
-            self.svnclient.set_default_username(self.username)
-        if( password != None):
-            self.password = password
-            self.svnclient.set_default_password(self.password)
         
     def get_login(self, realm, username, may_save):
         logging.debug("This is a svnclient.callback_get_login event. ")
-        if( self.username == None):
-            self.username = raw_input("username for %s:" % realm)
+        user = raw_input("username for %s:" % realm)
         #save = True
-        if( self.password == None):
-            self.password = getpass.getpass()
-        if(self.username== None or self.username ==''): 
+        password = getpass.getpass()
+        if(user==''): 
             retcode = False
         else:
             retcode = True
-        return retcode, self.username, self.password, may_save
+        return retcode, user, password, may_save
 
     def ssl_server_trust_prompt( self, trust_dict ):
         retcode=True
@@ -147,9 +136,9 @@ class SVNLogClient:
         #temporary file cannot be created and the 'diff' call fails. Hence I am changing it just 'tmpdir' path. -- Nitin (20 July 2009)
         #self.tmppath = os.path.join(self.tmppath, "svnplot")
         
-    def getHeadRevNo(self):
+    def getHeadRevNo(self, svnrevenddate):
         revno = 0
-        headrev = self._getHeadRev()
+        headrev = self._getHeadRev(svnrevenddate)
         
         if( headrev != None):
             revno = headrev.revision.number
@@ -159,12 +148,18 @@ class SVNLogClient:
             
         return(revno)
 
-    def _getHeadRev(self):
+    def _getHeadRev(self, svnrevenddate):
         rooturl = self.getRootUrl()
         headrevlog = None
-        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )                    
+        # OC3May2010: Here is where the headrev can be specified as a revision date (useful as end date of a period collection).
+
+        #headrev = pysvn.Revision( pysvn.opt_revision_kind.head )                    
+		
+        endtime = calendar.timegm( (int(svnrevenddate[0:4]),int(svnrevenddate[4:6]), int(svnrevenddate[6:8]), 00, 00, 00, 0,0,0))
+        headrev = pysvn.Revision( pysvn.opt_revision_kind.date, endtime )
         
         logging.debug("Trying to get head revision rooturl:%s" % rooturl)
+        
         revlog = self.svnclient.log( rooturl,
              revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
         #got the revision log. Now break out the multi-try for loop
@@ -175,42 +170,32 @@ class SVNLogClient:
             
         return(headrevlog)
     
-    def getStartEndRevForRepo(self):
-        '''
-        find the start and end revision data for the entire repository.
-        '''
-        headrev = self._getHeadRev()
-        firstrev = self.getLog(1, url=self.getRootUrl(), detailedLog=False)
-        
-        return(firstrev, headrev)
-        
-    def findStartEndRev(self):
+    def findStartEndRev(self, svnrevstartdate, svnrevenddate):
         #Find svn-root for the url
         url = self.getUrl('')
+        headrev = self._getHeadRev(svnrevenddate)
+        #firstrev = self.getLog(1, url=self.getRootUrl(), detailedLog=False)
         
-        #find the start and end revision numbers for the entire repository.
-        firstrev, headrev = self.getStartEndRevForRepo()
-        startrevno = firstrev.revision.number
-        endrevno = headrev.revision.number
+        #headrev and first revision of the repository is found
+        #actual start end revision numbers for given URL will be between these two numbers
+        #Since svn log doesnot have a direct way of determining the start and end revisions
+        #for a given url, I am using headrevision and first revision time to get those
         
-        if( not self.isRepoUrlSameAsRoot()):
-            #if the url is not same as 'root' url. Then we need to find first revision for
-            #given URL.        
+		#OC3May2010: Substituting "starttime = firstrev.date" for starttime based on svnrevstartdate to allow for period collect. 
+		#starttime = firstrev.date
+        starttime = calendar.timegm((int(svnrevstartdate[0:4]), int(svnrevstartdate[4:6]), int(svnrevstartdate[6:8]), 00, 00, 00, 0,0,0))
+		
+        revstart = pysvn.Revision(pysvn.opt_revision_kind.date, starttime)
+        startrev = self.svnclient.log( url,
+                     revision_start=revstart, revision_end=headrev.revision, limit = 1, discover_changed_paths=False)
         
-            #headrev and first revision of the repository is found
-            #actual start end revision numbers for given URL will be between these two numbers
-            #Since svn log doesnot have a direct way of determining the start and end revisions
-            #for a given url, I am using headrevision and first revision time to get those
-            starttime = firstrev.date
-            revstart = pysvn.Revision(pysvn.opt_revision_kind.date, starttime)
-            logging.debug("finding start end revision for %s" % url)
-            startrev = self.svnclient.log( url,
-                         revision_start=revstart, revision_end=headrev.revision, limit = 1, discover_changed_paths=False)
+        startrevno = 0
+        endrevno = 0
+        if( startrev != None and len(startrev) > 0):
+            startrevno = startrev[0].revision.number
+            endrevno   = headrev.revision.number
             
-            if( startrev != None and len(startrev) > 0):
-                startrevno = startrev[0].revision.number
-                
-        return(startrevno, endrevno)
+        return(startrevno, endrevno)        
         
     def getLog(self, revno, url=None, detailedLog=False):
         log=None
