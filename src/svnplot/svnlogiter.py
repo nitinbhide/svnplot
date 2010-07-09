@@ -23,6 +23,7 @@ import getpass
 import traceback
 import types
 import tempfile
+import pdb
 
 
 def covert2datetime(seconds):
@@ -153,9 +154,18 @@ class SVNLogClient:
         headrevlog = None
         # OC3May2010: Here is where the headrev can be specified as a revision date (useful as end date of a period collection).
 
-        #headrev = pysvn.Revision( pysvn.opt_revision_kind.head )                    
-		
-        endtime = calendar.timegm( (int(svnrevenddate[0:4]),int(svnrevenddate[4:6]), int(svnrevenddate[6:8]), 00, 00, 00, 0,0,0))
+        #headrev = pysvn.Revision( pysvn.opt_revision_kind.head )        
+
+		# Using simple dates '{YEAR-MONTH-DAY}' as defined in http://svnbook.red-bean.com/en/1.5/svn-book.html#svn.tour.revs.dates
+
+        svnrevenddate = svnrevenddate.strip('{}')
+        svnrevenddate = svnrevenddate.split('-')	  
+
+        year = int(svnrevenddate[0])
+        month = int(svnrevenddate[1])
+        day = int(svnrevenddate[2])
+
+        endtime = calendar.timegm((year, month, day, 00, 00, 00, 0,0,0))
         headrev = pysvn.Revision( pysvn.opt_revision_kind.date, endtime )
         
         logging.debug("Trying to get head revision rooturl:%s" % rooturl)
@@ -183,7 +193,17 @@ class SVNLogClient:
         
 		#OC3May2010: Substituting "starttime = firstrev.date" for starttime based on svnrevstartdate to allow for period collect. 
 		#starttime = firstrev.date
-        starttime = calendar.timegm((int(svnrevstartdate[0:4]), int(svnrevstartdate[4:6]), int(svnrevstartdate[6:8]), 00, 00, 00, 0,0,0))
+		
+		# Using simple dates '{YEAR-MONTH-DAY}' as defined in http://svnbook.red-bean.com/en/1.5/svn-book.html#svn.tour.revs.dates
+		
+        svnrevstartdate = svnrevstartdate.strip('{}')
+        svnrevstartdate = svnrevstartdate.split('-')	  
+
+        year = int(svnrevstartdate[0])
+        month = int(svnrevstartdate[1])
+        day = int(svnrevstartdate[2])
+
+        starttime = calendar.timegm((year, month, day, 00, 00, 00, 0,0,0))
 		
         revstart = pysvn.Revision(pysvn.opt_revision_kind.date, starttime)
         startrev = self.svnclient.log( url,

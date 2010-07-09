@@ -297,7 +297,7 @@ def getLogfileName(sqlitedbpath):
     return(logfile)
     
 def RunMain():
-    usage = "usage: %prog [options] <svnrepo root url> <sqlitedbpath> <startdate (yearmonthday)> <enddate (yearmonthday)>"
+    usage = "usage: %prog [options] <svnrepo root url> <sqlitedbpath> <startdate = '{YEAR-MONTH-DAY}'> <enddate = '{YEAR-MONTH-DAY}'>"
     parser = OptionParser(usage)
     parser.set_defaults(updlinecount=False)
 
