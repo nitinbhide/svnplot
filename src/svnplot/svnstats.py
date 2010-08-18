@@ -76,8 +76,8 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
         logging.debug("Error %s" % expinst)
         temperature = 0
         
-    return(temperature)
-
+    return(temperature)    
+    
 def pairwise(iterable):
     "s -> (0, s0,s1), (1, s1,s2), (2, s2, s3), ..."
     a, b = itertools.tee(iterable)
@@ -166,6 +166,15 @@ class DeltaStdDev:
 
 def timedelta2days(tmdelta):
     return(tmdelta.days + tmdelta.seconds/(3600.0*24.0))
+
+def sqlite_daynames():
+    #calendar.day_abbr starts with Monday while for dayofweek returned by strftime 0 is Sunday.
+    # so to get the correct day of week string, the day names list must be corrected in such a way
+    # that it starts from Sunday
+    daynames = [day for day in calendar.day_abbr]
+    daynames = daynames[6:]+daynames[0:6]
+    return(daynames)
+
 
 class SVNStats:
     def __init__(self, svndbpath):
@@ -329,7 +338,7 @@ class SVNStats:
                 author='unknown'
             authListFinal.append(author)
         return(authListFinal)
-
+    
     def getActivityByWeekday(self):
         '''
         returns two lists (commit counts and weekday)
@@ -337,12 +346,7 @@ class SVNStats:
         self.cur.execute("select strftime('%w', SVNLog.commitdate, 'localtime') as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
                          where search_view.revno=SVNLog.revno group by dayofweek")
 
-        #calendar.day_abbr starts with Monday while for dayofweek returned by strftime 0 is Sunday.
-        # so to get the correct day of week string, the day names list must be corrected in such a way
-        # that it starts from Sunday
-        daynames = [day for day in calendar.day_abbr]
-        daynames = daynames[6:]+daynames[0:6]
-        
+        daynames = sqlite_daynames()
         commits = dict()
         for dayofweek, commitcount in self.cur:
             commits[int(dayofweek)] = commitcount            
@@ -356,7 +360,7 @@ class SVNStats:
             weekdaylist.append(daynames[int(dayofweek)])
 
         return(commits_list, weekdaylist)
-
+    
     def getActivityByTimeOfDay(self):
         '''
         returns two lists (commit counts and time of day)
@@ -376,6 +380,27 @@ class SVNStats:
                 
         return(commitlist, hrofdaylist)
 
+    def getWeekDayTimeOfDayPivotTable(self):
+        '''
+        get pivot table of number of commits for weekday and hour combination
+        '''
+        self.cur.execute("select strftime('%w', SVNLog.commitdate,'localtime') as weekday, \
+                         strftime('%H', SVNLog.commitdate,'localtime') as hourofday, \
+                         count(SVNLog.revno) from SVNLog, search_view \
+                          where search_view.revno=SVNLog.revno group by weekday, hourofday")
+        commits = dict()
+        for weekday, hrofday, commitcount in self.cur:
+            commits[(int(weekday), int(hrofday))] = commitcount
+        
+        daynames = sqlite_daynames()
+        
+        commitstable = []
+        #now make it into a table.
+        for weekday in range(0,7):            
+            hrrow = [daynames[weekday]]+[commits.get((weekday, hrofday), 0) for hrofday in range(0,24)]
+            commitstable.append(hrrow)
+        return(commitstable)
+        
     def getFileCountStats(self):
         '''
         returns two lists (dates and total file count on those dates)
@@ -1048,7 +1073,7 @@ class SVNStats:
             authCloud.append((author, commitcount,activity[1]))
             
         return(authCloud)
-        
+    
     def getActiveAuthors(self, numAuthors):
         '''
         return top numAthors based on the activity index of commited revisions
