@@ -317,7 +317,9 @@ def RunMain():
     else:
         svnrepopath = args[0]
         sqlitedbpath = args[1]
-
+        
+        if( not svnrepopath.endswith('/')):
+            svnrepopath = svnrepopath+'/'
 
         try:
             print "Updating the subversion log"
