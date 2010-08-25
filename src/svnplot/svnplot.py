@@ -34,6 +34,8 @@ from __future__ import with_statement
 __revision__ = '$Revision:$'
 __date__     = '$Date:$'
 
+import matplotlib
+matplotlib.use('Agg') #Default use Agg backend we don't need any interactive display
 
 import matplotlib.pyplot as plt
 import matplotlib.mpl as mpl
