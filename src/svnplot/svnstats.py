@@ -1021,15 +1021,15 @@ class SVNStats:
 
     def _getAuthActivityDict(self):
         self._updateActivityHotness()
-        self.cur.execute('select SVNLog.author, SVNLog.commitdate as "commitdate [timestamp]", RevisionActivity.temperature from RevisionActivity, SVNLog \
-                    where SVNLog.revno = RevisionActivity.revno order by commitdate ASC')
+        self.cur.execute('select SVNLog.author, SVNLog.commitdate as "commitdate [timestamp]" from SVNLog, search_view \
+                    where SVNLog.revno = search_view.revno order by commitdate ASC')
 
         authActivityIdx = dict()                    
-        for author, cmdate, temperature in self.cur:
+        for author, cmdate in self.cur:
             cmtactv = authActivityIdx.get(author)
-            revtemp = temperature
+            revtemp = TEMPINCREMENT
             if( cmtactv != None):                
-                revtemp = temperature+getTemperatureAtTime(cmdate, cmtactv[0], cmtactv[1], COOLINGRATE)
+                revtemp = TEMPINCREMENT+getTemperatureAtTime(cmdate, cmtactv[0], cmtactv[1], COOLINGRATE)
             authActivityIdx[author] = (cmdate, revtemp)
         return(authActivityIdx)
         
