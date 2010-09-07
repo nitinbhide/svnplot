@@ -25,7 +25,7 @@ import types
 import tempfile
 
 
-def covert2datetime(seconds):
+def convert2datetime(seconds):
     gmt = time.gmtime(seconds)
     return(datetime.datetime(gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec))
 
@@ -159,40 +159,52 @@ class SVNLogClient:
             
         return(revno)
 
-    def _getHeadRev(self):
+    def _getHeadRev(self, enddate=None):
         rooturl = self.getRootUrl()
-        headrevlog = None
-        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )                    
-        
         logging.debug("Trying to get head revision rooturl:%s" % rooturl)
+        
+        headrevlog = None
+        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )
+            
         revlog = self.svnclient.log( rooturl,
              revision_start=headrev, revision_end=headrev, discover_changed_paths=False)
+                
         #got the revision log. Now break out the multi-try for loop
         if( revlog != None and len(revlog) > 0):
             revno = revlog[0].revision.number
             logging.debug("Found head revision %d" % revno)
             headrevlog = revlog[0]            
             
+            if( enddate != None and enddate < headrevlog.date):
+                headrevlog = self.getLastRevForDate(enddate, rooturl, False)
+            
         return(headrevlog)
     
-    def getStartEndRevForRepo(self):
+    def getStartEndRevForRepo(self, startdate=None, enddate=None):
         '''
         find the start and end revision data for the entire repository.
         '''
-        headrev = self._getHeadRev()
-        firstrev = self.getLog(1, url=self.getRootUrl(), detailedLog=False)
+        rooturl = self.getRootUrl()
+        headrev = self._getHeadRev(enddate)
+        
+        firstrev = self.getLog(1, url=rooturl, detailedLog=False)
+        if (startdate!= None and firstrev.date < startdate):
+            firstrev = self.getFirstRevForDate(startdate,rooturl,False)
+            
+        if( firstrev and headrev):            
+            assert(firstrev.revision.number <= headrev.revision.number)
         
         return(firstrev, headrev)
         
-    def findStartEndRev(self):
+    def findStartEndRev(self, startdate=None, enddate=None):
         #Find svn-root for the url
         url = self.getUrl('')
         
         #find the start and end revision numbers for the entire repository.
-        firstrev, headrev = self.getStartEndRevForRepo()
+        firstrev, headrev = self.getStartEndRevForRepo(startdate, enddate)
         startrevno = firstrev.revision.number
         endrevno = headrev.revision.number
-        
+                
         if( not self.isRepoUrlSameAsRoot()):
             #if the url is not same as 'root' url. Then we need to find first revision for
             #given URL.        
@@ -211,6 +223,32 @@ class SVNLogClient:
                 startrevno = startrev[0].revision.number
                 
         return(startrevno, endrevno)
+        
+    def getFirstRevForDate(self, revdate, url, detailedlog=False):
+        '''
+        find the first log entry for the given date.
+        '''
+        revlog = None
+        revstart = pysvn.Revision(pysvn.opt_revision_kind.date, revdate)
+        revloglist = self.svnclient.log( url,
+                         revision_start=revstart, limit = 1, discover_changed_paths=False)
+        if( revloglist != None and len(revloglist) > 0):
+            revlog = revloglist[0]
+        return(revlog)
+    
+    def getLastRevForDate(self, revdate, url, detailedlog=False):
+        '''
+        find the first log entry for the given date.
+        '''
+        revlog = None
+        revstart = pysvn.Revision(pysvn.opt_revision_kind.date, revdate)
+        #seconds per day is 24*60*60. revend is revstart+1 day
+        revend = pysvn.Revision(pysvn.opt_revision_kind.date, revdate+(24*60*60))
+        revloglist = self.svnclient.log( url,
+                         revision_start=revstart, revision_end=revend, discover_changed_paths=False)
+        if( revloglist != None and len(revloglist) > 0):
+            revlog = revloglist[-1]
+        return(revlog)
         
     def getLog(self, revno, url=None, detailedLog=False):
         log=None
@@ -723,7 +761,7 @@ class SVNRevLog:
             return(msg)
         elif(name == 'date'):
             try:
-                dt = covert2datetime(self.revlog.date)
+                dt = convert2datetime(self.revlog.date)
             except:
                 dt = None
             return(dt)
