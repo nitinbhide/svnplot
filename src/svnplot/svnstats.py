@@ -1066,7 +1066,7 @@ class SVNStats:
         determine the size of the author tag and Activity index will determine the color
         '''
         authActivityIdx = self._getAuthActivityDict()
-        self.cur.execute("select author, count(revno) as commitcount from SVNLog group by author")
+        self.cur.execute("select SVNLog.author, count(SVNLog.revno) as commitcount from SVNLog,search_view where search_view.revno=SVNLog.revno group by SVNLog.author")
         authCloud = []
         for author, commitcount in self.cur:
             activity = authActivityIdx[author]
