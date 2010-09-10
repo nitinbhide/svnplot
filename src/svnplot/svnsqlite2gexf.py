@@ -123,8 +123,7 @@ class SVNSqlite2Gephi:
 				for row3 in cur3:
 					
 					# As mentioned, we only consider the lines of code that have been added by a committer.     
-					loc = max(row3[6],1)
-					assert(loc > 0)
+					loc = row3[6]
 					# And create links to all previous committers who have revised this same
 					# file, ie. file co-authorship.
 					if (row3[0] <= row2[0]):
