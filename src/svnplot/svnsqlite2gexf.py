@@ -41,42 +41,18 @@ class SVNSqlite2Gephi:
 		self.dbcon = sqlite3.connect(self.dbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 	
 	def closedb(self):
-		self.dbcon.commit()
 		self.dbcon.close()
 
-	def Process(self):
-		output = open(self.outputfile, 'w')
-		self.initdb()   
-		print "Processing..."
-		
-		revisions = set()
-		r = {}
-		
-		committers = set()
-		c = {}
-	
-		# Write XML prelude to CMU node specification
-			#output.write("<?xml version=\"1.0\" standalone=\"yes\"?>\n")
-			#output.write("<DynamicMetaNetwork id=\"Meta Network\">\n")
-	
-		# Write XML prelude to Gephi node specification
-		output.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-		output.write("  <gexf xmlns=\"http://www.gexf.net/1.1draft\"\n")
-		output.write("  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
-		output.write("  xsi:schemaLocation=\"http://www.gexf.net/1.1draft http://www.gexf.net/1.1draft/gexf.xsd\"\n")
-		output.write("  version=\"1.1\">\n")
-		output.write("  <graph defaultedgetype=\"directed\">\n")
-	
+	def __processNodes(self, output):
 		# We create a cursor for SVNLog and do a SELECT on all records (*), so cur = SVNLog
 		cur = self.dbcon.cursor()
-		
-		# Write XML specification for Gephi network, then start writing <nodes> section of the XML file consisting of nodes
-		output.write("      <nodes>\n")
-		
 		# We go through all the committers and their revisions, then we create lists of both.
 		cur.execute('SELECT * FROM SVNLog')
-		for row in cur:     
-			
+		
+		# Write XML specification for Gephi network, then start writing <nodes> section of the XML file consisting of nodes
+		output.write("\t\t<nodes>\n")
+		
+		for row in cur:     		
 			committer = row[2]
 			if( committer== '' or committer == None):
 				committer = 'Unknown'
@@ -84,27 +60,29 @@ class SVNSqlite2Gephi:
 	
 			# If committer has not been counted then add him/her to the list, and increment committer_count
 			# then write <node id> in XML file.
-			if (committer not in committers):
-				committer_id = len(committers)
-				committers.add(committer)
-				c[committer] = committer_id
+			if (committer not in self.committers):
+				committer_id = len(self.committers)
+				self.committers.add(committer)
+				self.c[committer] = committer_id
 				output.write('\t\t\t<node id="%d" label="%s"/>\n' %(committer_id,committer))
 			
 			# If a revision has not been counted then add it to the list, increment revision_count and 
 			# associate revision to committer.
-			if (revno not in revisions):
-				revisions.add(revno) 
-				revisions_count = len(revisions)
-				r[revno] = committer
+			if (revno not in self.revisions):
+				self.revisions.add(revno) 
+				self.r[revno] = committer
 				
-		committer_count = len(committers)
-						
-		cur.close   
-		
 		# Finish the <nodes> section, and start the <edges> section
 		# of the Gephi XML file.
 		output.write("\t\t</nodes>\n")
-		output.write("\t\t<edges>\n")
+						
+		cur.close()
+		
+	def __processEdges(self, output):
+		committer_count = len(self.committers)
+				
+		# Create a matrix of committers with the dimensions we found out previously.
+		mat = array([[0]*committer_count]*committer_count)
 	
 		############################################################################
 		# Write sociomatrix from                                                   #
@@ -112,10 +90,7 @@ class SVNSqlite2Gephi:
 		############################################################################
 		cur = self.dbcon.cursor()
 		cur.execute('SELECT * FROM SVNLog')
-		
-		# Create a matrix of committers with the dimensions we found out previously.
-		mat = array([[0]*committer_count]*committer_count)
-	
+				
 		for row in cur:         
 			committer = row[2]
 			if( committer == '' or committer == None):
@@ -125,7 +100,7 @@ class SVNSqlite2Gephi:
 			cur2 = self.dbcon.cursor()
 			cur2.execute('SELECT * FROM SVNLogDetail where revno=?',(revno,))
 	
-			committer_id = c[committer]
+			committer_id = self.c[committer]
 			# Iterate over all files that were worked on in a single revision (commit).
 			for row2 in cur2:
 				
@@ -148,30 +123,59 @@ class SVNSqlite2Gephi:
 					assert(loc > 0)
 					# And create links to all previous committers who have revised this same
 					# file, ie. file co-authorship.
-					if (row3[0] <= row2[0]):						
-						mat[committer_id][c[r[row3[0]]]] = mat[committer_id][c[r[row3[0]]]] + loc						
-					else:
-						continue    
+					if (row3[0] <= row2[0]):
+						coauthor = self.r[row3[0]]
+						coauthor_id = self.c[coauthor]
+						mat[committer_id][coauthor_id] = mat[committer_id][coauthor_id] + loc
 	
 		cur.close
 		cur2.close
 		cur3.close
 	
+		output.write("\t\t<edges>\n")		
 		# We iterate over the resulting matrix to write it out to the XML file.
 		edge_id = 0
-		for i in c:
-			for j in c:
-				wt = mat[c[i]][c[j]]
+		for auth1, auth1_id in self.c.iteritems():
+			for auth2, auth2_id in self.c.iteritems():
+				wt = mat[auth1_id][auth2_id]
 				if( wt > 0):
-					output.write('\t\t\t<edge id="%d" source="%d" target="%d" weight="%d"/>\n'% (edge_id, c[i], c[j],wt))
+					output.write('\t\t\t<edge id="%d" source="%d" target="%d" weight="%d"/>\n'
+								 % (edge_id, auth1_id, auth2_id,wt))
 					edge_id = edge_id+1
 					
 					
 		output.write("\t\t</edges>\n")
-		output.write("\t</graph>\n")
-		output.write("</gexf>\n")
-	
-		self.closedb()
+		
+	def Process(self):
+		with open(self.outputfile, 'w') as output:
+			self.initdb()   
+			print "Processing..."
+			
+			self.revisions = set()
+			self.r = {}
+			
+			self.committers = set()
+			self.c = {}
+		
+			# Write XML prelude to CMU node specification
+				#output.write("<?xml version=\"1.0\" standalone=\"yes\"?>\n")
+				#output.write("<DynamicMetaNetwork id=\"Meta Network\">\n")
+		
+			# Write XML prelude to Gephi node specification
+			output.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+			output.write("  <gexf xmlns=\"http://www.gexf.net/1.1draft\"\n")
+			output.write("  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
+			output.write("  xsi:schemaLocation=\"http://www.gexf.net/1.1draft http://www.gexf.net/1.1draft/gexf.xsd\"\n")
+			output.write("  version=\"1.1\">\n")
+			output.write("  <graph defaultedgetype=\"directed\">\n")
+		
+			self.__processNodes(output)
+			self.__processEdges(output)
+			
+			output.write("\t</graph>\n")
+			output.write("</gexf>\n")
+		
+			self.closedb()
 
 def RunMain():
 	usage = "(File co-authorship version) usage: %prog <sqlitedbpath> <outputfile>"
