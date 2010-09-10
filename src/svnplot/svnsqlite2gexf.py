@@ -83,6 +83,8 @@ class SVNSqlite2Gephi:
         for row in cur:     
             
             committer = row[2]
+            if( committer== '' or committer == None):
+                committer = 'Unknown'
             revno = row[0]
     
             # If committer has not been counted then add him/her to the list, and increment committer_count
@@ -121,6 +123,8 @@ class SVNSqlite2Gephi:
     
         for row in cur:         
             committer = row[2]
+            if( committer == '' or committer == None):
+                committer = 'Unknown'
             revno = row[0]
     
             cur2 = self.dbcon.cursor()
@@ -187,7 +191,7 @@ def RunMain():
         try:
             print "Processing the sqlite subversion log"
             
-            SVNSqlite2Ora(sqlitedbpath, outputfilepath)
+            SVNSqlite2Gephi(sqlitedbpath, outputfilepath)
         except:
             pass
             raise
