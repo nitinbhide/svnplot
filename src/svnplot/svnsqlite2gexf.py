@@ -22,12 +22,9 @@ links are created to all co-authors who are active in the sqlite db contents.
 This version of svnsqlite2gexf.py has been tested with SVNPlot version 0.6.1 .
 '''
 
-import sqlite3
-import datetime
-from datetime import date
-import calendar
 import string
-from datetime import datetime
+import sqlite3
+
 from optparse import OptionParser
 from numpy import *
 from numpy import matrix
