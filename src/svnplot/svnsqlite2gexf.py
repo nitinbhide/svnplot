@@ -148,7 +148,7 @@ class SVNSqlite2Gephi:
 					
 					# As mentioned, we only consider the lines of code that have been added by a committer.     
 					loc = max(row3[6],1)
-					
+					assert(loc > 0)
 					# And create links to all previous committers who have revised this same
 					# file, ie. file co-authorship.
 					if (row3[0] <= row2[0]):						
@@ -161,12 +161,14 @@ class SVNSqlite2Gephi:
 		cur3.close
 	
 		# We iterate over the resulting matrix to write it out to the XML file.
-		i = 0
-		j = 0
-	
+		edge_id = 0
 		for i in c:
-			for j in c:             
-				output.write('\t\t\t<edge id="%d" source="%s" target="%s" weight="%d"/>\n'% (c[i], i, j,mat[c[i]][c[j]]))
+			for j in c:
+				wt = mat[c[i]][c[j]]
+				if( wt > 0):
+					output.write('\t\t\t<edge id="%d" source="%d" target="%d" weight="%d"/>\n'% (edge_id, c[i], c[j],wt))
+					edge_id = edge_id+1
+					
 					
 		output.write("\t\t</edges>\n")
 		output.write("\t</graph>\n")
