@@ -38,10 +38,16 @@ class SVNSqlite2Gephi:
 		self.Process()  
 
 	def initdb(self):
+		self.closedb()
+		self.revisions = dict()			
+		self.committers = dict()
+		
 		self.dbcon = sqlite3.connect(self.dbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 	
 	def closedb(self):
-		self.dbcon.close()
+		if( self.dbcon):
+			self.dbcon.close()
+			self.dbcon=None
 
 	def __processNodes(self, output):
 		# We create a cursor for SVNLog and do a SELECT on all records (*), so cur = SVNLog
@@ -62,15 +68,13 @@ class SVNSqlite2Gephi:
 			# then write <node id> in XML file.
 			if (committer not in self.committers):
 				committer_id = len(self.committers)
-				self.committers.add(committer)
-				self.c[committer] = committer_id
+				self.committers[committer] = committer_id
 				output.write('\t\t\t<node id="%d" label="%s"/>\n' %(committer_id,committer))
 			
 			# If a revision has not been counted then add it to the list, increment revision_count and 
 			# associate revision to committer.
 			if (revno not in self.revisions):
-				self.revisions.add(revno) 
-				self.r[revno] = committer
+				self.revisions[revno] = committer
 				
 		# Finish the <nodes> section, and start the <edges> section
 		# of the Gephi XML file.
@@ -100,7 +104,7 @@ class SVNSqlite2Gephi:
 			cur2 = self.dbcon.cursor()
 			cur2.execute('SELECT * FROM SVNLogDetail where revno=?',(revno,))
 	
-			committer_id = self.c[committer]
+			committer_id = self.committers[committer]
 			# Iterate over all files that were worked on in a single revision (commit).
 			for row2 in cur2:
 				
@@ -124,8 +128,8 @@ class SVNSqlite2Gephi:
 					# And create links to all previous committers who have revised this same
 					# file, ie. file co-authorship.
 					if (row3[0] <= row2[0]):
-						coauthor = self.r[row3[0]]
-						coauthor_id = self.c[coauthor]
+						coauthor = self.revisions[row3[0]]
+						coauthor_id = self.committers[coauthor]
 						mat[committer_id][coauthor_id] = mat[committer_id][coauthor_id] + loc
 	
 		cur.close
@@ -135,28 +139,21 @@ class SVNSqlite2Gephi:
 		output.write("\t\t<edges>\n")		
 		# We iterate over the resulting matrix to write it out to the XML file.
 		edge_id = 0
-		for auth1, auth1_id in self.c.iteritems():
-			for auth2, auth2_id in self.c.iteritems():
+		for auth1, auth1_id in self.committers.iteritems():
+			for auth2, auth2_id in self.committers.iteritems():
 				wt = mat[auth1_id][auth2_id]
 				if( wt > 0):
 					output.write('\t\t\t<edge id="%d" source="%d" target="%d" weight="%d"/>\n'
 								 % (edge_id, auth1_id, auth2_id,wt))
-					edge_id = edge_id+1
-					
+					edge_id = edge_id+1					
 					
 		output.write("\t\t</edges>\n")
 		
 	def Process(self):
 		with open(self.outputfile, 'w') as output:
-			self.initdb()   
+			self.initdb()
 			print "Processing..."
-			
-			self.revisions = set()
-			self.r = {}
-			
-			self.committers = set()
-			self.c = {}
-		
+						
 			# Write XML prelude to CMU node specification
 				#output.write("<?xml version=\"1.0\" standalone=\"yes\"?>\n")
 				#output.write("<DynamicMetaNetwork id=\"Meta Network\">\n")
