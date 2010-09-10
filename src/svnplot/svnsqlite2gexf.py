@@ -34,167 +34,164 @@ from numpy import matrix
 
 
 class SVNSqlite2Gephi:
-    def __init__(self, sqlitedbpath, outputfilepath):
-        self.dbpath = sqlitedbpath
-        self.dbcon = None
-        self.outputfile = outputfilepath
-        self.Process()  
+	def __init__(self, sqlitedbpath, outputfilepath):
+		self.dbpath = sqlitedbpath
+		self.dbcon = None
+		self.outputfile = outputfilepath
+		self.Process()  
 
-    def initdb(self):
-        self.dbcon = sqlite3.connect(self.dbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-    
-    def closedb(self):
-        self.dbcon.commit()
-        self.dbcon.close()
+	def initdb(self):
+		self.dbcon = sqlite3.connect(self.dbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+	
+	def closedb(self):
+		self.dbcon.commit()
+		self.dbcon.close()
 
-    def Process(self):
-        output = open(self.outputfile, 'w')
-        self.initdb()   
-        print "Processing..."
-        
-        revisions = []
-        revisions_count = 0
-        r = {}
-        
-        committers = []
-        committer_count = 0
-        c = {}
-    
-        # Write XML prelude to CMU node specification
-            #output.write("<?xml version=\"1.0\" standalone=\"yes\"?>\n")
-            #output.write("<DynamicMetaNetwork id=\"Meta Network\">\n")
-    
-        # Write XML prelude to Gephi node specification
-        output.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-        output.write("  <gexf xmlns=\"http://www.gexf.net/1.1draft\"\n")
-        output.write("  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
-        output.write("  xsi:schemaLocation=\"http://www.gexf.net/1.1draft http://www.gexf.net/1.1draft/gexf.xsd\"\n")
-        output.write("  version=\"1.1\">\n")
-        output.write("  <graph defaultedgetype=\"directed\">\n")
-    
-        # We create a cursor for SVNLog and do a SELECT on all records (*), so cur = SVNLog
-        cur = self.dbcon.cursor()
-        
-        # Write XML specification for Gephi network, then start writing <nodes> section of the XML file consisting of nodes
-        output.write("      <nodes>\n")
-        
-        # We go through all the committers and their revisions, then we create lists of both.
-        cur.execute('SELECT * FROM SVNLog')
-        for row in cur:     
-            
-            committer = row[2]
-            if( committer== '' or committer == None):
-                committer = 'Unknown'
-            revno = row[0]
-    
-            # If committer has not been counted then add him/her to the list, and increment committer_count
-            # then write <node id> in XML file.
-            if (committers.count(committer) == 0):
-                committers.append(committer) 
-                committer_count = committer_count + 1
-                c[committer] = committer_count                      
-                output.write("          <node id=\"" + "%i" %committer_count + "\" label=\"" + "%s" %committer + "\"/>\n")
-            
-            # If a revision has not been counted then add it to the list, increment revision_count and 
-            # associate revision to committer.
-            if (revisions.count(revno) == 0):
-                revisions.append(revno) 
-                revisions_count = revisions_count + 1
-                r[revno] = committer
-                
-        committer_count = committer_count + 1           
-                        
-        cur.close   
-        
-        # Finish the <nodes> section, and start the <edges> section
-        # of the Gephi XML file.
-        output.write("      </nodes>\n")
-        output.write("      <edges>\n")
-    
-        ############################################################################
-        # Write sociomatrix from                                                   #
-        # Agent x Resource(changedpathid) and Resource(changedpathid) x Agent      #
-        ############################################################################
-        cur = self.dbcon.cursor()
-        cur.execute('SELECT * FROM SVNLog')
-        
-        # Create a matrix of committers with the dimensions we found out previously.
-        mat = array([[0]*committer_count]*committer_count)
-    
-        for row in cur:         
-            committer = row[2]
-            if( committer == '' or committer == None):
-                committer = 'Unknown'
-            revno = row[0]
-    
-            cur2 = self.dbcon.cursor()
-            cur2.execute('SELECT * FROM SVNLogDetail where revno=' + "%s" %revno)
-    
-            # Iterate over all files that were worked on in a single revision (commit).
-            for row2 in cur2:
-                
-                changedpathid = row2[1]         
-                
-                # Iterate over the individual files (changedpathid's) to get the work contents 
-                # from them, namely lines-of-code (loc).
-                
-                # Note: We only take into account lines added (row3[6]) and not lines deleted
-                # because we are interested in what committers 'do' and that is more evident from
-                # the loc they add, and not so from the loc they delete. Furthermore, negative links
-                # between developers are meaningless. 
-                cur3 = self.dbcon.cursor()
-                cur3.execute('SELECT * FROM SVNLogDetail where changedpathid=' + "%s" %changedpathid)
-                
-                for row3 in cur3:
-                    
-                    # As mentioned, we only consider the lines of code that have been added by a committer.     
-                    loc = row3[6]   
-                    
-                    # And create links to all previous committers who have revised this same
-                    # file, ie. file co-authorship.
-                    if (row3[0] <= row2[0]):
-                        
-                        mat[c[committer]][c[r[row3[0]]]] = mat[c[committer]][c[r[row3[0]]]] + loc
-                        
-                    else:
-                        continue    
-    
-        cur.close
-        cur2.close
-        cur3.close
-    
-        # We iterate over the resulting matrix to write it out to the XML file.
-        i = 0
-        j = 0
-    
-        for i in c:
-            for j in c:             
-                    output.write("          <edge id=\""+ "%s" % c[i] + "\" source=\"" + "%s" % i + "\" target=\"" + "%s" % j + "\" weight=\"" + "%i" % mat[c[i]][c[j]] + "\"/>\n")                 
-                    
-        output.write("      </edges>\n")
-        output.write("  </graph>\n")
-        output.write("</gexf>\n")
-    
-        self.closedb()
+	def Process(self):
+		output = open(self.outputfile, 'w')
+		self.initdb()   
+		print "Processing..."
+		
+		revisions = set()
+		r = {}
+		
+		committers = set()
+		c = {}
+	
+		# Write XML prelude to CMU node specification
+			#output.write("<?xml version=\"1.0\" standalone=\"yes\"?>\n")
+			#output.write("<DynamicMetaNetwork id=\"Meta Network\">\n")
+	
+		# Write XML prelude to Gephi node specification
+		output.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+		output.write("  <gexf xmlns=\"http://www.gexf.net/1.1draft\"\n")
+		output.write("  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
+		output.write("  xsi:schemaLocation=\"http://www.gexf.net/1.1draft http://www.gexf.net/1.1draft/gexf.xsd\"\n")
+		output.write("  version=\"1.1\">\n")
+		output.write("  <graph defaultedgetype=\"directed\">\n")
+	
+		# We create a cursor for SVNLog and do a SELECT on all records (*), so cur = SVNLog
+		cur = self.dbcon.cursor()
+		
+		# Write XML specification for Gephi network, then start writing <nodes> section of the XML file consisting of nodes
+		output.write("      <nodes>\n")
+		
+		# We go through all the committers and their revisions, then we create lists of both.
+		cur.execute('SELECT * FROM SVNLog')
+		for row in cur:     
+			
+			committer = row[2]
+			if( committer== '' or committer == None):
+				committer = 'Unknown'
+			revno = row[0]
+	
+			# If committer has not been counted then add him/her to the list, and increment committer_count
+			# then write <node id> in XML file.
+			if (committer not in committers):
+				committer_id = len(committers)
+				committers.add(committer)
+				c[committer] = committer_id
+				output.write('\t\t\t<node id="%d" label="%s"/>\n' %(committer_id,committer))
+			
+			# If a revision has not been counted then add it to the list, increment revision_count and 
+			# associate revision to committer.
+			if (revno not in revisions):
+				revisions.add(revno) 
+				revisions_count = len(revisions)
+				r[revno] = committer
+				
+		committer_count = len(committers)
+						
+		cur.close   
+		
+		# Finish the <nodes> section, and start the <edges> section
+		# of the Gephi XML file.
+		output.write("\t\t</nodes>\n")
+		output.write("\t\t<edges>\n")
+	
+		############################################################################
+		# Write sociomatrix from                                                   #
+		# Agent x Resource(changedpathid) and Resource(changedpathid) x Agent      #
+		############################################################################
+		cur = self.dbcon.cursor()
+		cur.execute('SELECT * FROM SVNLog')
+		
+		# Create a matrix of committers with the dimensions we found out previously.
+		mat = array([[0]*committer_count]*committer_count)
+	
+		for row in cur:         
+			committer = row[2]
+			if( committer == '' or committer == None):
+				committer = 'Unknown'
+			revno = row[0]
+	
+			cur2 = self.dbcon.cursor()
+			cur2.execute('SELECT * FROM SVNLogDetail where revno=?',(revno,))
+	
+			committer_id = c[committer]
+			# Iterate over all files that were worked on in a single revision (commit).
+			for row2 in cur2:
+				
+				changedpathid = row2[1]         
+				
+				# Iterate over the individual files (changedpathid's) to get the work contents 
+				# from them, namely lines-of-code (loc).
+				
+				# Note: We only take into account lines added (row3[6]) and not lines deleted
+				# because we are interested in what committers 'do' and that is more evident from
+				# the loc they add, and not so from the loc they delete. Furthermore, negative links
+				# between developers are meaningless. 
+				cur3 = self.dbcon.cursor()
+				cur3.execute('SELECT * FROM SVNLogDetail where changedpathid=?',(changedpathid,))
+				
+				for row3 in cur3:
+					
+					# As mentioned, we only consider the lines of code that have been added by a committer.     
+					loc = max(row3[6],1)
+					
+					# And create links to all previous committers who have revised this same
+					# file, ie. file co-authorship.
+					if (row3[0] <= row2[0]):						
+						mat[committer_id][c[r[row3[0]]]] = mat[committer_id][c[r[row3[0]]]] + loc						
+					else:
+						continue    
+	
+		cur.close
+		cur2.close
+		cur3.close
+	
+		# We iterate over the resulting matrix to write it out to the XML file.
+		i = 0
+		j = 0
+	
+		for i in c:
+			for j in c:             
+				output.write('\t\t\t<edge id="%d" source="%s" target="%s" weight="%d"/>\n'% (c[i], i, j,mat[c[i]][c[j]]))
+					
+		output.write("\t\t</edges>\n")
+		output.write("\t</graph>\n")
+		output.write("</gexf>\n")
+	
+		self.closedb()
 
 def RunMain():
-    usage = "(File co-authorship version) usage: %prog <sqlitedbpath> <outputfile>"
-    parser = OptionParser(usage)
-    (options, args) = parser.parse_args()
-    
-    if( len(args) < 2):
-        print "Invalid number of arguments. Use svnsqlite2ora_filecoauthorship.py --help to see the details."
-    else:
-        sqlitedbpath = args[0]
-        outputfilepath = args[1]
+	usage = "(File co-authorship version) usage: %prog <sqlitedbpath> <outputfile>"
+	parser = OptionParser(usage)
+	(options, args) = parser.parse_args()
+	
+	if( len(args) < 2):
+		print "Invalid number of arguments. Use svnsqlite2ora_filecoauthorship.py --help to see the details."
+	else:
+		sqlitedbpath = args[0]
+		outputfilepath = args[1]
 
-        try:
-            print "Processing the sqlite subversion log"
-            
-            SVNSqlite2Gephi(sqlitedbpath, outputfilepath)
-        except:
-            pass
-            raise
-        
+		try:
+			print "Processing the sqlite subversion log"
+			
+			SVNSqlite2Gephi(sqlitedbpath, outputfilepath)
+		except:
+			pass
+			raise
+		
 if( __name__ == "__main__"):
-    RunMain()
+	RunMain()
