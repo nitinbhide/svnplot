@@ -98,6 +98,15 @@ IMPORTANT NOTE for migrating from 0.5.x to 0.6
 ==============================================
 SVNPlot ver 0.6 sqlite database schema is different than 0.5.x schema. Hence for migrating from 0.5.x to 0.6 you will need to regenerate the sqlite database.
 
+==============================================
+Changes from 0.6.x to 0.7.x
+==============================================
+1. Many minor bug fixes for charts and activity index computations for Authors.
+2. Added the facility to define username and password for the repository on command line.
+3. Added svnstatscsv.py to export the basic statistics data to csv format.
+4. Merged the changes to export the network data from svn to Gephi. (Contributed by Oscar Castaneda
+   from GSoC 2010).
+
 ============
 License
 ============
