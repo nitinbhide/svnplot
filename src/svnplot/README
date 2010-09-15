@@ -77,6 +77,15 @@ Quick Start
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
 
 ==============================================
+Changes from 0.6.1 to 0.6.2
+==============================================
+1. Fixed XHTML template for svnplot-js.
+2. LocChurn graph added for matplot lib based svnplot (svnplot.py)
+3. Better start/end revision detection.
+4. Command line parameters for specifying Username/password  for repository authentication.
+5. Some basic support for exporting the stats in CSV format (svnstatscsv.py)
+
+==============================================
 Changes from 0.5.x to 0.6.1
 ==============================================
 1. Many bug fixes especially related to linecount and file count when folders are deleted or renamed.
@@ -88,6 +97,15 @@ Changes from 0.5.x to 0.6.1
 IMPORTANT NOTE for migrating from 0.5.x to 0.6
 ==============================================
 SVNPlot ver 0.6 sqlite database schema is different than 0.5.x schema. Hence for migrating from 0.5.x to 0.6 you will need to regenerate the sqlite database.
+
+==============================================
+Changes from 0.6.x to 0.7.x
+==============================================
+1. Many minor bug fixes for charts and activity index computations for Authors.
+2. Added the facility to define username and password for the repository on command line.
+3. Added svnstatscsv.py to export the basic statistics data to csv format.
+4. Merged the changes to export the network data from svn to Gephi. (Contributed by Oscar Castaneda
+   from GSoC 2010).
 
 ============
 License
