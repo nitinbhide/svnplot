@@ -339,12 +339,20 @@ class SVNStats:
             authListFinal.append(author)
         return(authListFinal)
     
-    def getActivityByWeekday(self):
+    def getActivityByWeekday(self, months=None):
         '''
         returns two lists (commit counts and weekday)
         '''
-        self.cur.execute("select strftime('%w', SVNLog.commitdate, 'localtime') as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
-                         where search_view.revno=SVNLog.revno group by dayofweek")
+        if( months == None):
+            query= "select strftime('%w', SVNLog.commitdate, 'localtime') as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
+                         where search_view.revno=SVNLog.revno group by dayofweek"
+            
+        else:
+            query= "select strftime('%%w', SVNLog.commitdate, 'localtime') as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
+                         where search_view.revno=SVNLog.revno and date('now', '-%d month') < SVNLog.commitdate \
+                        group by dayofweek" % (months)
+            
+        self.cur.execute(query)
 
         daynames = sqlite_daynames()
         commits = dict()
@@ -361,12 +369,20 @@ class SVNStats:
 
         return(commits_list, weekdaylist)
     
-    def getActivityByTimeOfDay(self):
+    def getActivityByTimeOfDay(self, months=None):
         '''
         returns two lists (commit counts and time of day)
         '''
-        self.cur.execute("select strftime('%H', SVNLog.commitdate,'localtime') as hourofday, count(SVNLog.revno) from SVNLog, search_view \
-                          where search_view.revno=SVNLog.revno group by hourofday")
+        if( months == None):
+            query= "select strftime('%H', SVNLog.commitdate,'localtime') as hourofday, count(SVNLog.revno) from SVNLog, search_view \
+                          where search_view.revno=SVNLog.revno group by hourofday"
+            
+        else:
+            query= "select strftime('%%H', SVNLog.commitdate,'localtime') as hourofday, count(SVNLog.revno) from SVNLog, search_view \
+                          where search_view.revno=SVNLog.revno and date('now', '-%d month') < SVNLog.commitdate \
+                          group by hourofday " % (months)
+            
+        self.cur.execute(query)
         commits = dict()
         for hourofday, commitcount in self.cur:
             commits[int(hourofday)] = commitcount

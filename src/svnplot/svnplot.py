@@ -248,31 +248,45 @@ class SVNPlot(SVNPlotMatplotLib):
         htmlfile.write(outstr.encode('utf-8'))
         htmlfile.close()
                                
-    def ActivityByWeekday(self, filename):
+    def ActivityByWeekday(self, filename, months=3):
         self._printProgress("Calculating Activity by day of week graph")
         
         data, labels = self.svnstats.getActivityByWeekday()
+        data1, labels1 = self.svnstats.getActivityByWeekday(months=months)
         
-        ax = self._drawBarGraph(data, labels,0.5)
-        ax.set_ylabel('Commits')
-        ax.set_xlabel('Day of Week')
-        ax.set_title('Activity By Day of Week')
+        fig = plt.figure()
+        ax1 = fig.add_subplot(211)
+        
+        ax1 = self._drawBarGraph(data, None,0.5, axes=ax1,color='b')
+        ax1.set_ylabel('Commits')
+        ax1.set_title('Activity By Day of Week (All time)')
 
-        fig = ax.figure                        
+        ax2 = fig.add_subplot(212)
+        ax2 = self._drawBarGraph(data1, labels1,0.5,axes=ax2,color='g')
+        ax2.set_ylabel('Commits')
+        ax2.set_xlabel('Day of Week')
+        ax2.set_title('Activity By Day of Week (Last %d months)' % months)
         fig.savefig(filename, dpi=self.dpi, format=self.format)        
 
-    def ActivityByTimeOfDay(self, filename):
+    def ActivityByTimeOfDay(self, filename, months=3):
         self._printProgress("Calculating Activity by time of day graph")
         
         data, labels = self.svnstats.getActivityByTimeOfDay()
+        data1, labels1 = self.svnstats.getActivityByTimeOfDay(months=months)
         
-        ax = self._drawBarGraph(data, labels,0.5)
-        ax.set_ylabel('Commits')
-        ax.set_xlabel('Hour of Day')
-        ax.set_title('Activity By Hour of Day')
+        fig = plt.figure()
+        ax1 = fig.add_subplot(211)
+        ax1 = self._drawBarGraph(data, None,0.5, axes=ax1,color='b')        
+        ax1.set_ylabel('Commits')
+        ax1.set_title('Activity By Hour of Day (All Time)')
 
-        fig = ax.figure                        
-        fig.savefig(filename, dpi=self.dpi, format=self.format)        
+        ax2 = fig.add_subplot(212)
+        ax2 = self._drawBarGraph(data1, labels1,0.5, axes=ax2, color='g')        
+        ax2.set_ylabel('Commits')
+        ax2.set_xlabel('Hour of Day')
+        ax2.set_title('Activity By Hour of Day (Last %d months)' %months)
+
+        fig.savefig(filename, dpi=self.dpi, format=self.format)
 
     def CommitActivityIdxGraph(self, filename):
         '''
