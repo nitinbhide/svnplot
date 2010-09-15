@@ -43,16 +43,19 @@ class SVNPlotMatplotLib(SVNPlotBase):
            ncol = len(labels)
         fig.legend(lnhandles, labels, loc=loc, ncol=ncol, prop=legendfont)
                     
-    def _drawBarGraph(self, data, labels, barwid, **kwargs):
+    def _drawBarGraph(self, data, labels, barwid, **kwargs):        
         #create dummy locations based on the number of items in data values
         xlocations = [x*2*barwid+barwid for x in range(len(data))]
         xtickloc = [x+barwid/2.0 for x in xlocations]
         xtickloc.append(xtickloc[-1]+barwid)
         
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        ax = kwargs.pop('axes', fig.add_subplot(111))
         ax.bar(xlocations, data, width=barwid, **kwargs)
         ax.set_xticks(xtickloc)
+        if( labels == None):
+            labels = ['']*len(data)
+            
         ax.set_xticklabels(labels)
         
         return(ax)
