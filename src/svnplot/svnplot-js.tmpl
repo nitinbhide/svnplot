@@ -35,8 +35,13 @@
 	$DirFileCountPie
 	$CommitActIdxTable
 	$AuthorsCommitTrend
-	$ActivityByWeekdayTable
-	$ActivityByTimeOfDayTable
+	$ActivityByWeekdayFunc
+	$ActivityByWeekdayAllTable
+    $ActivityByWeekdayRecentTable
+    $ActivityByTimeOfDayFunc
+    $ActivityByTimeOfDayAllTable
+	$ActivityByTimeOfDayRecentTable
+
 	$AuthorActivityGraph
 	$DailyCommitCountGraph
     <script type="text/javascript">
@@ -47,8 +52,10 @@
 				avglocgraph('AvgLoCGraph',showLegend);
 				fileCountGraph('FileCountGraph',showLegend);
 				fileTypesGraph('FileTypeCountGraph',showLegend);
-				ActivityByWeekday('ActivityByWeekdayGraph',showLegend);
-				ActivityByTimeOfDay('ActivityByTimeOfDayGraph',showLegend);
+				ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
+                ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
+                ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
+                ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
 				CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
                 directorySizePieGraph('DirSizePie', showLegend);
                 dirFileCountPieGraph('DirFileCountPie', showLegend);
@@ -161,12 +168,22 @@
 </tr>
 <tr>	
     <td><br/>
-    <div id="ActivityByWeekdayGraph" class="graph"></div>    
+    <div id="ActivityByWeekdayAllGraph" class="graph"></div>    
+    </td>
+</tr>
+<tr>	
+    <td><br/>
+    <div id="ActivityByWeekdayRecentGraph" class="graph"></div>    
     </td>
 </tr>
 <tr>
     <td><br/>
-    <div id="ActivityByTimeOfDayGraph" class="graph"></div>    
+    <div id="ActivityByTimeOfDayAllGraph" class="graph"></div>    
+    </td>    
+</tr>
+<tr>
+    <td><br/>
+    <div id="ActivityByTimeOfDayRecentGraph" class="graph"></div>    
     </td>    
 </tr>
 <tr>
@@ -178,11 +195,14 @@
     <td><br/>
      <div id="AuthorActivityGraph" class="graph"></div>	 
     </td>
+</tr>
+<tr>	
     <td align="center" >
     <div id="DailyCommitCountGraph" class="graph"></div>
     </td>    
 </tr>
 </table>
+
 <table id="pb" width="90%">
 <th align="center"><h3>Log Message Tag Cloud</h3></th>
 </tr>

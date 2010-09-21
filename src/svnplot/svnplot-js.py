@@ -118,7 +118,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	<script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
 	<script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
 	<script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
-	$LocTable
+    $LocTable
 	$LoCChurnTable	
 	$ContriLoCTable
 	$AvgLoCTable
@@ -129,8 +129,12 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	$DirFileCountPie
 	$CommitActIdxTable
 	$AuthorsCommitTrend
-	$ActivityByWeekdayTable
-	$ActivityByTimeOfDayTable
+	$ActivityByWeekdayFunc
+	$ActivityByWeekdayAllTable
+    $ActivityByWeekdayRecentTable
+    $ActivityByTimeOfDayFunc
+    $ActivityByTimeOfDayAllTable
+	$ActivityByTimeOfDayRecentTable
 	$AuthorActivityGraph
 	$DailyCommitCountGraph
     <script type="text/javascript">
@@ -142,8 +146,10 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
                     avglocgraph('AvgLoCGraph',showLegend);
                     fileCountGraph('FileCountGraph',showLegend);
                     fileTypesGraph('FileTypeCountGraph',showLegend);
-                    ActivityByWeekday('ActivityByWeekdayGraph',showLegend);
-                    ActivityByTimeOfDay('ActivityByTimeOfDayGraph',showLegend);
+                    ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
+                    ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
+                    ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
+                    ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
                     CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
                     directorySizePieGraph('DirSizePie', showLegend);
                     dirFileCountPieGraph('DirFileCountPie', showLegend);
@@ -248,10 +254,21 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         <div id="CommitActIdxGraph" class="graph" onclick ="showGraphBox(CommitActivityIndexGraph, true);"></div>
     </td>    
     <td align="center" >
-    <div id="ActivityByWeekdayGraph" class="graph" onclick ="showGraphBox(ActivityByWeekday, true);"></div>
+    <div id="ActivityByWeekdayAllGraph" class="graph" onclick ="showGraphBox(ActivityByWeekdayAll, true);"></div>
     </td>
     <td align="center" >
-    <div id="ActivityByTimeOfDayGraph" class="graph" onclick ="showGraphBox(ActivityByTimeOfDay, true);"></div>
+    <div id="ActivityByWeekdayRecentGraph" class="graph" onclick ="showGraphBox(ActivityByWeekdayRecent, true);"></div>
+    </td>
+</tr>
+<tr>
+    <td align="center" >
+    <div id="DailyCommitCountGraph" class="graph" onclick ="showGraphBox(dailyCommitCountGraph, true);"></div>
+    </td>    
+    <td align="center" >
+    <div id="ActivityByTimeOfDayAllGraph" class="graph" onclick ="showGraphBox(ActivityByTimeOfDayAll, true);"></div>
+    </td>
+    <td align="center" >
+    <div id="ActivityByTimeOfDayRecentGraph" class="graph" onclick ="showGraphBox(ActivityByTimeOfDayRecent, true);"></div>
     </td>    
 </tr>
 <tr>
@@ -261,9 +278,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <td align="center">
     <div id="AuthorActivityGraph" class="graph" onclick ="showGraphBox(authorActivityGraph, true);"></div>
     </td>
-    <td align="center" >
-    <div id="DailyCommitCountGraph" class="graph" onclick ="showGraphBox(dailyCommitCountGraph, true);"></div>
-    </td>    
+    
 </tr>
 <th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
 </tr>
@@ -315,17 +330,12 @@ class SVNPlotJS(SVNPlotBase):
         htmlfile.close()
         if( copyjs == True):
             self.__copyJSFiles(dirpath)
-                               
-    def ActivityByWeekday(self):
-        self._printProgress("Calculating Activity by day of week graph")
-        
-        data, labels = self.svnstats.getActivityByWeekday()
-        
-        template = '''        
-            function ActivityByWeekday(divElemId,showLegend) {
-            var data = [$DATA];
+
+    def ActivityByWeekdayFunc(self):
+        template = '''
+        function doActivityByWeekday(divElemId,data, titletext, showLegend) {
             var plot = $.jqplot(divElemId, [data], {
-                title:'Commit Activity by Day of Week',
+                title:titletext,
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
                     rendererOptions:{barPadding: 6, barMargin:15}, 
@@ -341,6 +351,22 @@ class SVNPlotJS(SVNPlotBase):
             return(plot);
         };
         '''
+        params = dict()
+        return(self.__getGraphScript(template,params))
+        
+    def ActivityByWeekdayAll(self):
+        self._printProgress("Calculating Activity by day of week graph")
+        
+        data, labels = self.svnstats.getActivityByWeekday()
+        
+        template = '''
+            function ActivityByWeekdayAll(divElemId,showLegend) {
+            var data = [$DATA];
+            var titletext = 'Commits by Day of Week (All time)'
+            var plot = doActivityByWeekday(divElemId, data, titletext, showLegend);
+            return(plot);
+        };
+        '''
         assert(len(data) == len(labels))
         
         datalist = [ "['%s',%d]" % (wkday, actdata) for actdata, wkday in zip(data, labels)]
@@ -348,16 +374,32 @@ class SVNPlotJS(SVNPlotBase):
 
         return(self.__getGraphScript(template, {"DATA":data}))
 
-    def ActivityByTimeOfDay(self):
-        self._printProgress("Calculating Activity by time of day graph")
+    def ActivityByWeekdayRecent(self, months=3):
+        self._printProgress("Calculating Activity by day of week graph")
         
-        data, labels = self.svnstats.getActivityByTimeOfDay()
+        data, labels = self.svnstats.getActivityByWeekday(months)
         
-        template = '''        
-            function ActivityByTimeOfDay(divElemId,showLegend) {
+        template = '''
+            function ActivityByWeekdayRecent(divElemId,showLegend) {
             var data = [$DATA];
+            var titletext = 'Commits by Day of Week (%d months)'
+            var plot = doActivityByWeekday(divElemId, data, titletext, showLegend);
+            return(plot);
+        };
+        '''
+        template = template % months
+        assert(len(data) == len(labels))
+        
+        datalist = [ "['%s',%d]" % (wkday, actdata) for actdata, wkday in zip(data, labels)]
+        data = ','.join(datalist)
+
+        return(self.__getGraphScript(template, {"DATA":data}))
+
+    def ActivityByTimeOfDayFunc(self):
+        template = '''        
+            function doActivityByTimeOfDay(divElemId,data, titletext, showLegend) {            
             var plot = $.jqplot(divElemId, [data], {
-                title:'Commit Activity By Hour of Day',
+                title:titletext,
                 seriesDefaults:{
                     renderer:$.jqplot.BarRenderer, 
                     rendererOptions:{barPadding: 6, barMargin:10}, 
@@ -373,10 +415,47 @@ class SVNPlotJS(SVNPlotBase):
             return(plot);
         };
         '''
+        params = dict()
+        return(self.__getGraphScript(template,params))
+        
+    def ActivityByTimeOfDayAll(self):
+        self._printProgress("Calculating Activity by time of day graph")
+        
+        data, labels = self.svnstats.getActivityByTimeOfDay()
+        
+        template = '''        
+            function ActivityByTimeOfDayAll(divElemId,showLegend) {
+            var data = [$DATA];
+            var titletext = 'Commits By Hour of Day (All time)'
+            var plot = doActivityByTimeOfDay(divElemId, data, titletext,showLegend);
+            return(plot);
+        };
+        '''
         assert(len(data) == len(labels))
 
         datalist = ["['%s',%d]" % (tmofday, actdata)  for actdata, tmofday in zip(data, labels)]
                     
+        data = ','.join(datalist)
+
+        return(self.__getGraphScript(template, {"DATA":data}))
+
+    def ActivityByTimeOfDayRecent(self, months=3):
+        self._printProgress("Calculating Activity by time of day graph")
+        
+        data, labels = self.svnstats.getActivityByTimeOfDay(months)
+        assert(len(data) == len(labels))
+        
+        template = '''        
+            function ActivityByTimeOfDayRecent(divElemId,showLegend) {
+            var data = [$DATA];
+            var titletext = 'Commits By Hour of Day (last %d months)'
+            var plot = doActivityByTimeOfDay(divElemId, data, titletext,showLegend);
+            return(plot);
+        };
+        '''
+        template = template % months
+        
+        datalist = ["['%s',%d]" % (tmofday, actdata)  for actdata, tmofday in zip(data, labels)]                
         data = ','.join(datalist)
 
         return(self.__getGraphScript(template, {"DATA":data}))
@@ -839,8 +918,12 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["AvgLoCTable"] = self.AvgFileLocGraph()
         graphParamDict["FileCountTable"] = self.FileCountGraph()
         graphParamDict["FileTypeCountTable"] = self.FileTypesGraph()
-        graphParamDict["ActivityByWeekdayTable"] = self.ActivityByWeekday()
-        graphParamDict["ActivityByTimeOfDayTable"] = self.ActivityByTimeOfDay()
+        graphParamDict["ActivityByWeekdayFunc"] = self.ActivityByWeekdayFunc()
+        graphParamDict["ActivityByWeekdayAllTable"] = self.ActivityByWeekdayAll()
+        graphParamDict["ActivityByWeekdayRecentTable"] = self.ActivityByWeekdayRecent(3)
+        graphParamDict["ActivityByTimeOfDayFunc"] = self.ActivityByTimeOfDayFunc()
+        graphParamDict["ActivityByTimeOfDayAllTable"] = self.ActivityByTimeOfDayAll()
+        graphParamDict["ActivityByTimeOfDayRecentTable"] = self.ActivityByTimeOfDayRecent(3)
         graphParamDict["CommitActIdxTable"] = self.CommitActivityIdxGraph()
         graphParamDict["LoCChurnTable"] = self.LocChurnGraph()
         graphParamDict["DirSizePie"] = self.DirectorySizePieGraph(self.dirdepth, maxdircount)
