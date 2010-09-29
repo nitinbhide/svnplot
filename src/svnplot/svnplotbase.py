@@ -46,7 +46,12 @@ def getActivityClr(normlizer, actIdx):
     return(clrstr)
 
 
-
+def normalize_activityidx(actIdx, minActivity, maxActivity):
+    normactidx = 0.0
+    if( actIdx-minActivity > 0.0):
+        normactidx=math.log(actIdx-minActivity)/math.log(maxActivity-minActivity)
+    return(normactidx)
+    
 class SVNPlotBase:
     def __init__(self, svnstats, dpi=100,format='png'):
         self.svnstats = svnstats
@@ -144,10 +149,11 @@ class SVNPlotBase:
             minActivity = min(authTagList, key=operator.itemgetter(2))[2]
             maxActivity = max(authTagList, key=operator.itemgetter(2))[2]
             maxActivity = max(minActivity*1.2, maxActivity)
-            minActivityLog = math.log(minActivity)
-            maxActivityLog = math.log(maxActivity)
-                        
-            normlizer = lambda actIdx : (math.log(actIdx)-minActivityLog)/(maxActivityLog-minActivityLog)
+
+            normlizer = lambda actIdx : normalize_activityidx(actIdx, minActivity, maxActivity)
+            #minActivityLog = math.log(minActivity)
+            #maxActivityLog = math.log(maxActivity)                        
+            #normlizer = lambda actIdx : (math.log(actIdx)-minActivityLog)/(maxActivityLog-minActivityLog)
 
             #Now sort the authers by author names
             authTagList = sorted(authTagList, key=operator.itemgetter(0))
