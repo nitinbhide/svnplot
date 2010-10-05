@@ -71,7 +71,8 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
         if( hrsSinceLastTime < 0.0):
             hrsSinceLastTime = 0.0
         tempFactor = -(coolingRate*hrsSinceLastTime)
-        temperature = lastTemp*math.exp(tempFactor)        
+        temperature = lastTemp*math.exp(tempFactor)
+        temperature = max(temperature, 0.001)
     except Exception, expinst:  
         logging.debug("Error %s" % expinst)
         temperature = 0
@@ -1047,6 +1048,13 @@ class SVNStats:
             if( cmtactv != None):                
                 revtemp = TEMPINCREMENT+getTemperatureAtTime(cmdate, cmtactv[0], cmtactv[1], COOLINGRATE)
             authActivityIdx[author] = (cmdate, revtemp)
+            
+        #Now update the activity for current date and time.
+        curdate = datetime.datetime.now()
+        for author, cmtactv in authActivityIdx.items():
+            authtemp = getTemperatureAtTime(curdate, cmtactv[0], cmtactv[1], COOLINGRATE)
+            authActivityIdx[author] = (curdate, authtemp)
+        
         return(authActivityIdx)
         
     def getRevActivityTemperature(self):
