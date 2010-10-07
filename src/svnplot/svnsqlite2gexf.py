@@ -21,9 +21,10 @@ links are created to all co-authors who are active in the sqlite db contents.
 
 This version of svnsqlite2gexf.py has been tested with SVNPlot version 0.6.1 .
 '''
-
+from __future__ import with_statement
 import string
 import sqlite3
+import math
 
 from optparse import OptionParser
 from numpy import *
@@ -39,7 +40,7 @@ class SVNSqlite2Gephi:
 
 	def initdb(self):
 		self.closedb()
-		self.revisions = dict()			
+		self.revisions = dict()         
 		self.committers = dict()
 		
 		self.dbcon = sqlite3.connect(self.dbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -58,7 +59,7 @@ class SVNSqlite2Gephi:
 		# Write XML specification for Gephi network, then start writing <nodes> section of the XML file consisting of nodes
 		output.write("\t\t<nodes>\n")
 		
-		for row in cur:     		
+		for row in cur:             
 			committer = row[2]
 			if( committer== '' or committer == None):
 				committer = 'Unknown'
@@ -93,58 +94,52 @@ class SVNSqlite2Gephi:
 		# Agent x Resource(changedpathid) and Resource(changedpathid) x Agent      #
 		############################################################################
 		cur = self.dbcon.cursor()
-		cur.execute('SELECT * FROM SVNLog')
+		cur.execute('SELECT * FROM SVNPaths')
 				
-		for row in cur:         
-			committer = row[2]
-			if( committer == '' or committer == None):
-				committer = 'Unknown'
-			revno = row[0]
-	
+		for row in cur:
+			print 'processing %s' % row[1].encode('utf-8')
+			changedpathid = row[0]
+
+			#ignore the line count for tagged version of directories. This will have huge line count            
 			cur2 = self.dbcon.cursor()
-			cur2.execute('SELECT * FROM SVNLogDetail where revno=?',(revno,))
+			cur2.execute('SELECT SVNLogDetail.changedpathid , SVNLog.author, SVNLogDetail.linesadded FROM SVNLog, SVNLogDetail \
+				where SVNLogDetail.changedpathid=? and SVNLog.revno=SVNLogDetail.revno and SVNLogDetail.copyfrompathid ISNULL and SVNLogDetail.linesadded > 0 \
+				order by SVNLogDetail.revno asc',(changedpathid,))
 	
-			committer_id = self.committers[committer]
-			# Iterate over all files that were worked on in a single revision (commit).
+			# Iterate over all authors that worked on file
+			authList = set()
 			for row2 in cur2:
 				
-				changedpathid = row2[1]         
+				committer_id = self.committers[row2[1]]
 				
-				# Iterate over the individual files (changedpathid's) to get the work contents 
-				# from them, namely lines-of-code (loc).
+				# Iterate over the revision entries to get the work contentsfrom them, namely lines-of-code (loc).
 				
 				# Note: We only take into account lines added (row3[6]) and not lines deleted
 				# because we are interested in what committers 'do' and that is more evident from
 				# the loc they add, and not so from the loc they delete. Furthermore, negative links
 				# between developers are meaningless. 
-				cur3 = self.dbcon.cursor()
-				cur3.execute('SELECT * FROM SVNLogDetail where changedpathid=?',(changedpathid,))
+				loc = row2[2]
 				
-				for row3 in cur3:
-					
-					# As mentioned, we only consider the lines of code that have been added by a committer.     
-					loc = row3[6]
+				for coauthor_id in authList:
+					# As mentioned, we only consider the lines of code that have been added by a committer.                         
 					# And create links to all previous committers who have revised this same
-					# file, ie. file co-authorship.
-					if (row3[0] <= row2[0]):
-						coauthor = self.revisions[row3[0]]
-						coauthor_id = self.committers[coauthor]
-						mat[committer_id][coauthor_id] = mat[committer_id][coauthor_id] + loc
-	
-		cur.close
-		cur2.close
-		cur3.close
-	
-		output.write("\t\t<edges>\n")		
+					# file, ie. file co-authorship.                    
+					mat[committer_id][coauthor_id] = mat[committer_id][coauthor_id] + loc
+				authList.add(committer_id)
+				
+		cur2.close()
+		cur.close()
+		
+		output.write("\t\t<edges>\n")       
 		# We iterate over the resulting matrix to write it out to the XML file.
 		edge_id = 0
 		for auth1, auth1_id in self.committers.iteritems():
 			for auth2, auth2_id in self.committers.iteritems():
 				wt = mat[auth1_id][auth2_id]
-				if( wt > 0):
-					output.write('\t\t\t<edge id="%d" source="%d" target="%d" weight="%d"/>\n'
-								 % (edge_id, auth1_id, auth2_id,wt))
-					edge_id = edge_id+1					
+				if( wt > 1 and auth1_id != auth2_id):
+					output.write('\t\t\t<edge id="%d" source="%d" target="%d" weight="%.4f"/>\n'
+								 % (edge_id, auth1_id, auth2_id,math.log(wt)))
+					edge_id = edge_id+1                 
 					
 		output.write("\t\t</edges>\n")
 		
