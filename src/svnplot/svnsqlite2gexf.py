@@ -138,7 +138,7 @@ class SVNSqlite2Gephi:
 				wt = mat[auth1_id][auth2_id]
 				if( wt > 1 and auth1_id != auth2_id):
 					output.write('\t\t\t<edge id="%d" source="%d" target="%d" weight="%.4f"/>\n'
-								 % (edge_id, auth1_id, auth2_id,math.log(wt)))
+								 % (edge_id, auth1_id, auth2_id,wt))
 					edge_id = edge_id+1                 
 					
 		output.write("\t\t</edges>\n")
