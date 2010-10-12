@@ -20,8 +20,9 @@ import operator
 import logging
 import itertools
 
-COOLINGRATE = 0.1/24.0 #degree per hour
+COOLINGRATE = 0.06/24.0 #degree per hour
 TEMPINCREMENT = 10.0 # degrees per commit
+AMBIENT_TEMP = 1.1
 
 def filetype(path):
     '''
@@ -71,8 +72,8 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
         if( hrsSinceLastTime < 0.0):
             hrsSinceLastTime = 0.0
         tempFactor = -(coolingRate*hrsSinceLastTime)
-        temperature = lastTemp*math.exp(tempFactor)
-        temperature = max(temperature, 0.001)
+        temperature = AMBIENT_TEMP + (lastTemp-AMBIENT_TEMP)*math.exp(tempFactor)
+        assert(temperature>=AMBIENT_TEMP)
     except Exception, expinst:  
         logging.debug("Error %s" % expinst)
         temperature = 0
@@ -1061,27 +1062,42 @@ class SVNStats:
         '''
         return revision activity as maximum temperature at each revision(using the newton's law of cooling)                                                                         
         '''
-        self._updateActivityHotness()
-        self.cur.execute('select date(SVNLog.commitdate) as "commitdate [date]", max(RevisionActivity.temperature) \
-                    from RevisionActivity, SVNLog where SVNLog.revno = RevisionActivity.revno \
-                    group by commitdate order by commitdate ASC')
-        cmdatelist = []
-        temperaturelist = []
-        lastcommitdate = None
-        for cmdate, temperature in self.cur:
-            revtemp = temperature
-            if( lastcommitdate != None):
-                temp = getTemperatureAtTime(cmdate, lastcommitdate, lasttemp, COOLINGRATE)
-                if( revtemp < temp):
-                    revtemp = temp
-                
-            lastcommitdate = cmdate
-            lasttemp = revtemp
-            if( self.isDateInRange(cmdate) == True):
-                cmdatelist.append(cmdate)
-                temperaturelist.append(revtemp)
-                        
-        return( cmdatelist,temperaturelist)            
+        #self._updateActivityHotness()
+        #self.cur.execute('select date(SVNLog.commitdate) as "commitdate [date]", max(RevisionActivity.temperature) \
+        #            from RevisionActivity, SVNLog where SVNLog.revno = RevisionActivity.revno \
+        #            group by commitdate order by commitdate ASC')
+        #cmdatelist = []
+        #temperaturelist = []
+        #lastcommitdate = None
+        #for cmdate, temperature in self.cur:
+        #    revtemp = temperature
+        #    if( lastcommitdate != None):
+        #        temp = getTemperatureAtTime(cmdate, lastcommitdate, lasttemp, COOLINGRATE)
+        #        if( revtemp < temp):
+        #            revtemp = temp
+        #        
+        #    lastcommitdate = cmdate
+        #    lasttemp = revtemp
+        #    if( self.isDateInRange(cmdate) == True):
+        #        cmdatelist.append(cmdate)
+        #        temperaturelist.append(revtemp)
+        #                
+        #return( cmdatelist,temperaturelist)
+        #
+        dates = []
+        templist = []
+        
+        startdate = datetime.date(2010, 1, 1)
+        dlta = datetime.timedelta(days=1)
+        prevdate = startdate
+        lasttemp = TEMPINCREMENT
+        for idx in range(1, 100):
+            dt = prevdate + dlta
+            lasttemp=getTemperatureAtTime(dt, prevdate, lasttemp, COOLINGRATE)        
+            dates.append(dt)
+            templist.append(lasttemp)
+            prevdate = dt
+        return(dates, templist)
 
     def getAuthorCloud(self):
         '''
