@@ -47,9 +47,12 @@ def getActivityClr(normlizer, actIdx):
 
 
 def normalize_activityidx(actIdx, minActivity, maxActivity):
+    assert(maxActivity > minActivity)
     normactidx = 0.0
-    if( actIdx-minActivity > 0.0):
+    if( actIdx-minActivity > 1.0):
+        #log of actIdx-minactivity has to be +ve for subsequent computations to work.
         normactidx=math.log(actIdx-minActivity)/math.log(maxActivity-minActivity)
+    assert(normactidx >=0.0)
     return(normactidx)
     
 class SVNPlotBase:
