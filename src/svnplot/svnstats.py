@@ -1062,42 +1062,27 @@ class SVNStats:
         '''
         return revision activity as maximum temperature at each revision(using the newton's law of cooling)                                                                         
         '''
-        #self._updateActivityHotness()
-        #self.cur.execute('select date(SVNLog.commitdate) as "commitdate [date]", max(RevisionActivity.temperature) \
-        #            from RevisionActivity, SVNLog where SVNLog.revno = RevisionActivity.revno \
-        #            group by commitdate order by commitdate ASC')
-        #cmdatelist = []
-        #temperaturelist = []
-        #lastcommitdate = None
-        #for cmdate, temperature in self.cur:
-        #    revtemp = temperature
-        #    if( lastcommitdate != None):
-        #        temp = getTemperatureAtTime(cmdate, lastcommitdate, lasttemp, COOLINGRATE)
-        #        if( revtemp < temp):
-        #            revtemp = temp
-        #        
-        #    lastcommitdate = cmdate
-        #    lasttemp = revtemp
-        #    if( self.isDateInRange(cmdate) == True):
-        #        cmdatelist.append(cmdate)
-        #        temperaturelist.append(revtemp)
-        #                
-        #return( cmdatelist,temperaturelist)
-        #
-        dates = []
-        templist = []
-        
-        startdate = datetime.date(2010, 1, 1)
-        dlta = datetime.timedelta(days=1)
-        prevdate = startdate
-        lasttemp = TEMPINCREMENT
-        for idx in range(1, 100):
-            dt = prevdate + dlta
-            lasttemp=getTemperatureAtTime(dt, prevdate, lasttemp, COOLINGRATE)        
-            dates.append(dt)
-            templist.append(lasttemp)
-            prevdate = dt
-        return(dates, templist)
+        self._updateActivityHotness()
+        self.cur.execute('select date(SVNLog.commitdate) as "commitdate [date]", max(RevisionActivity.temperature) \
+                    from RevisionActivity, SVNLog where SVNLog.revno = RevisionActivity.revno \
+                    group by commitdate order by commitdate ASC')
+        cmdatelist = []
+        temperaturelist = []
+        lastcommitdate = None
+        for cmdate, temperature in self.cur:
+            revtemp = temperature
+            if( lastcommitdate != None):
+                temp = getTemperatureAtTime(cmdate, lastcommitdate, lasttemp, COOLINGRATE)
+                if( revtemp < temp):
+                    revtemp = temp
+                
+            lastcommitdate = cmdate
+            lasttemp = revtemp
+            if( self.isDateInRange(cmdate) == True):
+                cmdatelist.append(cmdate)
+                temperaturelist.append(revtemp)
+                        
+        return( cmdatelist,temperaturelist)            
 
     def getAuthorCloud(self):
         '''
