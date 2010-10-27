@@ -77,13 +77,19 @@ Quick Start
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
 
 ==============================================
-Changes from 0.6.1 to 0.6.2
+Changes from 0.6.1 to 0.7.0
 ==============================================
 1. Fixed XHTML template for svnplot-js.
 2. LocChurn graph added for matplot lib based svnplot (svnplot.py)
 3. Better start/end revision detection.
 4. Command line parameters for specifying Username/password  for repository authentication.
 5. Some basic support for exporting the stats in CSV format (svnstatscsv.py)
+6. GSoC 2010/2009 changes by Oscar Castaneda merged into trunk. 
+7. Two plots added for 'Activity by Time of day for last 3 months' and 'Activity by day of week for last 3 months'.
+8. Bug fixes for correct display of javascript charts in IE 7 and IE8.
+9. Improvements in the computation of author activity index. 
+10. Improvements in the heat map colour computations for 'tag cloud'
+11. Many small bug fixes.
 
 ==============================================
 Changes from 0.5.x to 0.6.1
