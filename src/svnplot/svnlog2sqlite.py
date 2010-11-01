@@ -289,7 +289,7 @@ class SVNLog2Sqlite:
         #update SVNLogDetail set lc_updated ='Y' ## Use 'Y' or 'N' as appropriate.
 
         #because of some bug in old code sometimes path contains '//' or '.'. Uncomment the line to Fix such paths
-        #self.__fixPaths()
+        self.__fixPaths()
         
     def __fixPaths(self):
         '''
@@ -319,6 +319,7 @@ class SVNLog2Sqlite:
             for pathid, duppath1 in cur:
                 updcur.execute("UPDATE SVNLogDetail SET changedpathid=? where changedpathid=?", (correctid,pathid))
                 updcur.execute("UPDATE SVNLogDetail SET copyfrompathid=? where copyfrompathid=?", (correctid,pathid))
+                updcur.execute("DELETE FROM svnpaths where id=?", (pathid,))
             self.dbcon.commit()
         #if paths are fixed. Then drop the activity hotness table so that it gets rebuilt next time.
         updcur.execute("DROP TABLE IF EXISTS ActivityHotness")
