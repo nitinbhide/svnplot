@@ -23,7 +23,7 @@ import getpass
 import traceback
 import types
 import tempfile
-
+from os.path import normpath
 
 def convert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -33,7 +33,18 @@ def makeunicode(str):
     if type(str) == types.StringType: 
         str = unicode(str, 'utf-8')
     return(str)
-   
+
+def normurlpath(pathstr):
+    '''
+    normalize url path. I cannot use 'normpath' directory as it changes path seperator to 'os' default path seperator.
+    '''
+    nrmpath = pathstr
+    if( pathstr):
+        nrmpath = normpath(pathstr)
+        #replace the '\\' to '/' in case 'normpath' call has changed the directory seperator.
+        nrmpath = nrmpath.replace('\\', '/')
+    return(nrmpath)
+    
 def getDiffLineCountDict(diff_log):
     diffio = StringIO.StringIO(diff_log)
     addlnCount=0
@@ -272,7 +283,7 @@ class SVNLogClient:
         logging.debug("Trying to get revision logs [%d:%d]" % (startrevno, endrevno))
         revlog = self.svnclient.log( url,
              revision_start=startrev, revision_end=endrev, limit=cachesize,
-                                     discover_changed_paths=detailedLog)                
+                                     discover_changed_paths=detailedLog)
         return(revlog)
     
     def getRevDiff(self, revno):
@@ -568,10 +579,11 @@ class SVNChangeEntry:
         return(self.changedpath['action'])
     
     def filepath(self):
-        return(self.changedpath['path'])
+        nrmpath = normurlpath(self.changedpath['path'])
+        return(nrmpath)
     
     def filepath_unicode(self):
-        return(makeunicode(self.changedpath['path']))
+        return(makeunicode(self.filepath()))
 
     def lc_added(self):
         lc = self.changedpath.get('lc_added', 0)
@@ -583,7 +595,7 @@ class SVNChangeEntry:
 
     def copyfrom(self):
         path = self.changedpath['copyfrom_path']
-        path = makeunicode(path)
+        path = makeunicode(normurlpath(path))
         rev  = self.changedpath['copyfrom_revision']
         revno = None
         if( rev != None):
