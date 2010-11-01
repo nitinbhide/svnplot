@@ -287,6 +287,43 @@ class SVNLog2Sqlite:
         #Use the following sql to alter the old tables
         #ALTER TABLE SVNLogDetail ADD COLUMN lc_updated char
         #update SVNLogDetail set lc_updated ='Y' ## Use 'Y' or 'N' as appropriate.
+
+        #because of some bug in old code sometimes path contains '//' or '.'. Uncomment the line to Fix such paths
+        #self.__fixPaths()
+        
+    def __fixPaths(self):
+        '''
+        because of some bug in old code sometimes the path contains '//' or '.' etc. Fix such paths
+        '''
+        cur = self.dbcon.cursor()
+        cur.execute("select * from svnpaths")
+        pathstofix = []
+        for id, path in cur:
+            nrmpath = svnlogiter.normurlpath(path)
+            if( nrmpath != path):
+                logging.debug("fixing path for %s to %s"%(path, nrmpath))
+                pathstofix.append((id,nrmpath))
+        for id, path in pathstofix:
+            cur.execute('update svnpaths set path=? where id=?',(path, id))
+        self.dbcon.commit()
+        #Now fix the duplicate entries created after normalization
+        cur = self.dbcon.cursor()
+        updcur = self.dbcon.cursor()
+        cur.execute("SELECT count(path) as pathcnt, path FROM svnpaths group by path having pathcnt > 1")
+        duppathlist = [path for cnt, path in cur]
+        for duppath in duppathlist:
+            #query the ids for this path
+            cur.execute("SELECT * FROM svnpaths WHERE path = ? order by id", (duppath,))
+            correctid, duppath1 = cur.fetchone()
+            print "updating path %s" % duppath
+            for pathid, duppath1 in cur:
+                updcur.execute("UPDATE SVNLogDetail SET changedpathid=? where changedpathid=?", (correctid,pathid))
+                updcur.execute("UPDATE SVNLogDetail SET copyfrompathid=? where copyfrompathid=?", (correctid,pathid))
+            self.dbcon.commit()
+        #if paths are fixed. Then drop the activity hotness table so that it gets rebuilt next time.
+        updcur.execute("DROP TABLE IF EXISTS ActivityHotness")
+        self.dbcon.commit()
+        print "fixed paths"
         
     def printVerbose(self, msg):
         logging.info(msg)
