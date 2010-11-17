@@ -364,7 +364,7 @@ class SVNLogClient:
         has no svn:mime-type  property, or has a mime-type that is textual (e.g. text/*),
         Subversion assumes it is text. Otherwise it is treated as binary file.
         '''
-
+        logging.debug("Binary file check for file <%s> revision:%d" % (filepath, revno))
         binary = False #if explicit mime-type is not found always treat the file as 'text'                   
         url = self.getUrl(filepath)
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
@@ -560,7 +560,7 @@ class SVNChangeEntry:
 
     def isDirectory(self):
         isDir = False
-        path = self.changedpath['path']
+        path = self.filepath()
         action = self.changedpath['action']
             
         #see if directory check is alredy done on this path. If not, then check with the repository        
@@ -626,11 +626,10 @@ class SVNChangeEntry:
         return(binary)    
                                            
     def updateDiffLineCountFromDict(self, diffCountDict):        
-        if( 'lc_added' not in self.changedpath):        
+        if( 'lc_added' not in self.changedpath):
             linesadded=0
             linesdeleted=0
-            filename = self.changedpath['path']
-            changetype = self.changedpath['action']
+            filename = self.filepath()
             
             if( diffCountDict!= None and not self.isBinaryFile() and diffCountDict.has_key(filename)):
                 linesadded, linesdeleted = diffCountDict[filename]
@@ -644,7 +643,7 @@ class SVNChangeEntry:
             
         if( 'lc_added' not in self.changedpath):
             revno = self.revno
-            filepath = self.changedpath['path']
+            filepath = self.filepath()
             changetype = self.changedpath['action']
             prev_filepath = self.changedpath.get('copyfrom_path')
             prev_revno = self.changedpath.get('copyfrom_revision')
