@@ -622,6 +622,7 @@ class SVNChangeEntry:
         if( self.change_type() == 'D'):
             #if change type is 'D' then reduce the 'revno' to appropriately detect the binary file type.
             revno = revno - 1
+            logging.debug("Found file deletion for <%s>" % self.filepath())
         binary = self.logclient.isBinaryFile(self.filepath(), revno)
         return(binary)    
                                            
