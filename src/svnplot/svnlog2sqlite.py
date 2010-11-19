@@ -322,9 +322,10 @@ class SVNLog2Sqlite:
                 updcur.execute("DELETE FROM svnpaths where id=?", (pathid,))
             self.dbcon.commit()
         #if paths are fixed. Then drop the activity hotness table so that it gets rebuilt next time.
-        updcur.execute("DROP TABLE IF EXISTS ActivityHotness")
-        self.dbcon.commit()
-        print "fixed paths"
+        if( len(duppathlist) > 0):            
+            updcur.execute("DROP TABLE IF EXISTS ActivityHotness")        
+            self.dbcon.commit()        
+            print "fixed paths"
         
     def printVerbose(self, msg):
         logging.info(msg)
