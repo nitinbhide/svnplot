@@ -383,6 +383,8 @@ class SVNLogClient:
         return(binary)
     
     def isBinaryFile(self, filepath, revno):
+        assert(filepath is not None)
+        assert(revno > 0)
         binary = self.__isBinaryFileExt(filepath)
         
         if( binary == False):
@@ -582,6 +584,22 @@ class SVNChangeEntry:
         nrmpath = normurlpath(self.changedpath['path'])
         return(nrmpath)
     
+    def prev_filepath(self):
+        prev_filepath = self.changedpath.get('copyfrom_path')
+        if(prev_filepath == None):
+            prev_filepath = self.filepath()
+        return (prev_filepath)
+        
+    def prev_revno(self):
+        prev_revno = self.changedpath.get('copyfrom_revision')
+        if( prev_revno == None):
+            prev_revno = self.revno-1
+        else:
+            assert(isinstance(prev_revno, type(pysvn.Revision(pysvn.opt_revision_kind.number, 0))))
+            prev_revno = prev_revno.number
+            
+        return(prev_revno)
+            
     def filepath_unicode(self):
         return(makeunicode(self.filepath()))
 
@@ -616,14 +634,17 @@ class SVNChangeEntry:
 
     def isBinaryFile(self):
         '''
-        if the change is in a binary file.
+        if the change is in a binary file.        
         '''
         revno = self.revno
+        filepath = self.filepath()
         if( self.change_type() == 'D'):
             #if change type is 'D' then reduce the 'revno' to appropriately detect the binary file type.
-            revno = revno - 1
-            logging.debug("Found file deletion for <%s>" % self.filepath())
-        binary = self.logclient.isBinaryFile(self.filepath(), revno)
+            logging.debug("Found file deletion for <%s>" % filepath)
+            filepath = self.prev_filepath()
+            revno= self.prev_revno()
+        binary = self.logclient.isBinaryFile(filepath, revno)
+            
         return(binary)    
                                            
     def updateDiffLineCountFromDict(self, diffCountDict):        
@@ -646,8 +667,8 @@ class SVNChangeEntry:
             revno = self.revno
             filepath = self.filepath()
             changetype = self.changedpath['action']
-            prev_filepath = self.changedpath.get('copyfrom_path')
-            prev_revno = self.changedpath.get('copyfrom_revision')
+            prev_filepath = self.prev_filepath()
+            prev_revno = self.prev_revno()
             filename = filepath
 
             if( self.isDirectory() == False and not self.isBinaryFile() ):
@@ -656,7 +677,7 @@ class SVNChangeEntry:
                 if( changetype == 'A'):
                     added = self.logclient.getLineCount(filepath, revno)
                 elif( changetype == 'D'):
-                    deleted = self.logclient.getLineCount(filepath, revno-1)
+                    deleted = self.logclient.getLineCount(prev_filepath, prev_revno)
                 else:
                     #change type is 'changetype != 'A' and changetype != 'D'
                     #directory is modified
@@ -684,6 +705,9 @@ class SVNRevLog:
         else:
             self.revlog = revnolog
         assert(self.revlog == None or isinstance(revnolog, pysvn.PysvnLog)==True)
+        if( self.revlog):
+            self.__normalizePaths()
+            self.__updateCopyFromPaths()
 
     def isvalid(self):
         '''
@@ -694,10 +718,48 @@ class SVNRevLog:
             valid = False
         return(valid)
 
+    def __normalizePaths(self):
+        '''
+        sometimes I get '//' in the file names. Normalize those names.
+        '''
+        assert(self.revlog is not None)
+        for change in self.revlog.changed_paths:
+            change['path'] = normurlpath(change['path'])
+            if('copyfrom_path' in change):
+                change['copyfrom_path'] = normurlpath(change['copyfrom_path'])
+        
+    def __updateCopyFromPaths(self):
+        '''
+        If you create a branch/tag from the working copy and working copy has 'deleted files or directories.
+        In this case, just lower revision number is not going to have that file in the same path and hence
+        we will get 'unknown node kind' error. Hence we have to update the 'copy from path' and 'copy
+        from revision' entries to the changed_path entries.
+        Check Issue 44.
+        '''
+        assert( self.revlog is not None)
+        #First check if there are any additions with 'copy_from'
+        
+        copyfrom_dict = dict()
+        for change in self.revlog.changed_paths:            
+            if( change['action']=='A' and 'copyfrom_path' in change):
+                curpath = change['path']
+                copyfrom_dict[curpath]=(change['copyfrom_path'], change['copyfrom_revision'])
+                
+        if( len(copyfrom_dict) > 0):
+            for change in self.revlog.changed_paths:
+                if( change['action']=='D'):
+                    curfilepath = change['path']
+                    for curpath, (copyfrompath, copyfromrev) in copyfrom_dict.iteritems():
+                        if(curfilepath.startswith(curpath)):
+                            assert(change['copyfrom_path'] is None)
+                            assert(change['copyfrom_revision'] is None)
+                            change['copyfrom_path'] = curfilepath.replace(curpath, copyfrompath,1)
+                            change['copyfrom_revision'] = copyfromrev                    
+                
     def getChangeEntries(self):
         '''
         get the change entries from each changed path entry
-        '''
+        '''        
         for change in self.revlog.changed_paths:
             change_entry = SVNChangeEntry(self, change)
             if( change_entry.isValidChange()):
