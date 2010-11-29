@@ -164,7 +164,7 @@ class SVNLog2Sqlite:
         lc_updated = 'Y'
         addedfiles = 0
         deletedfiles = 0
-        if( changetype == 'D' or changetype=='A'):
+        if( (changetype == 'D' or changetype=='A') and change.isDirectory()):
             #since we may have to query the existing data. Commit the changes first.
             self.dbcon.commit()
             
@@ -184,18 +184,19 @@ class SVNLog2Sqlite:
                     lc_deleted = 0
 
                     filename = row[0].replace(copyfrompath, change.filepath_unicode(), 1)
-                    pathtype = 'F'
+                    path_type = 'F'
                     if(filename.endswith('/')):
-                       pathtype = 'D'
+                       path_type = 'D'
                     changedpathid = self.getFilePathId(filename, updcur)
                     copyfrompathid = self.getFilePathId(row[0], updcur)
+                    assert(path_type != 'U')
                     updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                             linesadded, linesdeleted, entrytype, pathtype, lc_updated) \
                                     values(?, ?, ?, ?,?,?, ?,?,?,?)", (change.revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                             lc_added, lc_deleted, entry_type,path_type,lc_updated))
-                    addedfiles = addedfiles+1
-                        
+                    addedfiles = addedfiles+1                    
                     #print row
+                    
             elif( changetype == 'D' and change.lc_added()== 0 and change.lc_deleted() == 0):                
                 #data is deleted and possibly original path is a copied from another source.
                 filename = change.filepath_unicode()
@@ -212,9 +213,10 @@ class SVNLog2Sqlite:
                         lc_deleted = 0
                     #set lines added to 0
                     lc_added = 0
-                    pathtype = 'F'
+                    path_type = 'F'
                     if(row[0].endswith('/')):
-                       pathtype = 'D'                    
+                        path_type = 'D'
+                    assert(path_type != 'U')
                     changedpathid = self.getFilePathId(row[0], updcur)
                     copyfrompathid = self.getFilePathId(copyfrompath, updcur)
                     updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
