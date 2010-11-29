@@ -1,5 +1,5 @@
 
-SVNPlot - Ver 0.7.0
+SVNPlot - Ver 0.7.1
 
 ============
 Introduction
@@ -112,6 +112,8 @@ Changes from 0.6.x to 0.7.x
 3. Added svnstatscsv.py to export the basic statistics data to csv format.
 4. Merged the changes to export the network data from svn to Gephi. (Contributed by Oscar Castaneda
    from GSoC 2010).
+5. Fixes Issue 44. In cases svnlog2sqlite.py aborted with 'unknown node kind error'.
+6. Fixes the duplicate filenames with extra '/' characters in filenames (e.g. trunk/xyz.txt and trunk//xyz.txt)
 
 ============
 License
