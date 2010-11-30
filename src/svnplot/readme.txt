@@ -115,7 +115,7 @@ Changes from 0.6.x to 0.7.x
 5. Fixes Issue 44. In cases svnlog2sqlite.py aborted with 'unknown node kind error'.
 6. Fixes the duplicate filenames with extra '/' characters in filenames (e.g. trunk/xyz.txt and trunk//xyz.txt)
 7. Fixes issue 47 : wrong line count.
-
+8. Fixes issue 48 and 49.
 
 ============
 License
