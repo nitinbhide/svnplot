@@ -29,20 +29,27 @@ def convert2datetime(seconds):
     gmt = time.gmtime(seconds)
     return(datetime.datetime(gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec))
 
-def makeunicode(str):
-    if type(str) == types.StringType: 
-        str = unicode(str, 'utf-8')
-    return(str)
+def makeunicode(s):
+    encoding = 'utf-8'
+    errors='strict'
+    if not isinstance(s, basestring):        
+        return unicode(s).encode(encoding, errors)
+    elif isinstance(s, unicode):
+        return s.encode(encoding, errors)
+    else:
+        return unicode(s, encoding, errors)    
 
 def normurlpath(pathstr):
     '''
     normalize url path. I cannot use 'normpath' directory as it changes path seperator to 'os' default path seperator.
     '''
     nrmpath = pathstr
-    if( pathstr):
-        nrmpath = normpath(pathstr)
+    if( nrmpath):
+        nrmpath = normpath(nrmpath)
         #replace the '\\' to '/' in case 'normpath' call has changed the directory seperator.
         nrmpath = nrmpath.replace('\\', '/')
+        nrmpath = makeunicode(nrmpath)
+        
     return(nrmpath)
     
 def getDiffLineCountDict(diff_log):
@@ -597,7 +604,7 @@ class SVNChangeEntry:
         else:
             assert(isinstance(prev_revno, type(pysvn.Revision(pysvn.opt_revision_kind.number, 0))))
             prev_revno = prev_revno.number
-            
+        
         return(prev_revno)
             
     def filepath_unicode(self):
