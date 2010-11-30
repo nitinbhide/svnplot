@@ -417,6 +417,7 @@ def RunMain():
         except Exception, expinst:
             print "Error "
             print expinst
+            logging.exception("Found Error")
             #del conv            
         
 if( __name__ == "__main__"):
