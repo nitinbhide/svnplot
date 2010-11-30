@@ -305,11 +305,14 @@ class SVNLogClient:
                                diff_deleted=True)
         return diff_log
 
-    def getRevFileDiff(self, path, revno,prev_path=None,prev_rev=None):
+    def getRevFileDiff(self, path, revno,prev_path=None,prev_rev_no=None):
         if( prev_path == None):
             prev_path = path
 
-        rev1 = prev_rev or pysvn.Revision(pysvn.opt_revision_kind.number, revno-1)
+        if( prev_rev_no == None):
+            prev_rev_no = revno-1
+            
+        rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, prev_rev_no)        
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
         prevurl = self.getUrl(prev_path)
@@ -688,6 +691,7 @@ class SVNChangeEntry:
                 else:
                     #change type is 'changetype != 'A' and changetype != 'D'
                     #directory is modified
+                    
                     diff_log = self.logclient.getRevFileDiff(filepath, revno,prev_filepath, prev_revno)
                     diffDict = getDiffLineCountDict(diff_log)
                     #for single files the 'diff_log' contains only the 'name of file' and not full path.
