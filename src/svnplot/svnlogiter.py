@@ -30,15 +30,17 @@ def convert2datetime(seconds):
     return(datetime.datetime(gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec))
 
 def makeunicode(s):
-    encoding = 'utf-8'
-    errors='strict'
-    if not isinstance(s, basestring):        
-        return unicode(s).encode(encoding, errors)
-    elif isinstance(s, unicode):
-        return s.encode(encoding, errors)
-    else:
-        return unicode(s, encoding, errors)    
-
+    uns = s
+    
+    if(s):
+        encoding = 'utf8'
+        errors='strict'
+        if not isinstance(s, basestring):
+            uns = unicode(s).encode(encoding, errors)
+        elif not isinstance(s, unicode):            
+            uns=unicode(s, encoding, errors)            
+    return(uns)
+    
 def normurlpath(pathstr):
     '''
     normalize url path. I cannot use 'normpath' directory as it changes path seperator to 'os' default path seperator.
