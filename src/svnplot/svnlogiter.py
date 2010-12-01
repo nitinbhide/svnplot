@@ -736,8 +736,8 @@ class SVNRevLog:
         assert(self.revlog is not None)
         for change in self.revlog.changed_paths:
             change['path'] = normurlpath(change['path'])
-            if('copyfrom_path' in change):
-                change['copyfrom_path'] = normurlpath(change['copyfrom_path'])
+            assert('copyfrom_path' in change)
+            change['copyfrom_path'] = normurlpath(change['copyfrom_path'])
         
     def __updateCopyFromPaths(self):
         '''
@@ -752,7 +752,7 @@ class SVNRevLog:
         
         copyfrom_dict = dict()
         for change in self.revlog.changed_paths:            
-            if( change['action']=='A' and 'copyfrom_path' in change):
+            if( change['action']=='A' and change['copyfrom_path'] !=None):
                 curpath = change['path']
                 copyfrom_dict[curpath]=(change['copyfrom_path'], change['copyfrom_revision'])
                 
