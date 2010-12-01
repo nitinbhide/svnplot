@@ -33,12 +33,12 @@ def makeunicode(s):
     uns = s
     
     if(s):
-        encoding = 'utf8'
+        encoding = 'utf-8'
         errors='strict'
         if not isinstance(s, basestring):
             uns = unicode(s).encode(encoding, errors)
         elif not isinstance(s, unicode):            
-            uns=unicode(s, encoding, errors)            
+            uns=unicode(s, encoding, errors)        
     return(uns)
     
 def normurlpath(pathstr):
