@@ -403,12 +403,10 @@ class SVNLogClient:
             binary = self.__isBinaryFile(filepath, revno)
         return(binary)
     
-    def isDirectory(self, revno, changepath, changetype):
+    def isDirectory(self, revno, changepath):
         #if the file/dir is deleted in the current revision. Then the status needs to be checked for
         # one revision before that
-        logging.debug("isDirectory: path %s change type %s revno %d" % (changepath, changetype, revno))
-        if( changetype == 'D'):            
-            revno = revno-1
+        logging.debug("isDirectory: path %s revno %d" % (changepath, revno))
         isDir = False            
         
         try:
@@ -574,16 +572,23 @@ class SVNChangeEntry:
 
     def isDirectory(self):
         isDir = False
-        path = self.filepath()
-        action = self.changedpath['action']
+        filepath = self.filepath()
+        action = self.change_type()
+        revno = self.revno
+        if( action == 'D'):
+            #if change type is 'D' then reduce the 'revno' to appropriately detect the binary file type.
+            logging.debug("Found file deletion for <%s>" % filepath)
+            filepath = self.prev_filepath()
+            revno= self.prev_revno()
             
         #see if directory check is alredy done on this path. If not, then check with the repository        
         if( 'isdir' not in self.changedpath):
-            isDir = self.logclient.isDirectory(self.revno, path, action)
+            isDir = self.logclient.isDirectory(revno, filepath)
             self.changedpath['isdir'] = isDir
-            if( isDir and not path.endswith('/')):
+            filepath = self.filepath()
+            if( isDir and not filepath.endswith('/')):
                 #if it is directory then add trailing '/' to the path to denote the directory.
-                self.changedpath['path'] = path + '/'
+                self.changedpath['path'] = filepath + '/'
         else:
             isDir = self.changedpath['isdir']
         
@@ -659,16 +664,20 @@ class SVNChangeEntry:
             
         return(binary)    
                                            
-    def updateDiffLineCountFromDict(self, diffCountDict):        
+    def updateDiffLineCountFromDict(self, diffCountDict):
         if( 'lc_added' not in self.changedpath):
-            linesadded=0
-            linesdeleted=0
-            filename = self.filepath()
-            
-            if( diffCountDict!= None and not self.isBinaryFile() and diffCountDict.has_key(filename)):
-                linesadded, linesdeleted = diffCountDict[filename]
-                self.changedpath['lc_added'] = linesadded
-                self.changedpath['lc_deleted'] = linesdeleted
+            try:
+                linesadded=0
+                linesdeleted=0
+                filename = self.filepath()
+                
+                if( diffCountDict!= None and filename in diffCountDict and not self.isBinaryFile()):
+                    linesadded, linesdeleted = diffCountDict[filename]
+                    self.changedpath['lc_added'] = linesadded
+                    self.changedpath['lc_deleted'] = linesdeleted
+            except:
+                logging.exception("Diff LIne error")
+                raise
                 
                     
     def getDiffLineCount(self):
@@ -897,7 +906,7 @@ class SVNRevLog:
                 diffcountdict = getDiffLineCountDict(revdiff_log)
             
         except Exception, expinst:            
-            logging.error("Error %s" % expinst)
-            
+            logging.exception("Error in diffline count")
+                        
         return(diffcountdict)
                  
