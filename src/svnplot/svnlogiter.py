@@ -48,9 +48,9 @@ def normurlpath(pathstr):
     nrmpath = pathstr
     if( nrmpath):
         nrmpath = normpath(nrmpath)
-        #replace the '\\' to '/' in case 'normpath' call has changed the directory seperator.
-        nrmpath = nrmpath.replace('\\', '/')
         nrmpath = makeunicode(nrmpath)
+        #replace the '\\' to '/' in case 'normpath' call has changed the directory seperator.
+        nrmpath = nrmpath.replace(u'\\', u'/')
         
     return(nrmpath)
     
@@ -60,8 +60,8 @@ def getDiffLineCountDict(diff_log):
     dellnCount=0
     curfile=None
     diffCountDict = dict()
-    newfilediffstart = 'Index: '
-    newfilepropdiffstart = 'Property changes on: '
+    newfilediffstart = u'Index: '
+    newfilepropdiffstart = u'Property changes on: '
     for diffline in diffio:
         #remove the newline characters near the end of line
         diffline = diffline.rstrip()
@@ -74,7 +74,7 @@ def getDiffLineCountDict(diff_log):
             dellnCount = 0
             #Index line entry doesnot have '/' as start of file path. Hence add the '/'
             #so that path entries in revision log list match with the names in the 'diff count' dictionary
-            curfile = '/'+diffline[len(newfilediffstart):]
+            curfile = u'/'+diffline[len(newfilediffstart):]
         elif(diffline.find(newfilepropdiffstart)==0):
             #property modification diff has started. Ignore it.
             if(curfile != None):
@@ -114,14 +114,14 @@ class SVNLogClient:
         binaryextlist = []
         for binext in binextlist:
             binext = binext.strip()
-            binext = '.' + binext
+            binext = u'.' + binext
             binaryextlist.append(binext)
             binext = binext.upper()
             binaryextlist.append(binext)
         self.binaryextlist = tuple(binaryextlist)
 
     def set_user_password(self,username, password):
-        if( username != None and username != ''):
+        if( username != None and username != u''):
             self.username = username
             self.svnclient.set_default_username(self.username)
         if( password != None):
@@ -305,6 +305,7 @@ class SVNLogClient:
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                         recurse=True,ignore_ancestry=True,ignore_content_type=False,
                                diff_deleted=True)
+        diff_log = makeunicode(diff_log)
         return diff_log
 
     def getRevFileDiff(self, path, revno,prev_path=None,prev_rev_no=None):
@@ -327,6 +328,7 @@ class SVNLogClient:
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                     recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                diff_deleted=True)
+        diff_log = makeunicode(diff_log)
         
         return(diff_log)
     
@@ -707,8 +709,8 @@ class SVNChangeEntry:
                     diffDict = getDiffLineCountDict(diff_log)
                     #for single files the 'diff_log' contains only the 'name of file' and not full path.
                     #Hence to need to 'extract' the filename from full filepath
-                    filename = '/'+filepath.rsplit('/', 2)[-1]
-                    #The dictionary may not have the filename key if only properties are modfiied.
+                    filename = u'/'+filepath.rsplit(u'/', 2)[-1]
+                    #The dictionary may have the filename key if only properties are modfiied.
                     if(diffDict.has_key(filename) == True):
                         added, deleted = diffDict[filename]
                     
