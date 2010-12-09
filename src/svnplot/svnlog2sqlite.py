@@ -53,13 +53,15 @@ class SVNLog2Sqlite:
                 (startrevno, endrevno) = self.svnclient.findStartEndRev(svnrevstartdate, svnrevenddate)
                 self.printVerbose("Start-End Rev no : %d-%d" % (startrevno, endrevno))
                 startrevno = max(startrevno,laststoredrev+1) 
-                self.ConvertRevs(startrevno, endrevno, bUpdLineCount, maxtrycount)
+                self.ConvertRevs(startrevno, endrevno, bUpdLineCount)
+                #every thing is ok. Commit the changes.
+                self.dbcon.commit()
             except Exception, expinst:
                 logging.exception("Found Error %s" % expinst)
+                self.dbcon.rollback()
                 print "Found Error %s" % expinst
-                print "Trying again (%d)" % (trycount+1)
-            finally:                        
-                self.dbcon.commit()
+                print "rolled back recent changes"
+                print "Trying again (%d)" % (trycount+1)            
                 
         self.closedb()
         
@@ -100,7 +102,7 @@ class SVNLog2Sqlite:
             
         return(id)
     
-    def ConvertRevs(self, startrev, endrev, bUpdLineCount, maxtrycount=3):
+    def ConvertRevs(self, startrev, endrev, bUpdLineCount):
         self.printVerbose("Converting revisions %d to %d" % (startrev, endrev))
         if( startrev < endrev):
             querycur = self.dbcon.cursor()
@@ -145,8 +147,10 @@ class SVNLog2Sqlite:
                             updcur.execute("UPDATE SVNLog SET addedfiles=?, deletedfiles=? where revno=?",(addedfiles,deletedfiles,revlog.revno))
                             
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
-                    lastrevno = revlog.revno
+                    lastrevno = revlog.revno                    
                     #commit after every change
+                    if( revcount % 10 == 0):
+                        self.dbcon.commit()                        
                 logging.debug("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
                 self.printVerbose("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
 
