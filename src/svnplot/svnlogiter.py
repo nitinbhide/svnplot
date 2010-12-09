@@ -774,8 +774,7 @@ class SVNRevLog:
                 if( change['action']=='D'):
                     curfilepath = change['path']
                     for curpath, (copyfrompath, copyfromrev) in copyfrom_dict.iteritems():
-                        if(curfilepath.startswith(curpath)):
-                            assert(change['copyfrom_path'] is None)
+                        if(curfilepath.startswith(curpath) and change['copyfrom_path'] is None):
                             assert(change['copyfrom_revision'] is None)
                             change['copyfrom_path'] = curfilepath.replace(curpath, copyfrompath,1)
                             change['copyfrom_revision'] = copyfromrev                    
@@ -885,6 +884,7 @@ class SVNRevLog:
         rooturl = self.logclient.getRootUrl()
         if( rooturl.startswith('file://')):
             usefilerevdiff=True
+        usefilerevdiff=False
         return(usefilerevdiff)
         
     def __updateDiffCount(self):
