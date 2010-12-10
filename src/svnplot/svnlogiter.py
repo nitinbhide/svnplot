@@ -806,12 +806,15 @@ class SVNRevLog:
                 isdir = change.isDirectory()
                 if( isdir == False):
                     action = change.change_type()                
-                    if( action == 'M'):
-                        fileschanged = fileschanged +1
-                    elif(action == 'A'):
+                    if(action == 'A'):
                         filesadded = filesadded+1
                     elif(action == 'D'):
                         filesdeleted = filesdeleted+1
+                    else:
+                        #action can be 'M' or 'R'
+                        assert(action == 'M' or action=='R')
+                        fileschanged = fileschanged +1
+                    
         return(filesadded, fileschanged, filesdeleted)
                     
     def getDiffLineCount(self, bUpdLineCount=True):
@@ -884,7 +887,13 @@ class SVNRevLog:
         rooturl = self.logclient.getRootUrl()
         if( rooturl.startswith('file://')):
             usefilerevdiff=True
-        usefilerevdiff=False
+        if( not usefilerevdiff ):
+            #check if there are additions or deletions. If yes, then use 'file level diff' to
+            #avoid memory errors in large number of file additions or deletions.
+            fadded, fchanged, fdeleted = self.changedFileCount()
+            if( fadded > 1 or fdeleted > 1):
+                usefilerevdiff=True
+            
         return(usefilerevdiff)
         
     def __updateDiffCount(self):
