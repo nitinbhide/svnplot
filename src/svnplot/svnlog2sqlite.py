@@ -370,7 +370,7 @@ def RunMain():
     parser.set_defaults(updlinecount=False)
 
     parser.add_option("-l", "--linecount", action="store_true", dest="updlinecount", default=False,
-                      help="update changed line count (True/False). Default is False")
+                      help="extract/update changed line count (True/False). Default is False")
     parser.add_option("-g", "--log", action="store_true", dest="enablelogging", default=False,
                       help="Enable logging during the execution(True/False). Name of generate logfile is svnlog2sqlite.log.")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
@@ -400,8 +400,10 @@ def RunMain():
         try:
             print "Updating the subversion log"
             print "Repository : %s" % svnrepopath            
-            print "Log database filepath : %s" % sqlitedbpath
-            print "Update Changed Line Count : %s" % options.updlinecount
+            print "SVN Log database filepath : %s" % sqlitedbpath
+            print "Extract Changed Line Count : %s" % options.updlinecount
+            if( options.updlinecount):
+                print "\t\tplease use -l option. if you want to extract linecount information."
             if( svnrevstartdate):
                 print "Repository startdate: %s" % (svnrevstartdate)
             if( svnrevenddate):
@@ -413,7 +415,7 @@ def RunMain():
                         format='%(asctime)s %(levelname)s %(message)s',
                         filename=logfile,
                         filemode='w')
-                print "Logging to file %s" % logfile
+                print "Debug Logging to file %s" % logfile
 
             conv = None            
             conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose, username=options.username, password=options.password)
