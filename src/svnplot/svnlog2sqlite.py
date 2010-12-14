@@ -402,7 +402,7 @@ def RunMain():
             print "Repository : %s" % svnrepopath            
             print "SVN Log database filepath : %s" % sqlitedbpath
             print "Extract Changed Line Count : %s" % options.updlinecount
-            if( options.updlinecount):
+            if( not options.updlinecount):
                 print "\t\tplease use -l option. if you want to extract linecount information."
             if( svnrevstartdate):
                 print "Repository startdate: %s" % (svnrevstartdate)
