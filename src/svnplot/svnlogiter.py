@@ -60,8 +60,8 @@ def getDiffLineCountDict(diff_log):
     dellnCount=0
     curfile=None
     diffCountDict = dict()
-    newfilediffstart = u'Index: '
-    newfilepropdiffstart = u'Property changes on: '
+    newfilediffstart = 'Index: '
+    newfilepropdiffstart = 'Property changes on: '
     for diffline in diffio:
         #remove the newline characters near the end of line
         diffline = diffline.rstrip()
@@ -305,7 +305,6 @@ class SVNLogClient:
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                         recurse=True,ignore_ancestry=True,ignore_content_type=False,
                                diff_deleted=True)
-        diff_log = makeunicode(diff_log)
         return diff_log
 
     def getRevFileDiff(self, path, revno,prev_path=None,prev_rev_no=None):
@@ -328,7 +327,6 @@ class SVNLogClient:
         diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                     recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                diff_deleted=True)
-        diff_log = makeunicode(diff_log)
         
         return(diff_log)
     
