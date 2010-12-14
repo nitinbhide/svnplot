@@ -898,7 +898,13 @@ class SVNRevLog:
             fadded, fchanged, fdeleted = self.changedFileCount()
             if( fadded > 1 or fdeleted > 1):
                 usefilerevdiff=True
-            
+        
+        #For the time being always return True, as in case of 'revision level' diff filenames returned
+        #in the diff are different than the filename returned by the svn log. hence this will result
+        #wrong linecount computation. So far, I don't have good fix for this condition. Hence falling
+        #back to using 'file level' diffs. This will result in multiple calls to repository and hence
+        # will be slower but linecount data will be  more reliable. -- Nitin (15 Dec 2010)
+        usefilerevdiff=True
         return(usefilerevdiff)
         
     def __updateDiffCount(self):
