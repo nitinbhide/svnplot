@@ -84,7 +84,10 @@ def getDiffLineCountDict(diff_log):
             #property modification diff has started. Ignore it.
             if(curfile != None):
                 diffCountDict[curfile] = (addlnCount, dellnCount)
-            curfile = None
+            curfile = u'/'+diffline[len(newfilepropdiffstart):]
+            #only properties are modified. there is no content change. hence set the line count to 0,0
+            if( curfile not in diffCountDict):
+                diffCountDict[curfile] = (0, 0)
         elif(diffline.find('---')==0 or diffline.find('+++')==0 or diffline.find('@@')==0 or diffline.find('===')==0):                
             continue
         elif(diffline.find('-')==0):
@@ -710,17 +713,11 @@ class SVNChangeEntry:
                     
                     diff_log = self.logclient.getRevFileDiff(filepath, revno,prev_filepath, prev_revno)
                     diffDict = getDiffLineCountDict(diff_log)
+                    assert(len(diffDict)==1)
                     #for single files the 'diff_log' contains only the 'name of file' and not full path.
                     #Hence to need to 'extract' the filename from full filepath
                     filename = u'/'+filepath.rsplit(u'/', 2)[-1]
-                    #The dictionary may not have the filename key if only properties are modfiied.
-                    logging.debug("Diff dict length %d" % len(diffDict))
-                    logging.debug("filename : %s" % filename)
-                    logging.debug(diffDict)
-                    assert(len(diffDict)==0 or filename in diffDict)
-                    
-                    if(filename in diffDict):
-                        added, deleted = diffDict[filename]                    
+                    fname, (added, deleted) = diffDict.popitem()                    
                     
             logging.debug("DiffLineCount %d : %s : %s : %d : %d " % (revno, filename, changetype, added, deleted))
             self.changedpath['lc_added'] = added
