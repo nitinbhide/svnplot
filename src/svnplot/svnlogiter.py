@@ -16,7 +16,7 @@ an sqlite database.
 import pysvn
 import datetime, time
 import os, re, string
-import StringIO
+from StringIO import StringIO
 import urllib, urlparse
 import logging
 import getpass
@@ -35,10 +35,13 @@ def makeunicode(s):
     if(s):
         encoding = 'utf-8'
         errors='strict'
-        if not isinstance(s, basestring):
-            uns = unicode(s).encode(encoding, errors)
-        elif not isinstance(s, unicode):            
-            uns=unicode(s, encoding, errors)        
+        if not isinstance(s, unicode):
+            try:
+                #try utf-8 first.If that doesnot work, then try 'latin_1'
+                uns=unicode(s, encoding, errors)
+            except UnicodeDecodeError:
+                uns=unicode(s, 'latin_1', errors)
+        assert(isinstance(uns, unicode))
     return(uns)
     
 def normurlpath(pathstr):
@@ -55,7 +58,8 @@ def normurlpath(pathstr):
     return(nrmpath)
     
 def getDiffLineCountDict(diff_log):
-    diffio = StringIO.StringIO(diff_log)
+    diff_log = makeunicode(diff_log)
+    diffio = StringIO(diff_log)
     addlnCount=0
     dellnCount=0
     curfile=None
@@ -74,6 +78,7 @@ def getDiffLineCountDict(diff_log):
             dellnCount = 0
             #Index line entry doesnot have '/' as start of file path. Hence add the '/'
             #so that path entries in revision log list match with the names in the 'diff count' dictionary
+            logging.debug(diffline)
             curfile = u'/'+diffline[len(newfilediffstart):]
         elif(diffline.find(newfilepropdiffstart)==0):
             #property modification diff has started. Ignore it.
@@ -676,7 +681,7 @@ class SVNChangeEntry:
                     self.changedpath['lc_added'] = linesadded
                     self.changedpath['lc_deleted'] = linesdeleted
             except:
-                logging.exception("Diff LIne error")
+                logging.exception("Diff Line error")
                 raise
                 
                     
@@ -708,9 +713,14 @@ class SVNChangeEntry:
                     #for single files the 'diff_log' contains only the 'name of file' and not full path.
                     #Hence to need to 'extract' the filename from full filepath
                     filename = u'/'+filepath.rsplit(u'/', 2)[-1]
-                    #The dictionary may have the filename key if only properties are modfiied.
-                    if(diffDict.has_key(filename) == True):
-                        added, deleted = diffDict[filename]
+                    #The dictionary may not have the filename key if only properties are modfiied.
+                    logging.debug("Diff dict length %d" % len(diffDict))
+                    logging.debug("filename : %s" % filename)
+                    logging.debug(diffDict)
+                    assert(len(diffDict)==0 or filename in diffDict)
+                    
+                    if(filename in diffDict):
+                        added, deleted = diffDict[filename]                    
                     
             logging.debug("DiffLineCount %d : %s : %s : %d : %d " % (revno, filename, changetype, added, deleted))
             self.changedpath['lc_added'] = added
