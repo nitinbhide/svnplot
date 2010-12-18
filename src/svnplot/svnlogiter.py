@@ -54,6 +54,8 @@ def normurlpath(pathstr):
         nrmpath = makeunicode(nrmpath)
         #replace the '\\' to '/' in case 'normpath' call has changed the directory seperator.
         nrmpath = nrmpath.replace(u'\\', u'/')
+        if( pathstr.endswith('/') or pathstr.endswith('\\')):
+            nrmpath = nrmpath + u'/'
         
     return(nrmpath)
     
@@ -570,48 +572,59 @@ class SVNChangeEntry:
         self.logclient = parent.logclient
         self.revno = parent.getRevNo()
         self.changedpath = changedpath
-
+            
+    def __normalizepath(self):
+        self.changedpath['path'] = normurlpath(self.changedpath['path'])
+        assert('copyfrom_path' in self.changedpath)
+        self.changedpath['copyfrom_path'] = normurlpath(self.changedpath['path'])
+        
     def isValidChange(self):
         '''
         check the changed path is valid for the 'given' repository path. All paths are valid
         if the repository path is same is repository 'root'
         '''
         return(self.logclient.isChildPath(self.filepath()))
-
-    def isDirectory(self):
-        isDir = False
-        filepath = self.filepath()
-        action = self.change_type()
-        revno = self.revno
-        if( action == 'D'):
-            #if change type is 'D' then reduce the 'revno' to appropriately detect the binary file type.
-            logging.debug("Found file deletion for <%s>" % filepath)
-            filepath = self.prev_filepath()
-            revno= self.prev_revno()
-            
-        #see if directory check is alredy done on this path. If not, then check with the repository        
-        if( 'isdir' not in self.changedpath):
-            isDir = self.logclient.isDirectory(revno, filepath)
-            self.changedpath['isdir'] = isDir
+    
+    def __updatePathType(self):
+        '''
+        Update the path type of change entry. 
+        '''
+        if( 'pathtype' not in self.changedpath):
             filepath = self.filepath()
-            if( isDir and not filepath.endswith('/')):
+            action = self.change_type()
+            revno = self.revno
+            if( action == 'D'):
+                #if change type is 'D' then reduce the 'revno' to appropriately detect the binary file type.
+                logging.debug("Found file deletion for <%s>" % filepath)
+                filepath = self.prev_filepath()
+                assert(filepath != None)            
+                revno= self.prev_revno()
+                
+            #see if directory check is alredy done on this path. If not, then check with the repository        
+            pathtype = 'F'
+            if(self.logclient.isDirectory(revno, filepath) ==True):
+                pathtype='D'
+            self.changedpath['pathtype'] = pathtype
+            #filepath may changed in case of 'delete' action.
+            filepath = self.filepath()
+            if( pathtype=='D' and not filepath.endswith('/')):
                 #if it is directory then add trailing '/' to the path to denote the directory.
-                self.changedpath['path'] = filepath + '/'
-        else:
-            isDir = self.changedpath['isdir']
+                self.changedpath['path'] = filepath + '/'                
         
-        return(isDir)
+    def isDirectory(self):
+        self.__updatePathType()
+        return(self.changedpath['pathtype'] == 'D')        
 
     def change_type(self):
         return(self.changedpath['action'])
     
     def filepath(self):
-        nrmpath = normurlpath(self.changedpath['path'])
-        return(nrmpath)
+        fpath = normlurlpath(self.changedpath['path'])        
+        return(fpath)
     
     def prev_filepath(self):
         prev_filepath = self.changedpath.get('copyfrom_path')
-        if(prev_filepath == None):
+        if(prev_filepath ==None or len(prev_filepath) ==0):
             prev_filepath = self.filepath()
         return (prev_filepath)
         
@@ -638,7 +651,6 @@ class SVNChangeEntry:
 
     def copyfrom(self):
         path = self.changedpath['copyfrom_path']
-        path = makeunicode(normurlpath(path))
         rev  = self.changedpath['copyfrom_revision']
         revno = None
         if( rev != None):
@@ -651,10 +663,8 @@ class SVNChangeEntry:
         '''
         path type is (F)ile or (D)irectory
         '''
-        pathtype = 'F'
-        isdir = self.changedpath.get('isdir', False)
-        if( isdir == True):
-            pathtype = 'D'
+        self.__updatePathType()
+        pathtype = self.changedpath['pathtype']
         return(pathtype)
 
     def isBinaryFile(self):
@@ -781,7 +791,7 @@ class SVNRevLog:
                     for curpath, (copyfrompath, copyfromrev) in copyfrom_dict.iteritems():
                         if(curfilepath.startswith(curpath) and change['copyfrom_path'] is None):
                             assert(change['copyfrom_revision'] is None)
-                            change['copyfrom_path'] = curfilepath.replace(curpath, copyfrompath,1)
+                            change['copyfrom_path'] = normurlpath(curfilepath.replace(curpath, copyfrompath,1))
                             change['copyfrom_revision'] = copyfromrev                    
                 
     def getChangeEntries(self):

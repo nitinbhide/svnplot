@@ -132,6 +132,8 @@ class SVNLog2Sqlite:
                         copyfrompath,copyfromrev = change.copyfrom()
                         entry_type = 'R' #Real log entry.
                         pathtype = change.pathtype()
+                        if(pathtype=='D'):
+                            assert(filename.endswith('/')==True)
                         changepathid = self.getFilePathId(filename, updcur)
                         copyfromid = self.getFilePathId(copyfrompath,updcur)
                         updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
@@ -172,12 +174,14 @@ class SVNLog2Sqlite:
             #since we may have to query the existing data. Commit the changes first.
             self.dbcon.commit()
             
-            copyfrompath, copyfromrev = change.copyfrom()            
+            copyfrompath, copyfromrev = change.copyfrom()
+            changepath = change.filepath()
             path_type = 'U' #set path type to unknown
             if(changetype == 'A' and copyfrompath != None):
                 #the data is copied from an existing source path.
-                querycur.execute("select changedpath, sum(linesadded), sum(linesdeleted) from SVNLogDetailVw where changedpath LIKE ? and revno < ? \
-                                group by changedpath",("%s%%"%copyfrompath, copyfromrev))
+                querycur.execute("select changedpath, sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
+                        where changedpath LIKE ? and changedpath != ? and revno < ? \
+                                group by changedpath",("%s%%"%copyfrompath, changepath, copyfromrev))
 
                 for row in querycur:
                     #set lines added to current line count
@@ -188,6 +192,7 @@ class SVNLog2Sqlite:
                     lc_deleted = 0
 
                     filename = row[0].replace(copyfrompath, change.filepath_unicode(), 1)
+                    filename = svnlogiter.normurlpath(filename)
                     path_type = 'F'
                     if(filename.endswith('/')):
                        path_type = 'D'
@@ -204,11 +209,14 @@ class SVNLog2Sqlite:
             elif( changetype == 'D' and change.lc_added()== 0 and change.lc_deleted() == 0):                
                 #data is deleted and possibly original path is a copied from another source.
                 filename = change.filepath_unicode()
-
-                sqlquery = "select changedpath, sum(linesadded), sum(linesdeleted) from SVNLogDetailVw where changedpath LIKE '%s' and revno < %d \
-                                group by changedpath" % ("%s%%"%filename, change.revno)
-                querycur.execute('select changedpath, sum(linesadded), sum(linesdeleted) from SVNLogDetailVw where changedpath LIKE ? and revno < ? \
-                                group by changedpath',("%s%%"%filename, change.revno))
+                if( change.pathtype() == 'D'):
+                    assert(filename.endswith('/'))
+                sqlquery = "select changedpath, sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
+                           where changedpath LIKE '%s' and revno < %d \
+                            group by changedpath" % ("%s%%"%filename, change.revno)
+                querycur.execute('select changedpath, sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
+                                where changedpath LIKE ? and changedpath != ? and revno < ? \
+                                group by changedpath',("%s%%"%filename, filename, change.revno))
                 
                 for row in querycur:
                     #set lines deleted to current line count
@@ -295,7 +303,7 @@ class SVNLog2Sqlite:
         #update SVNLogDetail set lc_updated ='Y' ## Use 'Y' or 'N' as appropriate.
 
         #because of some bug in old code sometimes path contains '//' or '.'. Uncomment the line to Fix such paths
-        self.__fixPaths()
+        #self.__fixPaths()
         
     def __fixPaths(self):
         '''
