@@ -312,9 +312,17 @@ class SVNLogClient:
         diff_log = None
         
         logging.info("Trying to get revision diffs url:%s" % url)
-        diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
+        try:
+            diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                         recurse=True,ignore_ancestry=True,ignore_content_type=False,
                                diff_deleted=True)
+            
+        except:
+            logging.exception("Error in getting revision diff")
+            logging.debug("revno =%d", revno)
+            logging.debug("prev renvo = %d", revno-1)
+            raise
+        
         return diff_log
 
     def getRevFileDiff(self, path, revno,prev_path=None,prev_rev_no=None):
@@ -334,9 +342,17 @@ class SVNLogClient:
         logging.debug("revision : %d, url=%s" % (revno, url))
         logging.debug("prev url=%s" % (prevurl))
         
-        diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
-                    recurse=True, ignore_ancestry=False,ignore_content_type=False,
-                               diff_deleted=True)
+        try:
+            diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
+                        recurse=True, ignore_ancestry=False,ignore_content_type=False,
+                                   diff_deleted=True)
+        except:
+            logging.exception("Error in getting file level revision diff")
+            logging.debug("url : %s" % url)
+            logging.debug("previous url : %s" % prevurl)
+            logging.debug("revno =%d", revno)
+            logging.debug("prev renvo = %d", prev_rev_no)
+            raise
         
         return(diff_log)
     
@@ -619,7 +635,7 @@ class SVNChangeEntry:
         return(self.changedpath['action'])
     
     def filepath(self):
-        fpath = normlurlpath(self.changedpath['path'])        
+        fpath = normurlpath(self.changedpath['path'])        
         return(fpath)
     
     def prev_filepath(self):
