@@ -593,14 +593,7 @@ class SVNChangeEntry:
         self.changedpath['path'] = normurlpath(self.changedpath['path'])
         assert('copyfrom_path' in self.changedpath)
         self.changedpath['copyfrom_path'] = normurlpath(self.changedpath['path'])
-        
-    def isValidChange(self):
-        '''
-        check the changed path is valid for the 'given' repository path. All paths are valid
-        if the repository path is same is repository 'root'
-        '''
-        return(self.logclient.isChildPath(self.filepath()))
-    
+
     def __updatePathType(self):
         '''
         Update the path type of change entry. 
@@ -626,6 +619,25 @@ class SVNChangeEntry:
             if( pathtype=='D' and not filepath.endswith('/')):
                 #if it is directory then add trailing '/' to the path to denote the directory.
                 self.changedpath['path'] = filepath + '/'                
+        
+    def isValidChange(self):
+        '''
+        check the changed path is valid for the 'given' repository path. All paths are valid
+        if the repository path is same is repository 'root'
+        '''
+        return(self.logclient.isChildPath(self.filepath()))
+    
+    def is_branchtag(self):
+        '''
+        Is this entry represent a branch or tag.
+        '''
+        branchtag = False
+        if( self.changedpath['action']=='A'):        
+            path = self.changedpath['copyfrom_path']
+            rev  = self.changedpath['copyfrom_revision']
+            if( path != None or rev != None):
+                branchtag = True
+        return(branchtag)
         
     def isDirectory(self):
         self.__updatePathType()
