@@ -170,6 +170,7 @@ class SVNLog2Sqlite:
         lc_updated = 'Y'
         addedfiles = 0
         deletedfiles = 0
+        #Path type is directory then dummy entries are required. For file type, 'real' entries will get creaetd                
         if( (changetype == 'D' or changetype=='A') and change.isDirectory()):
             #since we may have to query the existing data. Commit the changes first.
             self.dbcon.commit()
@@ -206,14 +207,11 @@ class SVNLog2Sqlite:
                     addedfiles = addedfiles+1                    
                     #print row
                     
-            elif( changetype == 'D' and change.lc_added()== 0 and change.lc_deleted() == 0):                
+            elif( changetype == 'D'):
                 #data is deleted and possibly original path is a copied from another source.
                 filename = change.filepath_unicode()
                 if( change.pathtype() == 'D'):
                     assert(filename.endswith('/'))
-                sqlquery = "select changedpath, sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
-                           where changedpath LIKE '%s' and revno < %d \
-                            group by changedpath" % ("%s%%"%filename, change.revno)
                 querycur.execute('select changedpath, sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
                                 where changedpath LIKE ? and changedpath != ? and revno < ? \
                                 group by changedpath',("%s%%"%filename, filename, change.revno))
