@@ -332,29 +332,30 @@ class SVNLogClient:
         if( prev_rev_no == None):
             prev_rev_no = revno-1
             
-        rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, prev_rev_no)
-        rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
-        url = self.getUrl(path)
-        prevurl = self.getUrl(prev_path)
+        cur_url = self.getUrl(path)
+        cur_rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+        prev_url = self.getUrl(prev_path)
+        prev_rev = pysvn.Revision(pysvn.opt_revision_kind.number, prev_rev_no)
         diff_log = None
         
         logging.debug("Getting filelevel revision diffs")
-        logging.debug("revision : %d, url=%s" % (revno, url))
-        logging.debug("prev url=%s" % prevurl)
+        logging.debug("revision : %d, url=%s" % (revno, cur_url))
+        logging.debug("prev url=%s" % prev_url)
         
         try:
-            diff_log = self.svnclient.diff(self.tmppath, url_or_path=url, revision1=rev1,
-                        url_or_path2=prevurl , revision2=rev2,
+            diff_log = self.svnclient.diff(self.tmppath, url_or_path=prev_url, revision1=prev_rev,
+                        url_or_path2=cur_url , revision2=cur_rev,
                         recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                    diff_deleted=True)
         except:
             logging.exception("Error in getting file level revision diff")
-            logging.debug("url : %s" % url)
-            logging.debug("previous url : %s" % prevurl)
+            logging.debug("url : %s" % cur_url)
+            logging.debug("previous url : %s" % prev_url)
             logging.debug("revno =%d", revno)
             logging.debug("prev renvo = %d", prev_rev_no)
             raise
         
+        print diff_log
         return(diff_log)
     
     def getInfo(self, path, revno):
