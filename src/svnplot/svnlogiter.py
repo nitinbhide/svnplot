@@ -332,7 +332,7 @@ class SVNLogClient:
         if( prev_rev_no == None):
             prev_rev_no = revno-1
             
-        rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, prev_rev_no)        
+        rev1 = pysvn.Revision(pysvn.opt_revision_kind.number, prev_rev_no)
         rev2 = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
         prevurl = self.getUrl(prev_path)
@@ -340,10 +340,11 @@ class SVNLogClient:
         
         logging.debug("Getting filelevel revision diffs")
         logging.debug("revision : %d, url=%s" % (revno, url))
-        logging.debug("prev url=%s" % (prevurl))
+        logging.debug("prev url=%s" % prevurl)
         
         try:
-            diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
+            diff_log = self.svnclient.diff(self.tmppath, url_or_path=url, revision1=rev1,
+                        url_or_path2=prevurl , revision2=rev2,
                         recurse=True, ignore_ancestry=False,ignore_content_type=False,
                                    diff_deleted=True)
         except:
@@ -733,7 +734,7 @@ class SVNChangeEntry:
         if( 'lc_added' not in self.changedpath):
             revno = self.revno
             filepath = self.filepath()
-            changetype = self.changedpath['action']
+            changetype = self.change_type()
             prev_filepath = self.prev_filepath()
             prev_revno = self.prev_revno()
             filename = filepath
@@ -967,6 +968,7 @@ class SVNRevLog:
             
         except Exception, expinst:            
             logging.exception("Error in diffline count")
+            raise
                         
         return(diffcountdict)
                  
