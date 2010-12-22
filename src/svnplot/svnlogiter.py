@@ -355,7 +355,6 @@ class SVNLogClient:
             logging.debug("prev renvo = %d", prev_rev_no)
             raise
         
-        print diff_log
         return(diff_log)
     
     def getInfo(self, path, revno):
