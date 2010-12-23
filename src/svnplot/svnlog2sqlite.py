@@ -114,6 +114,7 @@ class SVNLog2Sqlite:
             if( bUpdLineCount == True):
                 lc_updated = 'Y'
             lastrevno = 0
+            bAddDummy=True
             for revlog in svnloglist:
                 logging.debug("Revision author:%s" % revlog.author)
                 logging.debug("Revision date:%s" % revlog.date)
@@ -141,7 +142,7 @@ class SVNLog2Sqlite:
                                     values(?, ?, ?, ?,?,?, ?,?,?,?)", (revlog.revno, changepathid, changetype, copyfromid, copyfromrev, \
                                             linesadded, linesdeleted, lc_updated, pathtype, entry_type))
 
-                        if( bUpdLineCount == True):
+                        if( bUpdLineCount == True and bAddDummy==True):
                             #dummy entries may add additional added/deleted file entries.
                             (addedfiles1, deletedfiles1) = self.addDummyLogDetail(change,querycur,updcur)
                             addedfiles = addedfiles+addedfiles1
