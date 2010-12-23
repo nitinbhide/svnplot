@@ -818,6 +818,10 @@ class SVNRevLog:
                 if( change['action']=='D'):
                     curfilepath = change['path']
                     for curpath, (copyfrompath, copyfromrev) in copyfrom_dict.iteritems():
+                        #change the curpath to 'directory name'. otherwise it doesnot make sense to add a copy path entry
+                        #for example 'curpath' /trunk/xxx and there is also a deleted entry called '/trunk/xxxyyy'. then in such
+                        #case don't replace the 'copyfrom_path'. replace it only if entry is '/trunk/xxx/yyy'
+                        curpath = curpath + '/'
                         if(curfilepath.startswith(curpath) and change['copyfrom_path'] is None):
                             assert(change['copyfrom_revision'] is None)
                             change['copyfrom_path'] = normurlpath(curfilepath.replace(curpath, copyfrompath,1))
