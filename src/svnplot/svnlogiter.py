@@ -700,14 +700,18 @@ class SVNChangeEntry:
         '''
         if the change is in a binary file.        
         '''
-        revno = self.revno
-        filepath = self.filepath()
-        if( self.change_type() == 'D'):
-            #if change type is 'D' then reduce the 'revno' to appropriately detect the binary file type.
-            logging.debug("Found file deletion for <%s>" % filepath)
-            filepath = self.prev_filepath()
-            revno= self.prev_revno()
-        binary = self.logclient.isBinaryFile(filepath, revno)
+        binary=False
+        #check detailed binary check only if the change entry is of a file.
+        if( self.pathtype() == 'F'):
+            revno = self.revno
+            filepath = self.filepath()
+            
+            if( self.change_type() == 'D'):
+                #if change type is 'D' then reduce the 'revno' to appropriately detect the binary file type.
+                logging.debug("Found file deletion for <%s>" % filepath)
+                filepath = self.prev_filepath()
+                revno= self.prev_revno()
+            binary = self.logclient.isBinaryFile(filepath, revno)
             
         return(binary)    
                                            
