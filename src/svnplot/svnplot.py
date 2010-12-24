@@ -24,7 +24,7 @@ Graph types to be supported
 11. directory size pie chart (latest status) -- Done
 12. Directory file count pie char(latest status) -- Done
 13. Loc and Churn graph (loc vs date, churn vs date)- Churn is number of lines touched
-	(i.e. lines added + lines deleted + lines modified) -- Done
+    (i.e. lines added + lines deleted + lines modified) -- Done
 14. Repository Activity Index (using exponential decay) -- Done
 15. Repository heatmap (treemap)
 16. Tag cloud of words in commit log message.
@@ -478,11 +478,12 @@ class SVNPlot(SVNPlotMatplotLib):
         for dirname in dirlist:
             ax = self._drawDirectorySizeLineGraphByDir(dirname, ax)
 
-        self._addFigureLegend(ax, dirlist, loc="center right", ncol=1)
-            
-        ax.set_title('Directory Size (Lines of Code)')
-        ax.set_ylabel('Lines')        
-        self._closeDateLineGraph(ax, filename)            
+        if( ax):
+            self._addFigureLegend(ax, dirlist, loc="center right", ncol=1)
+                
+            ax.set_title('Directory Size (Lines of Code)')
+            ax.set_ylabel('Lines')        
+            self._closeDateLineGraph(ax, filename)
     
     def AuthorsCommitTrend(self, filename):
         self._printProgress("Calculating Author commits trend histogram graph")
