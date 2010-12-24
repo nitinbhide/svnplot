@@ -29,8 +29,7 @@ BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'od
                  'bmp', 'dib', 'jpg', 'jpeg', 'png', 'gif', 'ico', 'pcd', 'wmf', 'emf', 'xcf', 'tiff', 'xpm',
                  'gho', 'mp3', 'wma', 'wmv','wav','avi'
                  ]
-
-
+    
 class SVNLog2Sqlite:
     def __init__(self, svnrepopath, sqlitedbpath,verbose=False,**kwargs):
         username=kwargs.pop('username', None)
@@ -57,12 +56,10 @@ class SVNLog2Sqlite:
                 #every thing is ok. Commit the changes.
                 self.dbcon.commit()
             except Exception, expinst:
-                logging.exception("Found Error %s" % expinst)
-                self.dbcon.rollback()
-                print "Found Error %s" % expinst
-                print "rolled back recent changes"
+                logging.exception("Found Error")
+                self.svnexception_handler(expinst)
                 print "Trying again (%d)" % (trycount+1)            
-                
+        
         self.closedb()
         
     def initdb(self):
@@ -72,6 +69,16 @@ class SVNLog2Sqlite:
     def closedb(self):
         self.dbcon.commit()
         self.dbcon.close()
+
+    def svnexception_handler(self, expinst):
+        '''
+        decide to continue or exit on the svn exception.
+        '''
+        self.dbcon.rollback()
+        print "Found Error. Rolled back recent changes"
+        exitAdvised = self.svnclient.printSvnErrorHint(expinst)
+        if( exitAdvised):
+            exit(1)
         
     def getLastStoredRev(self):
         cur = self.dbcon.cursor()
@@ -404,34 +411,28 @@ def RunMain():
         if( not svnrepopath.endswith('/')):
             svnrepopath = svnrepopath+'/'
 
-        try:
-            print "Updating the subversion log"
-            print "Repository : %s" % svnrepopath            
-            print "SVN Log database filepath : %s" % sqlitedbpath
-            print "Extract Changed Line Count : %s" % options.updlinecount
-            if( not options.updlinecount):
-                print "\t\tplease use -l option. if you want to extract linecount information."
-            if( svnrevstartdate):
-                print "Repository startdate: %s" % (svnrevstartdate)
-            if( svnrevenddate):
-                print "Repository enddate: %s" % (svnrevenddate)
-            
-            if(options.enablelogging==True):
-                logfile = getLogfileName(sqlitedbpath)
-                logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(levelname)s %(message)s',
-                        filename=logfile,
-                        filemode='w')
-                print "Debug Logging to file %s" % logfile
+        print "Updating the subversion log"
+        print "Repository : %s" % svnrepopath            
+        print "SVN Log database filepath : %s" % sqlitedbpath
+        print "Extract Changed Line Count : %s" % options.updlinecount
+        if( not options.updlinecount):
+            print "\t\tplease use -l option. if you want to extract linecount information."
+        if( svnrevstartdate):
+            print "Repository startdate: %s" % (svnrevstartdate)
+        if( svnrevenddate):
+            print "Repository enddate: %s" % (svnrevenddate)
+        
+        if(options.enablelogging==True):
+            logfile = getLogfileName(sqlitedbpath)
+            logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s',
+                    filename=logfile,
+                    filemode='w')
+            print "Debug Logging to file %s" % logfile
 
-            conv = None            
-            conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose, username=options.username, password=options.password)
-            conv.convert(svnrevstartdate, svnrevenddate, options.updlinecount)
-        except Exception, expinst:
-            print "Error "
-            print expinst
-            logging.exception("Found Error")
-            #del conv            
+        conv = None            
+        conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose, username=options.username, password=options.password)
+        conv.convert(svnrevstartdate, svnrevenddate, options.updlinecount)        
         
 if( __name__ == "__main__"):
     RunMain()
