@@ -857,8 +857,13 @@ class SVNRevLog:
                         #change the curpath to 'directory name'. otherwise it doesnot make sense to add a copy path entry
                         #for example 'curpath' /trunk/xxx and there is also a deleted entry called '/trunk/xxxyyy'. then in such
                         #case don't replace the 'copyfrom_path'. replace it only if entry is '/trunk/xxx/yyy'
-                        curpath = curpath + '/'                        
-                        if(curfilepath.startswith(curpath) and change['copyfrom_path'] is None):                            
+                        if(not curpath.endswith('/')):
+                            curpath = curpath + '/'
+                        if(curfilepath.startswith(curpath) and change['copyfrom_path'] is None):
+                            #make sure that copyfrom path also ends with '/' since we are replacing directories
+                            #curpath ends with '/'
+                            if(not copyfrompath.endswith('/')):
+                                copyfrompath = copyfrompath + '/'
                             assert(change['copyfrom_revision'] is None)
                             change['copyfrom_path'] = normurlpath(curfilepath.replace(curpath, copyfrompath,1))
                             change['copyfrom_revision'] = copyfromrev                    
