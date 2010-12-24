@@ -25,6 +25,8 @@ import types
 import tempfile
 from os.path import normpath
 
+SVN_HEADER_ENCODING = 'utf-8'
+
 def convert2datetime(seconds):
     gmt = time.gmtime(seconds)
     return(datetime.datetime(gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec))
@@ -111,6 +113,7 @@ class SVNLogClient:
         self._updateTempPath()
         self.svnrepourl = svnrepourl
         self.svnclient = pysvn.Client()
+        self.svnclient.exception_style = 1
         self.svnclient.callback_get_login = self.get_login
         self.svnclient.callback_ssl_server_trust_prompt = self.ssl_server_trust_prompt
         self.svnclient.callback_ssl_client_cert_password_prompt = self.ssl_client_cert_password_prompt
@@ -176,6 +179,42 @@ class SVNLogClient:
         #However 'diff' function tries to create temporary files as '/tmp/svnplot/tempfile.tmp'. Since '/tmp/svnplot' folder doesnot exist
         #temporary file cannot be created and the 'diff' call fails. Hence I am changing it just 'tmpdir' path. -- Nitin (20 July 2009)
         #self.tmppath = os.path.join(self.tmppath, "svnplot")
+        
+    def printSvnErrorHint(self, exp):
+        '''
+        print some helpful error message for svn client errors.
+        '''
+        exitadvised = False
+        if(isinstance(exp, pysvn.ClientError)):
+            fullerrmsg, errs = exp
+            for svnerr in errs:
+                errmsg,code = svnerr
+                logging.error("SVN Error Code %d" % code)
+                logging.error(errmsg)
+                print "SVN Error : "+errmsg
+                helpmsg = None
+                if( code == 22):
+                    '''
+                    Safe data 'Index: test' was followed by non-ASCII byte 196: unable to convert to/from UTF-8
+                    '''
+                    helpmsg ="HINT : Make sure that you have 'APR_ICONV_PATH' variable set to subversion client "
+                    helpmsg = helpmsg +"'iconv' directory.\n"
+                    if( 'APR_ICONV_PATH' in os.environ):
+                        helpmsg = helpmsg+'Current value of APR_ICONV_PATH is %s' % os.environ['APR_ICONV_PATH']
+                    else:
+                        helpmsg = helpmsg+ 'Currently APR_ICONV_PATH is not set'
+                    exitadvised=True
+                elif (code == 145000):
+                    '''
+                    Unknown node kind error. Should never get this.
+                    '''
+                    helpmsg ="HINT : You should never get this error. Please report this to svnplot issue base"
+                    exitadvised=True
+                if( helpmsg):
+                    print helpmsg
+                    logging.error(helpmsg)
+                    
+        return(exitadvised)
         
     def getHeadRevNo(self):
         revno = 0
@@ -312,17 +351,10 @@ class SVNLogClient:
         diff_log = None
         
         logging.info("Trying to get revision diffs url:%s" % url)
-        try:
-            diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
+        diff_log = self.svnclient.diff(self.tmppath, url, revision1=rev1, revision2=rev2,
                         recurse=True,ignore_ancestry=True,ignore_content_type=False,
-                               diff_deleted=True)
-            
-        except:
-            logging.exception("Error in getting revision diff")
-            logging.debug("revno =%d", revno)
-            logging.debug("prev renvo = %d", revno-1)
-            raise
-        
+                        header_encoding=SVN_HEADER_ENCODING, diff_deleted=True)
+                    
         return diff_log
 
     def getRevFileDiff(self, path, revno,prev_path=None,prev_rev_no=None):
@@ -346,13 +378,13 @@ class SVNLogClient:
             diff_log = self.svnclient.diff(self.tmppath, url_or_path=prev_url, revision1=prev_rev,
                         url_or_path2=cur_url , revision2=cur_rev,
                         recurse=True, ignore_ancestry=False,ignore_content_type=False,
-                                   diff_deleted=True)
-        except:
+                        header_encoding=SVN_HEADER_ENCODING, diff_deleted=True)
+        except pysvn.ClientError, exp:
             logging.exception("Error in getting file level revision diff")
             logging.debug("url : %s" % cur_url)
             logging.debug("previous url : %s" % prev_url)
             logging.debug("revno =%d", revno)
-            logging.debug("prev renvo = %d", prev_rev_no)
+            logging.debug("prev renvo = %d", prev_rev_no)            
             raise
         
         return(diff_log)
@@ -825,8 +857,8 @@ class SVNRevLog:
                         #change the curpath to 'directory name'. otherwise it doesnot make sense to add a copy path entry
                         #for example 'curpath' /trunk/xxx and there is also a deleted entry called '/trunk/xxxyyy'. then in such
                         #case don't replace the 'copyfrom_path'. replace it only if entry is '/trunk/xxx/yyy'
-                        curpath = curpath + '/'
-                        if(curfilepath.startswith(curpath) and change['copyfrom_path'] is None):
+                        curpath = curpath + '/'                        
+                        if(curfilepath.startswith(curpath) and change['copyfrom_path'] is None):                            
                             assert(change['copyfrom_revision'] is None)
                             change['copyfrom_path'] = normurlpath(curfilepath.replace(curpath, copyfrompath,1))
                             change['copyfrom_revision'] = copyfromrev                    
@@ -951,7 +983,7 @@ class SVNRevLog:
         #wrong linecount computation. So far, I don't have good fix for this condition. Hence falling
         #back to using 'file level' diffs. This will result in multiple calls to repository and hence
         # will be slower but linecount data will be  more reliable. -- Nitin (15 Dec 2010)
-        usefilerevdiff=True
+        #usefilerevdiff=True
         return(usefilerevdiff)
         
     def __updateDiffCount(self):
