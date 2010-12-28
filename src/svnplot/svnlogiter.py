@@ -472,7 +472,8 @@ class SVNLogClient:
             entry = self.getInfo(changepath, revno)
             filename, info_dict = entry[0]
             if( info_dict.kind == pysvn.node_kind.dir):
-                isDir = True        
+                isDir = True
+                logging.debug("path %s is Directory" % changepath)
         except pysvn.ClientError, expinst:
             #it is possible that changedpath is deleted (even if changetype is not 'D') and
             # doesnot exist in the revno. In this case, we will get a ClientError exception.
@@ -673,8 +674,7 @@ class SVNChangeEntry:
         return(branchtag)
         
     def isDirectory(self):
-        self.__updatePathType()
-        return(self.changedpath['pathtype'] == 'D')        
+        return(self.pathtype() == 'D')        
 
     def change_type(self):
         return(self.changedpath['action'])
@@ -726,12 +726,13 @@ class SVNChangeEntry:
         '''
         self.__updatePathType()
         pathtype = self.changedpath['pathtype']
+        assert(pathtype == 'F' or pathtype=='D' and self.filepath().endswith(''))
         return(pathtype)
 
     def isBinaryFile(self):
         '''
         if the change is in a binary file.        
-        '''
+        '''        
         binary=False
         #check detailed binary check only if the change entry is of a file.
         if( self.pathtype() == 'F'):
@@ -788,11 +789,11 @@ class SVNChangeEntry:
                     
                     diff_log = self.logclient.getRevFileDiff(filepath, revno,prev_filepath, prev_revno)
                     diffDict = getDiffLineCountDict(diff_log)
-                    assert(len(diffDict)==1)
-                    #for single files the 'diff_log' contains only the 'name of file' and not full path.
-                    #Hence to need to 'extract' the filename from full filepath
-                    filename = u'/'+filepath.rsplit(u'/', 2)[-1]
-                    fname, (added, deleted) = diffDict.popitem()                    
+                    if( len(diffDict)==1):
+                        #for single files the 'diff_log' contains only the 'name of file' and not full path.
+                        #Hence to need to 'extract' the filename from full filepath
+                        filename = u'/'+filepath.rsplit(u'/', 2)[-1]
+                        fname, (added, deleted) = diffDict.popitem()
                     
             logging.debug("DiffLineCount %d : %s : %s : %d : %d " % (revno, filename, changetype, added, deleted))
             self.changedpath['lc_added'] = added
@@ -980,7 +981,7 @@ class SVNRevLog:
             #check if there are additions or deletions. If yes, then use 'file level diff' to
             #avoid memory errors in large number of file additions or deletions.
             fadded, fchanged, fdeleted = self.changedFileCount()
-            if( fadded > 1 or fdeleted > 1):
+            if( fadded > 1 or fdeleted > 1 or fchanged > 5):
                 usefilerevdiff=True
         
         #For the time being always return True, as in case of 'revision level' diff filenames returned
