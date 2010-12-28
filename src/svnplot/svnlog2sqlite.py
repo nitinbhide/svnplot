@@ -76,6 +76,9 @@ class SVNLog2Sqlite:
         '''
         self.dbcon.rollback()
         print "Found Error. Rolled back recent changes"
+        print "Error type %s" % type(expinst)
+        if( isinstance(expinst, exceptions.AssertionError)):
+            exit(1)            
         exitAdvised = self.svnclient.printSvnErrorHint(expinst)
         if( exitAdvised):
             exit(1)
