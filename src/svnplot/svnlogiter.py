@@ -389,11 +389,14 @@ class SVNLogClient:
         
         return(diff_log)
     
-    def getInfo(self, path, revno):
+    def getInfo(self, path, revno=None):
         '''Gets the information about the given path ONLY from the repository.
         Hence recurse flag is set to False.
         '''
-        rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+        if( revno == None):
+            rev = pysvn.Revision( pysvn.opt_revision_kind.head )
+        else:
+            rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(path)
         entry_list = None
         
@@ -511,8 +514,18 @@ class SVNLogClient:
         if( possibleroot.endswith('/') == False):
             possibleroot = possibleroot+'/'
 
-        #get the last log message for the given path.            
-        revlog = self.svnclient.log(possibleroot, limit=1,discover_changed_paths=True)
+        #get the last log message for the given path.
+        headrev = pysvn.Revision( pysvn.opt_revision_kind.head )
+        urlinfo = self.svnclient.info2( possibleroot,revision=headrev,recurse=False)
+        last_changed_rev = headrev
+        for path, infodict in urlinfo:
+            if( infodict.kind == pysvn.node_kind.dir):
+                path = urllib.quote(path+'/')
+                if possibleroot.endswith(path):
+                    last_changed_rev = infodict.last_changed_rev
+                
+        revlog = self.svnclient.log(possibleroot, revision_start=last_changed_rev,
+                                    limit=1,discover_changed_paths=True)
         
         #Now changed path and subtract the common portion of changed path and possibleroot,
         #Remain ing 'possibleroot' is the actual subversion repository root path
@@ -524,7 +537,8 @@ class SVNLogClient:
             #over all paths changed in a revision and compare it with possible root path.
             maxmatchlen = 0
             for changedpath in changepathlist:
-                changedpath = changedpath['path'].split('/')                
+                changedpath = urllib.quote(changedpath['path'])
+                changedpath = changedpath.split('/')                
                 #split the path components and join them one by one and then find the
                 #maximum matched size to get the repository root.
                 for cmplen in range(1, len(changedpath)+1):
@@ -535,7 +549,8 @@ class SVNLogClient:
                          
             if( maxmatchlen > 0):
                 #remove last 'maxmatch' characters.
-                self.svnrooturl =possibleroot[0:-maxmatchlen]                
+                self.svnrooturl =possibleroot[0:-maxmatchlen]
+                logging.debug("Root url detected : %s" % self.svnrooturl)
                 
     def getRootUrl(self):        
         if( self.svnrooturl == None and self.svnclient.is_url(self.svnrepourl)):
