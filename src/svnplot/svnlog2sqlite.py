@@ -34,7 +34,7 @@ class SVNLog2Sqlite:
     def __init__(self, svnrepopath, sqlitedbpath,verbose=False,**kwargs):
         username=kwargs.pop('username', None)
         password=kwargs.pop('password',None)
-        
+        logging.info("Repo url : " + svnrepopath)
         self.svnclient = svnlogiter.SVNLogClient(svnrepopath,BINARYFILEXT,username=username, password=password)
         self.dbpath =sqlitedbpath
         self.dbcon =None
@@ -381,6 +381,18 @@ def parse_svndate(svndatestr):
     
     return(svntime)
 
+def getquotedurl(url):
+    '''
+    svn repo url specified on the command line can contain specs, special etc. We
+    have to quote them to that svn log client works on a valid url.
+    '''
+    import urllib
+    import urlparse
+    urlparams = list(urlparse.urlsplit(url, 'http'))
+    urlparams[2] = urllib.quote(urlparams[2])
+    
+    return(urlparse.urlunsplit(urlparams))
+    
 def RunMain():
     usage = "usage: %prog [options] <svnrepo root url> <sqlitedbpath>"
     parser = OptionParser(usage)
@@ -413,9 +425,11 @@ def RunMain():
             
         if( not svnrepopath.endswith('/')):
             svnrepopath = svnrepopath+'/'
-
+        
+        svnrepopath = getquotedurl(svnrepopath)
+        
         print "Updating the subversion log"
-        print "Repository : %s" % svnrepopath            
+        print "Repository : " + svnrepopath            
         print "SVN Log database filepath : %s" % sqlitedbpath
         print "Extract Changed Line Count : %s" % options.updlinecount
         if( not options.updlinecount):
