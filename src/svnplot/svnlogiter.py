@@ -866,8 +866,10 @@ class SVNRevLog:
                 copyfrom_dict[curpath]=(change['copyfrom_path'], change['copyfrom_revision'])
                 
         if( len(copyfrom_dict) > 0):
+            print copyfrom_dict[curpath]
             for change in self.revlog.changed_paths:
-                if( change['action']=='D'):
+                #check other modified or deleted paths (i.e. all actions other than add)
+                if( change['action']!='A'):
                     curfilepath = change['path']
                     for curpath, (copyfrompath, copyfromrev) in copyfrom_dict.iteritems():
                         #change the curpath to 'directory name'. otherwise it doesnot make sense to add a copy path entry
