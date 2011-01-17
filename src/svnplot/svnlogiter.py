@@ -866,7 +866,6 @@ class SVNRevLog:
                 copyfrom_dict[curpath]=(change['copyfrom_path'], change['copyfrom_revision'])
                 
         if( len(copyfrom_dict) > 0):
-            print copyfrom_dict[curpath]
             for change in self.revlog.changed_paths:
                 #check other modified or deleted paths (i.e. all actions other than add)
                 if( change['action']!='A'):
