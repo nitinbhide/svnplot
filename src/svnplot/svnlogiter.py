@@ -13,17 +13,18 @@ It is intended to be used in  python script to convert the Subversion log into
 an sqlite database.
 '''
 
-import pysvn
+import logging
 import datetime, time
 import os, re, string
-from StringIO import StringIO
 import urllib, urlparse
-import logging
 import getpass
 import traceback
 import types
 import tempfile
 from os.path import normpath
+from operator import itemgetter
+from StringIO import StringIO
+import pysvn
 
 SVN_HEADER_ENCODING = 'utf-8'
 
@@ -859,18 +860,17 @@ class SVNRevLog:
         assert( self.revlog is not None)
         #First check if there are any additions with 'copy_from'
         
-        copyfrom_dict = dict()
-        for change in self.revlog.changed_paths:            
-            if( change['action']=='A' and change['copyfrom_path'] !=None):
-                curpath = change['path']
-                copyfrom_dict[curpath]=(change['copyfrom_path'], change['copyfrom_revision'])
+        copyfrom = [(change['path'], change['copyfrom_path'], change['copyfrom_revision']) \
+            for change in self.revlog.changed_paths if( change['action']=='A' and change['copyfrom_path'] !=None)]
+        
+        sorted(copyfrom, key=itemgetter(0), reverse=True)       
                 
-        if( len(copyfrom_dict) > 0):
+        if( len(copyfrom) > 0):
             for change in self.revlog.changed_paths:
                 #check other modified or deleted paths (i.e. all actions other than add)
                 if( change['action']!='A'):
                     curfilepath = change['path']
-                    for curpath, (copyfrompath, copyfromrev) in copyfrom_dict.iteritems():
+                    for curpath, copyfrompath, copyfromrev in copyfrom:
                         #change the curpath to 'directory name'. otherwise it doesnot make sense to add a copy path entry
                         #for example 'curpath' /trunk/xxx and there is also a deleted entry called '/trunk/xxxyyy'. then in such
                         #case don't replace the 'copyfrom_path'. replace it only if entry is '/trunk/xxx/yyy'
