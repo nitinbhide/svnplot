@@ -861,11 +861,12 @@ class SVNRevLog:
         #First check if there are any additions with 'copy_from'
         
         copyfrom = [(change['path'], change['copyfrom_path'], change['copyfrom_revision']) \
-            for change in self.revlog.changed_paths if( change['action']=='A' and change['copyfrom_path'] !=None)]
+            for change in self.revlog.changed_paths if( change['action']=='A' and \
+                change['copyfrom_path'] != None and len(change['copyfrom_path']) > 0)]
         
-        sorted(copyfrom, key=itemgetter(0), reverse=True)       
-                
         if( len(copyfrom) > 0):
+            sorted(copyfrom, key=itemgetter(0), reverse=True)       
+        
             for change in self.revlog.changed_paths:
                 #check other modified or deleted paths (i.e. all actions other than add)
                 if( change['action']!='A'):
