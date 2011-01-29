@@ -865,7 +865,7 @@ class SVNRevLog:
                 change['copyfrom_path'] != None and len(change['copyfrom_path']) > 0)]
         
         if( len(copyfrom) > 0):
-            sorted(copyfrom, key=itemgetter(0), reverse=True)       
+            copyfrom = sorted(copyfrom, key=itemgetter(0), reverse=True)       
         
             for change in self.revlog.changed_paths:
                 #check other modified or deleted paths (i.e. all actions other than add)
