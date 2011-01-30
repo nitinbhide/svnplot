@@ -106,8 +106,8 @@ class SVNPlotBase:
         hotfiles = self.svnstats.getHotFiles(10)
         outstr = StringIO.StringIO()
         outstr.write("<ol>\n")
-        for filepath, temperatur in hotfiles:
-            outstr.write("<li>%s</li>\n"% self.svnstats.getSearchPathRelName(filepath))
+        for filepath, temperatur, revcount in hotfiles:
+            outstr.write("<li>%s (rev count: %d)</li>\n"% (self.svnstats.getSearchPathRelName(filepath),revcount))
         outstr.write("</ol>\n")
         return(outstr.getvalue())
 
@@ -117,10 +117,10 @@ class SVNPlotBase:
         HTML ordered list
         '''
         self._printProgress("Calculating Active authors list")
-        hotfiles = self.svnstats.getActiveAuthors(10)
+        hotauthors = self.svnstats.getActiveAuthors(10)
         outstr = StringIO.StringIO()
         outstr.write("<ol>\n")
-        for author, temperatur in hotfiles:
+        for author, temperatur in hotauthors:
             outstr.write("<li>%s</li>\n"%author)
         outstr.write("</ol>\n")
         return(outstr.getvalue())

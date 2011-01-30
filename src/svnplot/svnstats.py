@@ -1125,6 +1125,12 @@ class SVNStats:
         get the top 'numfiles' number of hot files.
         returns list of tuples (filepath, temperature)
         '''
+        def _getfilecount(fileparams):        
+            self.cur.execute("select count(*) from SVNLogDetailVw where \
+                         changedpath=? group by changedpath",(fileparams[0],))
+            count = self.cur.fetchone()[0]
+            return((fileparams[0],fileparams[1], count))
+            
         self._updateActivityHotness()
         curTime = datetime.datetime.now()
         self.cur.execute("select ActivityHotness.filepath, \
@@ -1133,7 +1139,8 @@ class SVNStats:
                 where ActivityHotness.filepath like ? and ActivityHotness.lastrevno=SVNLog.revno \
                 order by hotness DESC LIMIT ?", (curTime,COOLINGRATE,self.sqlsearchpath, numFiles))
         hotfileslist = [(filepath, hotness) for filepath, hotness in self.cur]
-        
+        hotfileslist = map(_getfilecount, hotfileslist)
+                
         return(hotfileslist)
         
     def getAuthorsCommitTrendMeanStddev(self):
