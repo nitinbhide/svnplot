@@ -514,45 +514,16 @@ class SVNLogClient:
         possibleroot = self.svnrepourl        
         if( possibleroot.endswith('/') == False):
             possibleroot = possibleroot+'/'
-
+        print "possible root %s" %possibleroot
         #get the last log message for the given path.
         headrev = pysvn.Revision( pysvn.opt_revision_kind.head )
         urlinfo = self.svnclient.info2( possibleroot,revision=headrev,recurse=False)
         last_changed_rev = headrev
+        maxmatchlen = 0
         for path, infodict in urlinfo:
-            if( infodict.kind == pysvn.node_kind.dir):
-                path = urllib.quote(path+'/')
-                if possibleroot.endswith(path):
-                    last_changed_rev = infodict.last_changed_rev
-                
-        revlog = self.svnclient.log(possibleroot, revision_start=last_changed_rev,
-                                    limit=1,discover_changed_paths=True)
-        
-        #Now changed path and subtract the common portion of changed path and possibleroot,
-        #Remain ing 'possibleroot' is the actual subversion repository root path
-        #This is really a hack. Needs a better/simpler way to do this.
-        if( len(revlog) > 0):
-            changepathlist = revlog[0].changed_paths
-            assert(len(changepathlist) > 0)
-            #since single revision can contain changes in multiple paths, we need to iterate
-            #over all paths changed in a revision and compare it with possible root path.
-            maxmatchlen = 0
-            for changedpath in changepathlist:
-                changedpath = urllib.quote(changedpath['path'])
-                changedpath = changedpath.split('/')                
-                #split the path components and join them one by one and then find the
-                #maximum matched size to get the repository root.
-                for cmplen in range(1, len(changedpath)+1):
-                    cpath = '/'.join(changedpath[0:cmplen])
-                    cpath = cpath+'/'
-                    if(possibleroot.endswith(cpath)==True):
-                         maxmatchlen=max(maxmatchlen, len(cpath))
-                         
-            if( maxmatchlen > 0):
-                #remove last 'maxmatch' characters.
-                self.svnrooturl =possibleroot[0:-maxmatchlen]
-                logging.debug("Root url detected : %s" % self.svnrooturl)
-                
+            self.svnrooturl = infodict.repos_root_URL
+            break
+                                
     def getRootUrl(self):        
         if( self.svnrooturl == None and self.svnclient.is_url(self.svnrepourl)):
             # for some reason 'root_url_from_path' crashes Python interpreter
