@@ -380,6 +380,10 @@ class SVNPlot(SVNPlotMatplotLib):
         self._printProgress("Calculating Author Activity graph")
 
         authlist, addfraclist,changefraclist,delfraclist = self.svnstats.getAuthorActivityStats(self.authorsToDisplay)
+        if( len(authlist) == 0):
+            logging.error("AuthorActivityGraph: Author count is 0")
+            return
+        
         dataList = [addfraclist, changefraclist, delfraclist]
 
         authlabellist = [self._getAuthorLabel(author) for author in authlist]
@@ -403,6 +407,9 @@ class SVNPlot(SVNPlotMatplotLib):
         
         authList = self.svnstats.getAuthorList(self.authorsToDisplay)
         authCount = len(authList)
+        if( authCount == 0):
+            logging.error("CommitActivityGraph: Author count is 0")
+            return
         
         authIdx = 1
         refaxs = None
