@@ -514,7 +514,6 @@ class SVNLogClient:
         possibleroot = self.svnrepourl        
         if( possibleroot.endswith('/') == False):
             possibleroot = possibleroot+'/'
-        print "possible root %s" %possibleroot
         #get the last log message for the given path.
         headrev = pysvn.Revision( pysvn.opt_revision_kind.head )
         urlinfo = self.svnclient.info2( possibleroot,revision=headrev,recurse=False)
