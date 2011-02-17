@@ -975,31 +975,33 @@ class SVNStats:
         update the file activity as 'temparature' data. Every commit adds 10 degrees. Rate of temperature
         drop is 1 deg/day. The temparature is calculated using the 'newtons law of cooling'
         '''
-        #self._printProgress("updating file hotness table")
-        self.cur.execute("CREATE TABLE IF NOT EXISTS ActivityHotness(filepath text, lastrevno integer, \
-                         temperature real)")
-        self.cur.execute("CREATE TABLE IF NOT EXISTS RevisionActivity(revno integer, \
-                         temperature real)")
-        self.cur.execute("CREATE INDEX IF NOT EXISTS ActHotRevIdx On ActivityHotness(lastrevno ASC)")
-        self.cur.execute("CREATE INDEX IF NOT EXISTS ActHotFileIdx On ActivityHotness(filepath ASC)")
-        self.cur.execute("CREATE INDEX IF NOT EXISTS RevActivityIdx On RevisionActivity(revno ASC)")
-        self.dbcon.commit()
-        self.cur.execute("select max(ActivityHotness.lastrevno) from ActivityHotness")
-        lastrevno = self.cur.fetchone()[0]         
-        if(lastrevno == None):
-            lastrevno = 0
-                    
-        #get the valid revision numbers from SVNLog table from lastrevno 
-        self.cur.execute("select revno from SVNLog where revno > ?", (lastrevno,))
-        revnolist = [row[0] for row in self.cur]
-        
-        for revno in revnolist:
-            self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
-                            where SVNLog.revno=?', (revno,))
-            commitdate = self.cur.fetchone()[0]
-            self.cur.execute('select changedpath from SVNLogDetailVw where revno=?', (revno,))
-            changedpaths = self.cur.fetchall()
-            self._updateRevActivityHotness(revno, commitdate, changedpaths)            
+        if( getattr(self,'_activity_hotness_updated', False)==False):
+            #self._printProgress("updating file hotness table")
+            self.cur.execute("CREATE TABLE IF NOT EXISTS ActivityHotness(filepath text, lastrevno integer, \
+                             temperature real)")
+            self.cur.execute("CREATE TABLE IF NOT EXISTS RevisionActivity(revno integer, \
+                             temperature real)")
+            self.cur.execute("CREATE INDEX IF NOT EXISTS ActHotRevIdx On ActivityHotness(lastrevno ASC)")
+            self.cur.execute("CREATE INDEX IF NOT EXISTS ActHotFileIdx On ActivityHotness(filepath ASC)")
+            self.cur.execute("CREATE INDEX IF NOT EXISTS RevActivityIdx On RevisionActivity(revno ASC)")
+            self.dbcon.commit()
+            self.cur.execute("select max(ActivityHotness.lastrevno) from ActivityHotness")
+            lastrevno = self.cur.fetchone()[0]         
+            if(lastrevno == None):
+                lastrevno = 0
+                        
+            #get the valid revision numbers from SVNLog table from lastrevno 
+            self.cur.execute("select revno from SVNLog where revno > ?", (lastrevno,))
+            revnolist = [row[0] for row in self.cur]
+            
+            for revno in revnolist:
+                self.cur.execute('select SVNLog.commitdate as "commitdate [timestamp]" from SVNLog \
+                                where SVNLog.revno=?', (revno,))
+                commitdate = self.cur.fetchone()[0]
+                self.cur.execute('select changedpath from SVNLogDetailVw where revno=? and pathtype="F"', (revno,))
+                changedpaths = self.cur.fetchall()
+                self._updateRevActivityHotness(revno, commitdate, changedpaths)
+            setattr(self, '_activity_hotness_updated',True)
 
     def _updateRevActivityHotness(self, revno, commitdate, changedpaths):
         self._printProgress("updating file activity hotness table for revision %d" % revno)
