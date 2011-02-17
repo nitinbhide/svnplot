@@ -312,19 +312,20 @@ class SVNPlot(SVNPlotMatplotLib):
         self._printProgress("Calculating Developer Contribution graph")
         ax = None
         authList = self.svnstats.getAuthorList(self.authorsToDisplay)
-        for author in authList:
-            ax = self._drawlocGraphLineByDev(author, ax)
+        if( len(authList) > 0):
+            for author in authList:
+                ax = self._drawlocGraphLineByDev(author, ax)
 
-        #Add the list of authors as figure legend.
-        #axes legend is added 'inside' the axes and overlaps the labels or the graph
-        #lines depending on the location
-        authLabelList = [self._getAuthorLabel(auth) for auth in authList]
+            #Add the list of authors as figure legend.
+            #axes legend is added 'inside' the axes and overlaps the labels or the graph
+            #lines depending on the location
+            authLabelList = [self._getAuthorLabel(auth) for auth in authList]
+                
+            self._addFigureLegend(ax, authLabelList)
             
-        self._addFigureLegend(ax, authLabelList)
-        
-        ax.set_title('Contributed Lines of Code')
-        ax.set_ylabel('Lines')        
-        self._closeDateLineGraph(ax, filename)
+            ax.set_title('Contributed Lines of Code')
+            ax.set_ylabel('Lines')        
+            self._closeDateLineGraph(ax, filename)
         
     def LocGraphByDev(self, filename, devname):
         ax = self._drawlocGraphLineByDev(devname)
@@ -356,14 +357,15 @@ class SVNPlot(SVNPlotMatplotLib):
 
         #first get the file types and
         ftypelist, ftypecountlist = self.svnstats.getFileTypesStats(self.fileTypesToDisplay)
-                
+        assert(len(ftypelist) == len(ftypecountlist))
         barwid = 0.2
-        ax = self._drawHBarGraph(ftypecountlist, ftypelist, barwid)
-        ax.set_xlabel("Number of files")
-        ax.set_ylabel("File Type")
-        ax.set_title('File Types')
-        fig = ax.figure
-        fig.savefig(filename, dpi=self.dpi, format=self.format)
+        if( len(ftypelist) > 0):
+            ax = self._drawHBarGraph(ftypecountlist, ftypelist, barwid)
+            ax.set_xlabel("Number of files")
+            ax.set_ylabel("File Type")
+            ax.set_title('File Types')
+            fig = ax.figure
+            fig.savefig(filename, dpi=self.dpi, format=self.format)
             
     def AvgFileLocGraph(self, filename):
         self._printProgress("Calculating Average File Size graph")
