@@ -529,8 +529,10 @@ class SVNPlot(SVNPlotMatplotLib):
     
     def _drawDailyChurnGraph(self, ax):
         dates, churnlist = self.svnstats.getChurnStats()
-        lines = ax.vlines(dates, [0.1], churnlist, color='r', label='Churn')
-        ax.set_ylim(ymin=0.0)
+        assert(len(dates) == len(churnlist))
+        if( len(dates) > 0):
+            lines = ax.vlines(dates, [0.1], churnlist, color='r', label='Churn')
+            ax.set_ylim(ymin=0.0)
         return(ax)
             
     def _drawDirectorySizeLineGraphByDir(self, dirname, ax):
