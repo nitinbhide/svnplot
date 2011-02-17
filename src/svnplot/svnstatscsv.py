@@ -86,10 +86,10 @@ class SVNStatsCSV:
         get the active filename and its temperature statistics.
         '''
         addcsvcomment(csvwriter, "SECTION:file stats")
-        addcsvcomment(csvwriter, "FORMAT:file name, File Activity Temperature")
+        addcsvcomment(csvwriter, "FORMAT:file name, File Activity Temperature, revision count")
         hotfiles = self.svnstats.getHotFiles(10)
-        for filepath, temperatur in hotfiles:
-            csvwriter.writerow([self.svnstats.getSearchPathRelName(filepath), temperatur])
+        for filepath, temperatur,revcount in hotfiles:
+            csvwriter.writerow([self.svnstats.getSearchPathRelName(filepath), temperatur,revcount])
         
     def activityByWeekday(self, csvwriter):
         '''
@@ -142,7 +142,7 @@ def RunMain():
     (options, args) = parser.parse_args()
     
     if( len(args) < 2):
-        print "Invalid number of arguments. Use svnplot.py --help to see the details."
+        print "Invalid number of arguments. Use svnstatscsv.py --help to see the details."
     else:        
         svndbpath = args[0]
         csvfilename = args[1]
@@ -153,7 +153,7 @@ def RunMain():
         if( options.verbose == True):
             print "Exporting subversion repository data in CSV format"
             print "Subversion log database : %s" % svndbpath
-            print "CSV file name : %s" % graphdir
+            print "CSV file name : %s" % csvfilename
             print "Repository Name : %s" % options.reponame
             print "Search path inside repository : %s" % options.searchpath
             print "Maximum dir count: %d" % options.maxdircount            
