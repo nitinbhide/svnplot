@@ -68,12 +68,7 @@ class SVNChangeEntry:
         self.logclient = parent.logclient
         self.revno = parent.getRevNo()
         self.changedpath = changedpath
-            
-    def __normalizepath(self):
-        self.changedpath['path'] = normurlpath(self.changedpath['path'])
-        assert('copyfrom_path' in self.changedpath)
-        self.changedpath['copyfrom_path'] = normurlpath(self.changedpath['path'])
-
+                
     def __updatePathType(self):
         '''
         Update the path type of change entry. 
@@ -98,7 +93,7 @@ class SVNChangeEntry:
             filepath = self.filepath()
             if( pathtype=='D' and not filepath.endswith('/')):
                 #if it is directory then add trailing '/' to the path to denote the directory.
-                self.changedpath['path'] = filepath + '/'                
+                self.changedpath['path'] = filepath + u'/'                
         
     def isValidChange(self):
         '''
