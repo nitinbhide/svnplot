@@ -23,6 +23,7 @@ from StringIO import StringIO
 import pysvn
 
 SVN_HEADER_ENCODING = 'utf-8'
+URL_NORM_RE = re.compile('[/]+')
 
 def convert2datetime(seconds):
     gmt = time.gmtime(seconds)
@@ -49,12 +50,9 @@ def normurlpath(pathstr):
     '''
     nrmpath = pathstr
     if( nrmpath):
-        nrmpath = normpath(nrmpath)
+        nrmpath = re.sub(URL_NORM_RE, '/',nrmpath)
         nrmpath = makeunicode(nrmpath)
-        #replace the '\\' to '/' in case 'normpath' call has changed the directory seperator.
-        nrmpath = nrmpath.replace(u'\\', u'/')
-        if( pathstr.endswith('/') or pathstr.endswith('\\')):
-            nrmpath = nrmpath + u'/'
+        assert(nrmpath.endswith('/') == pathstr.endswith('/'))
         
     return(nrmpath)
     
