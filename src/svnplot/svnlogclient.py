@@ -400,6 +400,34 @@ class SVNLogClient:
         
         return(entry_list)
         
+    def getFullDirInfo(self, path, revno):
+        '''
+        get full information of the directory at this given path and given revision
+        number. It is assumed that 'path' represents a directory.
+        '''
+        if( revno == None):
+            rev = pysvn.Revision( pysvn.opt_revision_kind.head )
+        else:
+            rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+        url = self.getUrl(path)
+        entry_list = None
+        
+        logging.debug("Trying to get full information for %s" % url)
+        entry_list = self.svnclient.info2( url,revision=rev,recurse=True)
+        
+        return(entry_list)
+    
+    def getFileList(self, path, revno):
+        '''
+        return the file list of all the files in the directory 'path' and its
+        sub directories
+        '''
+        entrylist = self.getFullDirInfo(path, revno)
+        for pathentry, info_dict in entrylist:
+            if info_dict.kind == pysvn.node_kind.file:
+                yield pathentry
+        
+        
     def isChildPath(self, filepath):
         '''
         Check if the given path is a child path of if given svnrepourl. All filepaths are child paths
