@@ -425,7 +425,7 @@ class SVNLogClient:
         entrylist = self.getFullDirInfo(path, revno)
         for pathentry, info_dict in entrylist:
             if info_dict.kind == pysvn.node_kind.file:
-                yield pathentry
+                yield normurlpath(pathentry)
         
         
     def isChildPath(self, filepath):
