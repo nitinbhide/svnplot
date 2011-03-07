@@ -240,6 +240,7 @@ class SVNLog2Sqlite:
         # source or they are deleted during the commiting this change). Hence
         # its better to query the file list valid for this repository, then
         #query the linecount for these files only to create the dummy entries
+        changedpath = change.prev_filepath()
         revno = change.prev_revno()
         
         entrylist = self.svnclient.getFileList(changedpath, revno)
