@@ -286,8 +286,8 @@ class SVNRevLog:
         #First check if there are any additions with 'copy_from'
         
         copyfrom = [(change['path'], change['copyfrom_path'], change['copyfrom_revision']) \
-            for change in self.revlog.changed_paths if( change['action']=='A' and \
-                change['copyfrom_path'] != None and len(change['copyfrom_path']) > 0)]
+            for change in self.revlog.changed_paths \
+                if( change['copyfrom_path'] != None and len(change['copyfrom_path']) > 0)]
         
         if( len(copyfrom) > 0):
             copyfrom = sorted(copyfrom, key=itemgetter(0), reverse=True)       
