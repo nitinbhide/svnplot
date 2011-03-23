@@ -151,8 +151,28 @@ class SVNChangeEntry:
         lc = self.changedpath.get('lc_deleted', 0)
         return(lc)        
 
-    def copyfrom(self):
+    def is_copied(self):
+        '''
+        return True if this change is copied from somewhere
+        '''
         path = self.changedpath['copyfrom_path']
+        rev  = self.changedpath['copyfrom_revision']
+        is_copied=False
+        if( path != None and len(path) > 0 and rev != None):
+            is_copied=True
+        return is_copied
+    
+    def copyfrom_path(self):
+        '''
+        get corrected copy from path.
+        '''
+        path = self.changedpath['copyfrom_path']
+        if self.isDirectory() and path is not None and not path.endswith('/'):
+            path = path + '/'
+        return(makeunicode(path))
+        
+    def copyfrom(self):
+        path = self.copyfrom_path()
         rev  = self.changedpath['copyfrom_revision']
         revno = None
         if( rev != None):
@@ -167,7 +187,7 @@ class SVNChangeEntry:
         '''
         self.__updatePathType()
         pathtype = self.changedpath['pathtype']
-        assert(pathtype == 'F' or pathtype=='D' and self.filepath().endswith(''))
+        assert(pathtype == 'F' or (pathtype=='D' and self.filepath().endswith('/')))
         return(pathtype)
 
     def isBinaryFile(self):
@@ -358,8 +378,9 @@ class SVNRevLog:
         diffCountDict = None
         if( bUpdLineCount == True):
             diffCountDict = self.__updateDiffCount()
-            
-        diffCountList = []
+                    
+        #get change entries sorted in the order of actions, and then paths.
+        
         for change in self.getChangeEntries():
             change.updateDiffLineCountFromDict(diffCountDict)
             filename=change.filepath()
@@ -368,7 +389,25 @@ class SVNRevLog:
             linesdeleted = change.lc_deleted()
             logging.debug("%d : %s : %s : %d : %d " % (self.revno, filename, change.change_type(), linesadded, linesdeleted))
             yield change                    
-            
+    
+    def getCopiedDirs(self):        
+        '''
+        return a list of change entries where directory is added/replaced during
+        this revision changes.
+        '''
+        changelist = [change for change in self.getChangeEntries() \
+                      if( change.is_copied() and change.isDirectory())]
+        
+        return changelist                
+                
+    def getDeletedDirs(self):
+        '''
+        return a list of change entries of where a directory is deleted
+        '''
+        changelist = [change for change in self.getChangeEntries() \
+            if( change.isDirectory() and change.change_type()=='D')]
+        return changelist
+                
     def getRevNo(self):
         return(self.revlog.revision.number)
     
