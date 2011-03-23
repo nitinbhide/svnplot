@@ -314,7 +314,7 @@ class SVNLog2Sqlite:
             lc_deleted = 0
             if row != None:                
                 #set lines deleted to current line count
-                lc_deleted = row[1]-row[0]
+                lc_deleted = row[0]-row[1]                
             if( lc_deleted < 0):
                 lc_deleted = 0
             
