@@ -117,7 +117,25 @@ def histogram_data(binlist, indata):
             update_bin(binlist, binvalues, value)
             
     return(binvalues)
-    
+
+def strip_zeros(dates, data):
+    '''
+    strips the dates with data is zero at start of the list
+    '''
+    filtered_dates = dates
+    filtered_data = data
+    if( data[0] == 0):
+        filtered_dates = []
+        filtered_data = []
+        filter=True
+        for dt, datedata in zip(dates, data):
+            if( filter == True and datedata == 0):
+                continue
+            filter=False
+            filtered_dates.append(dt)
+            filtered_data.append(datedata)
+    return(filtered_dates, filtered_data)
+        
 class DeltaAvg:
     '''
     DeltaAvg class implements a 'delta' average aggregate function. It calculates the
@@ -467,6 +485,8 @@ class SVNStats:
             dates.append(self.__endDate)
             fc.append(fc[-1])
 
+        date, fc = strip_zeros(dates, fc)
+
         return(dates, fc)            
 
     def getFileTypesStats(self, numTypes):
@@ -535,7 +555,8 @@ class SVNStats:
         if( len(dates) > 0 and dates[-1] < self.__endDate):
             dates.append(self.__endDate)
             avgloclist.append(avgloclist[-1])
-            
+
+        dates, avgloclist = strip_zeros(dates, avgloclist)        
         return(dates, avgloclist)
 
     def getAuthorActivityStats(self, numAuthors):
@@ -699,7 +720,7 @@ class SVNStats:
             dates.append(self.__endDate)
             loc.append(loc[-1])
             
-        return(dates, loc)
+        return(strip_zeros(dates, loc))
     
     def getChurnStats(self):
         '''
@@ -718,7 +739,7 @@ class SVNStats:
                 dates.append(commitdate)
                 churnloclist.append(float(churn))
             
-        return(dates, churnloclist)
+        return(strip_zeros(dates, churnloclist))
 
     def getDirLocTrendStats(self, dirname):
         '''
@@ -755,7 +776,7 @@ class SVNStats:
             dates.append(self.__endDate)
             dirsizelist.append(dirsizelist[-1])
             
-        return(dates, dirsizelist)
+        return(strip_zeros(dates, dirsizelist))
 
     def getAuthorCommitActivityStats(self, author):
         '''
@@ -770,7 +791,7 @@ class SVNStats:
         for hr, commitdate in self.cur:
             dates.append(commitdate)
             committimelist.append(int(hr))
-        return(dates, committimelist)
+        return(strip_zeros(dates, committimelist))
 
     def getLoCTrendForAuthor(self, author):
         '''
@@ -804,7 +825,7 @@ class SVNStats:
             dates.append(self.__endDate)
             loc.append(loc[-1])
             
-        return(dates, loc)
+        return(strip_zeros(dates, loc))
 
     def getBugfixCommitsTrendStats(self):
         '''
@@ -1084,7 +1105,7 @@ class SVNStats:
                 cmdatelist.append(cmdate)
                 temperaturelist.append(revtemp)
                         
-        return( cmdatelist,temperaturelist)            
+        return( strip_zeros(cmdatelist,temperaturelist))            
 
     def getAuthorCloud(self):
         '''
@@ -1201,4 +1222,4 @@ class SVNStats:
             datelist.append(cmdate)
             commitcountlist.append(commitcount)
 
-        return(datelist,commitcountlist)
+        return(strip_zeros(datelist,commitcountlist))
