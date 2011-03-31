@@ -179,6 +179,7 @@ class SVNLog2Sqlite:
         assert(dirname.endswith('/'))
         updcur.execute('DROP TABLE IF EXISTS TempRevDirFileList')
         updcur.execute('CREATE TEMP TABLE TempRevDirFileList(path text, pathid integer, addrevno integer)')
+        updcur.execute('CREATE INDEX revdirfilelistidx ON TempRevDirFileList (addrevno ASC, path ASC)')
         sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
                     pathtype="F" and revno <=%d and \
                     (changedpath like "%s%%" and changedpath != "%s") and \
@@ -206,6 +207,7 @@ class SVNLog2Sqlite:
             updcur.execute('DROP TABLE IF EXISTS TempRevFileList')
             updcur.execute('CREATE TEMP TABLE TempRevFileList(path text, addrevno integer, \
                         copyfrom_path text, copyfrom_pathid integer, copyfrom_rev integer)')
+            updcur.execute('CREATE INDEX revfilelistidx ON TempRevFileList (addrevno ASC, path ASC)')
                 
             for change in copied_dirlist:                
                 copiedfrom_path,copiedfrom_rev = change.copyfrom()
@@ -276,7 +278,8 @@ class SVNLog2Sqlite:
                 lc_added = 0
             #set the lines deleted = 0
             lc_deleted = 0
-    
+
+            logging.debug("\tadded dummy addition entry for path %s" % changedpath)
             changedpathid = self.getFilePathId(changedpath, querycur)
             copyfrompathid = self.getFilePathId(copyfrompath, querycur)
             assert(path_type != 'U')
@@ -302,10 +305,12 @@ class SVNLog2Sqlite:
         assert(deleted_dir.endswith('/'))
         #now query the deleted folders from the sqlite database and get the
         #file list
+        logging.debug("Updating dummy file deletion entries for path %s" % deleted_dir)
         self.__createRevFileListForDir(revno, deleted_dir, querycur, updcur)
-                        
+        
         querycur.execute('SELECT path FROM TempRevDirFileList')
-        for changedpath, in querycur.fetchall():            
+        for changedpath, in querycur.fetchall():
+            logging.debug("\tDummy file deletion entries for path %s" % changedpath)      
             querycur.execute('select sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
                         where changedpath == ? and revno < ? \
                         group by changedpath',(changedpath, revno))
@@ -317,7 +322,7 @@ class SVNLog2Sqlite:
                 lc_deleted = row[0]-row[1]                
             if( lc_deleted < 0):
                 lc_deleted = 0
-            
+        
             changedpathid = self.getFilePathId(changedpath, updcur)
             updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype,  \
                                     linesadded, linesdeleted, entrytype, pathtype, lc_updated) \
@@ -346,11 +351,13 @@ class SVNLog2Sqlite:
             if( len(copied_dirlist) > 0):
                 #now update the additions    
                 #Path type is directory then dummy entries are required.
-                #For file type, 'real' entries will get creaetd                            
+                #For file type, 'real' entries will get creaetd
+                logging.debug("Adding dummy file addition entries")
                 deleted_dirlist = self.__createRevFileList(revlog, copied_dirlist, deleted_dirlist,
                                     querycur, updcur)
                 addedfiles  = self.__addDummyAdditionDetails(revlog.revno, querycur, updcur)
             if len(deleted_dirlist) > 0:
+                logging.debug("Adding dummy file deletion entries")
                 for deleted_dir in deleted_dirlist:
                     deletedfiles = deletedfiles+ self.__addDummyDeletionDetails(revlog.revno, deleted_dir.filepath(), querycur, updcur)
                 
