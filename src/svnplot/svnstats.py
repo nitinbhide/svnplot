@@ -124,7 +124,7 @@ def strip_zeros(dates, data):
     '''
     filtered_dates = dates
     filtered_data = data
-    if( data[0] == 0):
+    if( len(data) > 0 and data[0] == 0):
         filtered_dates = []
         filtered_data = []
         filter=True
