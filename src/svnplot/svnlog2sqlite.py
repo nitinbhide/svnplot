@@ -302,7 +302,7 @@ class SVNLog2Sqlite:
             lc_deleted = 0
 
             total_lc_added = total_lc_added+lc_added
-            logging.debug("\tadded dummy addition entry for path %s linecount=%d" % (changedpath,lc_added))
+            #logging.debug("\tadded dummy addition entry for path %s linecount=%d" % (changedpath,lc_added))
             changedpathid = self.getFilePathId(changedpath, querycur)
             copyfrompathid = self.getFilePathId(copyfrompath, querycur)
             assert(path_type != 'U')
@@ -334,7 +334,7 @@ class SVNLog2Sqlite:
                 
         querycur.execute('SELECT path FROM TempRevDirFileListVw')
         for changedpath, in querycur.fetchall():
-            logging.debug("\tDummy file deletion entries for path %s" % changedpath)      
+            #logging.debug("\tDummy file deletion entries for path %s" % changedpath)      
             querycur.execute('select sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
                         where changedpath == ? and revno < ? \
                         group by changedpath',(changedpath, revno))
