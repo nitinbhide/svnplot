@@ -150,6 +150,8 @@ class SVNLog2Sqlite:
                             assert(filename.endswith('/')==True)
                         changepathid = self.getFilePathId(filename, updcur)
                         copyfromid = self.getFilePathId(copyfrompath,updcur)
+                        if (changetype == 'R'):
+                            logging.debug("Replace linecount (revno : %d): %s %d" % (revlog.revno, filename,linesadded))
                         updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                             linesadded, linesdeleted, lc_updated, pathtype, entrytype) \
                                     values(?, ?, ?, ?,?,?, ?,?,?,?)", (revlog.revno, changepathid, changetype, copyfromid, copyfromrev, \
@@ -181,7 +183,8 @@ class SVNLog2Sqlite:
         '''
         assert(dirname.endswith('/'))
         updcur.execute('DROP TABLE IF EXISTS TempRevDirFileList')
-        updcur.execute('CREATE TEMP TABLE TempRevDirFileList(path text, pathid integer, addrevno integer)')
+        updcur.execute('DROP VIEW IF EXISTS TempRevDirFileListVw')
+        updcur.execute('CREATE TABLE TempRevDirFileList(path text, pathid integer, addrevno integer)')
         updcur.execute('CREATE INDEX revdirfilelistidx ON TempRevDirFileList (addrevno ASC, path ASC)')
         sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
                     pathtype="F" and revno <=%d and \
@@ -191,7 +194,8 @@ class SVNLog2Sqlite:
         for sourcepath, sourcepathid, addrevno in querycur:
             updcur.execute('INSERT INTO TempRevDirFileList(path, pathid, addrevno) \
                         VALUES(?,?,?)',(sourcepath, sourcepathid, addrevno))
-                    
+        self.dbcon.commit()
+        
         #Now delete the already deleted files from the file list.
         sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
                     pathtype="F" and revno <=%d and changetype== "D" and \
@@ -199,6 +203,11 @@ class SVNLog2Sqlite:
         querycur.execute(sqlquery)
         for sourcepath, sourcepathid, delrevno in querycur:            
             updcur.execute('DELETE FROM TempRevDirFileList WHERE path=? and addrevno < ?',(sourcepath, delrevno))
+        
+        #in rare case there is a possibility of duplicate values in the TempRevFileList
+        #hence try to create a temporary view to get the unique values
+        updcur.execute('CREATE TEMP VIEW TempRevDirFileListVw AS SELECT DISTINCT \
+            path, pathid, addrevno FROM TempRevDirFileList')
         self.dbcon.commit()
         
     def __createRevFileList(self, revlog, copied_dirlist, deleted_dirlist,querycur, updcur):
@@ -208,7 +217,8 @@ class SVNLog2Sqlite:
         try:
             upd_del_dirlist = deleted_dirlist            
             updcur.execute('DROP TABLE IF EXISTS TempRevFileList')
-            updcur.execute('CREATE TEMP TABLE TempRevFileList(path text, addrevno integer, \
+            updcur.execute('DROP VIEW IF EXISTS TempRevFileListVw')
+            updcur.execute('CREATE TABLE TempRevFileList(path text, addrevno integer, \
                         copyfrom_path text, copyfrom_pathid integer, copyfrom_rev integer)')
             updcur.execute('CREATE INDEX revfilelistidx ON TempRevFileList (addrevno ASC, path ASC)')
                 
@@ -226,7 +236,9 @@ class SVNLog2Sqlite:
                     path = sourcepath.replace(copiedfrom_path, change.filepath_unicode())                    
                     updcur.execute('INSERT INTO TempRevFileList(path, addrevno, copyfrom_path, copyfrom_pathid,copyfrom_rev) \
                         VALUES(?,?,?,?,?)',(path, addrevno, sourcepath,sourcepathid, copiedfrom_rev))
-                    
+            self.dbcon.commit()
+            
+            for change in copied_dirlist:
                 #Now delete the already deleted files from the file list.
                 sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
                     pathtype="F" and revno <=%d and changetype== "D" and \
@@ -249,11 +261,17 @@ class SVNLog2Sqlite:
                 else:
                     #if deletion path is not there in the addition path, it has to be
                     #handled seperately. Hence add it into different list
-                    upd_del_dirlist.append(change)                            
+                    upd_del_dirlist.append(change)
+        
+            #in rare case there is a possibility of duplicate values in the TempRevFileList
+            #hence try to create a temporary view to get the unique values
+            updcur.execute('CREATE TEMP VIEW TempRevFileListVw AS SELECT DISTINCT \
+                path, addrevno, copyfrom_path, copyfrom_pathid,copyfrom_rev FROM TempRevFileList')
+                    
+            self.dbcon.commit()
+            
         except:
             logging.exception("Found error while getting file list for revision")
-        finally:
-            self.dbcon.commit()
             
         return(upd_del_dirlist)
         
@@ -264,8 +282,8 @@ class SVNLog2Sqlite:
         entry_type = 'D'
         lc_updated = 'Y'
         total_lc_added = 0
-        
-        querycur.execute("SELECT * from TempRevFileList")
+                
+        querycur.execute("SELECT * from TempRevFileListVw")
         for changedpath, addrevno, copyfrompath, copyfrompathid, copyfromrev in querycur.fetchall():                    
             querycur.execute("select sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
                     where changedpath == ? and revno <= ? group by changedpath",
@@ -313,8 +331,8 @@ class SVNLog2Sqlite:
         #file list
         logging.debug("Updating dummy file deletion entries for path %s" % deleted_dir)
         self.__createRevFileListForDir(revno, deleted_dir, querycur, updcur)
-        
-        querycur.execute('SELECT path FROM TempRevDirFileList')
+                
+        querycur.execute('SELECT path FROM TempRevDirFileListVw')
         for changedpath, in querycur.fetchall():
             logging.debug("\tDummy file deletion entries for path %s" % changedpath)      
             querycur.execute('select sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
@@ -368,6 +386,9 @@ class SVNLog2Sqlite:
                 for deleted_dir in deleted_dirlist:
                     deletedfiles = deletedfiles+ self.__addDummyDeletionDetails(revlog.revno, deleted_dir.filepath(), querycur, updcur)
                 
+        #if( revlog.revno == 373):
+        #    from sys import exit
+        #    exit(0)
         return(addedfiles, deletedfiles)
             
     def UpdateLineCountData(self):
