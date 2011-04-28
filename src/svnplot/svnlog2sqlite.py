@@ -282,12 +282,15 @@ class SVNLog2Sqlite:
         entry_type = 'D'
         lc_updated = 'Y'
         total_lc_added = 0
-                
+
+        querycur.execute("SELECT count(*) from TempRevFileListVw")
+        logging.debug("Revision file count = %d" % querycur.fetchone()[0])
+        
         querycur.execute("SELECT * from TempRevFileListVw")
         for changedpath, addrevno, copyfrompath, copyfrompathid, copyfromrev in querycur.fetchall():                    
-            querycur.execute("select sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
-                    where changedpath == ? and revno <= ? group by changedpath",
-                     (copyfrompath, copyfromrev))
+            querycur.execute("select sum(linesadded), sum(linesdeleted) from SVNLogDetail \
+                    where revno <= ? and changedpathid ==(select id from SVNPaths where path== ?) group by changedpathid",
+                     (copyfromrev, copyfrompath))
     
             row = querycur.fetchone()
             #set lines added to current line count
@@ -335,9 +338,9 @@ class SVNLog2Sqlite:
         querycur.execute('SELECT path FROM TempRevDirFileListVw')
         for changedpath, in querycur.fetchall():
             #logging.debug("\tDummy file deletion entries for path %s" % changedpath)      
-            querycur.execute('select sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
-                        where changedpath == ? and revno < ? \
-                        group by changedpath',(changedpath, revno))
+            querycur.execute('select sum(linesadded), sum(linesdeleted)  from SVNLogDetail \
+                    where revno <= ? and changedpathid ==(select id from SVNPaths where path== ?) group by changedpathid',
+                             (revno,changedpath))
         
             row = querycur.fetchone()
             lc_deleted = 0
@@ -446,6 +449,8 @@ class SVNLog2Sqlite:
         #line count data later        
         cur.execute("CREATE INDEX if not exists svnlogrevnoidx ON SVNLog (revno ASC)")
         cur.execute("CREATE INDEX if not exists svnlogdtlrevnoidx ON SVNLogDetail (revno ASC)")
+        cur.execute("CREATE INDEX if not exists svnlogdtlchangepathidx ON SVNLogDetail (changedpathid ASC)")
+        cur.execute("CREATE INDEX if not exists svnlogdtlcopypathidx ON SVNLogDetail (copyfrompathid ASC)")
         cur.execute("CREATE INDEX IF NOT EXISTS svnpathidx ON SVNPaths (path ASC)")
         self.dbcon.commit()
         
