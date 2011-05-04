@@ -180,10 +180,16 @@ class SVNLog2Sqlite:
         
         copyfrompath, copyfromrev = change.copyfrom()
         changedpath = change.filepath()
+        assert(changedpath.endswith('/'))
+        
         addedfiles  = 0
+        entry_type = 'D'
+        lc_updated = 'Y'
+        changetype = 'A'
         
         path_type = 'U' #set path type to unknown
         if(copyfrompath != None):
+            logging.debug("Updating addition entries")
             #the data is copied from an existing source path. and make sure
             #that we create dummy entries for files which are not already deleted
             #from the 'copy from path'
@@ -193,10 +199,11 @@ class SVNLog2Sqlite:
             # source or they are deleted during the commiting this change). Hence
             # its better to query the file list valid for this repository, then
             #query the linecount for these files only to create the dummy entries
-            entrylist = self.svnclient.getFileList(changedpath, revno)
-        
-            for changepathentry in entrylist:
+            
+            for changepathentry in self.svnclient.getFileList(changedpath, revno):
+                logging.debug("changed path entry : %s" % changepathentry)
                 original_path = changepathentry.replace(changedpath,copyfrompath,1)
+                logging.debug('original path %s' %original_path)
                 querycur.execute("select sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
                 where changedpath == ? and revno < ? group by changedpath",
                     (original_path, copyfromrev))
@@ -210,7 +217,6 @@ class SVNLog2Sqlite:
                     lc_added = 0
                 #set the lines deleted = 0
                 lc_deleted = 0
-
                 filename = svnlogiter.normurlpath(changepathentry)
                 path_type = 'F'                        
                 changedpathid = self.getFilePathId(changepathentry, querycur)
@@ -221,7 +227,7 @@ class SVNLog2Sqlite:
                                 values(?, ?, ?, ?,?,?, ?,?,?,?)", (change.revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                         lc_added, lc_deleted, entry_type,path_type,lc_updated))
                 addedfiles = addedfiles+1                    
-                    #print row
+        logging.debug("dummy add entries : %d" % addedfiles)
         return addedfiles
     
     def __addDummyDeletionDetails(self, change, revno, querycur, updcur):
@@ -232,6 +238,7 @@ class SVNLog2Sqlite:
             
         copyfrompath, copyfromrev = change.copyfrom()
         changedpath = change.filepath()
+        assert(changedpath.endswith('/'))
             
         deletedfiles = 0
         #get list of all files in the directory at this point. It is very difficult
@@ -242,6 +249,9 @@ class SVNLog2Sqlite:
         #query the linecount for these files only to create the dummy entries
         changedpath = change.prev_filepath()
         revno = change.prev_revno()
+        entry_type = 'D'
+        lc_updated = 'Y'
+        changetype = 'D'
         
         entrylist = self.svnclient.getFileList(changedpath, revno)
                         
@@ -259,7 +269,8 @@ class SVNLog2Sqlite:
                 lc_deleted = 0
             #set lines added to 0
             lc_added = 0
-            path_type = 'F'                    
+            path_type = 'F'
+            changetype = 'D'
             assert(path_type != 'U')
             changedpathid = self.getFilePathId(row[0], updcur)
             copyfrompathid = self.getFilePathId(copyfrompath, updcur)
@@ -275,16 +286,15 @@ class SVNLog2Sqlite:
         add dummy log detail entries for getting the correct line count data in case of tagging/branching and deleting the directories.
         '''
         
-        changetype = change.change_type()
-        entry_type = 'D'
-        lc_updated = 'Y'
+        changetype = change.change_type()        
         addedfiles = 0
         deletedfiles = 0
         #Path type is directory then dummy entries are required. For file type, 'real' entries will get creaetd                
         if( (changetype == 'D' or changetype=='A') and change.isDirectory()):
             #since we may have to query the existing data. Commit the changes first.
             self.dbcon.commit()
-                                    
+            print "updatng dummy linecount entries"
+            
             if( changetype == 'A'):
                 addedfiles= self.__addDummyAdditionDetails(change,revno, querycur, updcur)
                             
