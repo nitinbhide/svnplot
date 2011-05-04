@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+	<!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+	<title>Subversion Stats Plot for $RepoName</title>
+    <style type="text/css">
+		h3 {text-align:center;background-color: #F5F5F5;margin:2;border-style:solid}
+		h4 {background-color: transparent;margin:1}
+		td { text-align:justify;}
+		#pb { 	page-break-after: always;	}
+		.graph { 
+			display: block;
+			margin-left:auto;margin-right:auto;
+			padding:10px 25px;
+			height:480px;width:640px;
+		}
+    </style>
+	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
+	<script type="text/javascript" src="jquery.min.js"></script>
+	<script type="text/javascript" src="jquery.jqplot.js"></script>	
+	<script type="text/javascript" src="jqplot.dateAxisRenderer.min.js"></script>	
+	<script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
+	
+	$LocTable
+	$LoCChurnTable	
+	$ContriLoCTable
+	$AvgLoCTable
+	$FileCountTable
+	$FileTypeCountTable
+	$DirSizePie
+	$DirSizeLine
+	$DirFileCountPie
+	$CommitActIdxTable
+	$AuthorsCommitTrend
+	$ActivityByWeekdayFunc
+	$ActivityByWeekdayAllTable
+    $ActivityByWeekdayRecentTable
+    $ActivityByTimeOfDayFunc
+    $ActivityByTimeOfDayAllTable
+	$ActivityByTimeOfDayRecentTable
+
+	$AuthorActivityGraph
+	$DailyCommitCountGraph
+    <script type="text/javascript">
+			 function showAllGraphs(showLegend) {
+				locgraph('LoCGraph',showLegend);
+				locChurnGraph('LoCChurnGraph', showLegend);
+				contri_locgraph('ContriLoCGraph', showLegend);
+				avglocgraph('AvgLoCGraph',showLegend);
+				fileCountGraph('FileCountGraph',showLegend);
+				fileTypesGraph('FileTypeCountGraph',showLegend);
+				ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
+                ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
+                ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
+                ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
+				CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
+                directorySizePieGraph('DirSizePie', showLegend);
+                dirFileCountPieGraph('DirFileCountPie', showLegend);
+				dirSizeLineGraph('DirSizeLine', showLegend);
+				authorsCommitTrend('AuthorsCommitTrend',showLegend);
+				authorActivityGraph('AuthorActivityGraph', showLegend);
+				dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
+            };                			  
+	</script>	
+</head>
+
+<body onLoad="showAllGraphs(true);">
+<h1 align="center">Subversion Statistics for $RepoName</h1>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>General Statistics</h3></th>
+</tr>
+<tr>
+    <td>
+    $BasicStats
+    </td>
+</tr>
+<tr>
+<th align="center"><h3>Top 10 Hot List $SEARCHPATH</h3></th>
+</tr>
+<tr>
+	<td>
+		<table width="100%">
+            <td width="50%">
+            <p align='center'><b>Top 10 Active Files</b></p>
+            $ActiveFiles
+            </td>
+            <td width="50%">
+            <p align='center'><b>Top 10 Active Authors</b></p>
+            $ActiveAuthors
+            </td>
+		</table>
+	</td>
+</tr>
+</table>
+
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Lines of Code Graphs $SEARCHPATH</h3></th>
+</tr>
+<tr>
+    <td align="center">
+	<div id="LoCGraph" class="graph"></div>
+    </td>
+</tr>
+<tr>
+    <td align="center">
+	<div id="LoCChurnGraph" class="graph"></div>
+    </td>
+</tr>
+<tr>
+    <td align="left"><br/>
+	<div id="ContriLoCGraph" class="graph"></div>
+    </td>
+</tr>
+<tr>
+    <td align="left"><br/>
+	<div id="AvgLoCGraph" class="graph"></div>    
+    </td>    
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>File Count Graphs $SEARCHPATH</h3></th>
+</tr>
+<tr>
+    <td><br/>
+	<div id="FileCountGraph" class="graph"></div>    
+    </td>
+</tr>
+<tr>
+    <td><br/>
+    <div id="FileTypeCountGraph" class="graph"></div>    
+    </td>
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Directory Size Graphs $SEARCHPATH</h3></th>
+</tr>
+<tr>
+   <td><br/>
+   <div id="DirSizePie" class="graph"></div>
+    </td>
+</tr>
+<tr>	
+    <td><br/>
+    <div id="DirSizeLine" class="graph"></div>
+    </td>
+</tr>
+<tr>	
+    <td><br/>
+	<div id="DirFileCountPie" class="graph"></div>   
+    </td>
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Commit Activity Graphs</h3></th>
+</tr>
+<tr>
+    <td><br/>
+        <div id="CommitActIdxGraph" class="graph"></div>		
+    </td>    
+</tr>
+<tr>	
+    <td><br/>
+    <div id="ActivityByWeekdayAllGraph" class="graph"></div>    
+    </td>
+</tr>
+<tr>	
+    <td><br/>
+    <div id="ActivityByWeekdayRecentGraph" class="graph"></div>    
+    </td>
+</tr>
+<tr>
+    <td><br/>
+    <div id="ActivityByTimeOfDayAllGraph" class="graph"></div>    
+    </td>    
+</tr>
+<tr>
+    <td><br/>
+    <div id="ActivityByTimeOfDayRecentGraph" class="graph"></div>    
+    </td>    
+</tr>
+<tr>
+    <td><br/>	
+    <div id="AuthorsCommitTrend" class="graph"></div>    
+    </td>    
+</tr>
+<tr>
+    <td><br/>
+     <div id="AuthorActivityGraph" class="graph"></div>	 
+    </td>
+</tr>
+<tr>	
+    <td align="center" >
+    <div id="DailyCommitCountGraph" class="graph"></div>
+    </td>    
+</tr>
+</table>
+
+<table id="pb" width="90%">
+<th align="center"><h3>Log Message Tag Cloud</h3></th>
+</tr>
+<tr id='tagcloud'>
+<td align="center">$TagCloud</td>
+</tr>
+<th align="center"><h3>Author Cloud</h3></th>
+</tr>
+<tr id='authcloud'>
+<td align="center">$AuthCloud</td>
+</tr>
+</table>
+</body>
+</html>
