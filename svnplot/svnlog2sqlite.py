@@ -201,9 +201,7 @@ class SVNLog2Sqlite:
             #query the linecount for these files only to create the dummy entries
             
             for changepathentry in self.svnclient.getUnmodifiedFileList(changedpath, revno):
-                logging.debug("changed path entry : %s" % changepathentry)
                 original_path = changepathentry.replace(changedpath,copyfrompath,1)
-                logging.debug('original path %s' %original_path)
                 querycur.execute("select sum(linesadded), sum(linesdeleted) from SVNLogDetailVw \
                 where changedpath == ? and revno < ? group by changedpath",
                     (original_path, copyfromrev))
@@ -272,7 +270,7 @@ class SVNLog2Sqlite:
             path_type = 'F'
             changetype = 'D'
             assert(path_type != 'U')
-            changedpathid = self.getFilePathId(row[0], updcur)
+            changedpathid = self.getFilePathId(changepathentry, updcur)
             copyfrompathid = self.getFilePathId(copyfrompath, updcur)
             updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                     linesadded, linesdeleted, entrytype, pathtype, lc_updated) \
