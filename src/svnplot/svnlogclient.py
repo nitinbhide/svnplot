@@ -421,11 +421,15 @@ class SVNLogClient:
         '''
         return the file list of all the files in the directory 'path' and its
         sub directories
-        '''
+        '''                
         entrylist = self.getFullDirInfo(path, revno)
+        dirpath = path
+        if not dirpath.endswith('/'):
+            dirpath = path + '/'
+        assert(dirpath.endswith('/'))
         for pathentry, info_dict in entrylist:
             if info_dict.kind == pysvn.node_kind.file:
-                yield normurlpath(pathentry)
+                yield normurlpath(dirpath+pathentry)
         
         
     def isChildPath(self, filepath):
