@@ -428,8 +428,22 @@ class SVNLogClient:
         if not dirpath.endswith('/'):
             dirpath = path + '/'
         assert(dirpath.endswith('/'))
-        for pathentry, info_dict in entrylist:
+        for pathentry, info_dict in entrylist:            
             if info_dict.kind == pysvn.node_kind.file:
+                yield normurlpath(dirpath+pathentry)
+    
+    def getUnmodifiedFileList(self,path, revno):
+        '''
+        get a list of files in the path but not modified in the current revision
+        '''
+        entrylist = self.getFullDirInfo(path, revno)
+        dirpath = path
+        if not dirpath.endswith('/'):
+            dirpath = path + '/'
+        assert(dirpath.endswith('/'))
+        for pathentry, info_dict in entrylist:            
+            if info_dict.kind == pysvn.node_kind.file \
+                    and info_dict.last_changed_rev.number != revno:
                 yield normurlpath(dirpath+pathentry)
         
         
