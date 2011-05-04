@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Subversion Stats Plot for $RepoName</title>
+    <style type="text/css">
+    h3 {text-align:center;background-color: #F5F5F5;margin:2;border-style:solid}
+    h4 {background-color: transparent;margin:1}
+	td { text-align:justify;}
+	#pb { 	page-break-after: always;	}
+    </style>
+</head>
+
+<body>
+<h1 align="center">Subversion Statistics for $RepoName</h1>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>General Statistics</h3></th>
+</tr>
+<tr>
+    <td>
+    $BasicStats
+    </td>
+</tr>
+<tr>
+<th align="center"><h3>Top 10 Hot List</h3></th>
+</tr>
+<tr>
+	<td>
+		<table width="100%">
+            <td width="50%">
+            <p align='center'><b>Top 10 Active Files</b></p>
+            $ActiveFiles
+            </td>
+            <td width="50%">
+            <p align='center'><b>Top 10 Active Authors</b></p>
+            $ActiveAuthors
+            </td>
+		</table>
+	</td>
+</tr>
+</table>
+
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Lines of Code Graphs</h3></th>
+</tr>
+<tr>
+    <td align="left"><h4>Lines of Code</h4><br/>
+    <a href="$LoC"><img src="$LoC" /></a>
+    </td>
+</tr>
+<tr>
+    <td align="left"><h4>Contributed Lines of Code</h4><br/>
+    <a href="$LoCByDev"><img src="$LoCByDev" /></a>
+    </td>
+</tr>
+<tr>
+    <td align="left"><h4>Average File Size</h4><br/>
+    <a href="$AvgLoC"><img src="$AvgLoC"></a>
+    </td>    
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>File Count Graphs</h3></th>
+</tr>
+<tr>
+    <td><h4>File Count</h4><br/>
+    <a href="$FileCount"><img src="$FileCount"></a>
+    </td>
+</tr>
+<tr>
+    <td><h4>File Types</h4><br/>
+    <a href="$FileTypes"><img src="$FileTypes"></a>
+    </td>
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Directory Size Graphs</h3></th>
+</tr>
+<tr>
+   <td><h4>Current Directory Size</h4><br/>
+    <a href="$DirSizePie"><img src="$DirSizePie"></a>
+    </td>
+</tr>
+<tr>	
+    <td><h4>Directory Size</h4><br/>
+    <a href="$DirSizeLine"><img src="$DirSizeLine"></a>
+    </td>
+</tr>
+<tr>	
+    <td><h4>Directory Size(FileCount)</h4><br/>
+    <a href="$DirFileCountPie"><img src="$DirFileCountPie"></a>
+    </td>
+</tr>
+</table>
+<table id="pb" width="90%">
+<tr>
+<th align="center"><h3>Commit Activity Graphs</h3></th>
+</tr>
+<tr>
+    <td><h4>Commit Activity Index over time</h4><br/>
+        <a href="$CommitActivityIdx"><img src="$CommitActivityIdx"></a>
+    </td>    
+</tr>
+<tr>	
+    <td><h4>Commit Activity By Day of Week </h4><br/>
+    <a href="$ActByWeek"><img src="$ActByWeek"></a>
+    </td>
+</tr>
+<tr>
+    <td><h4>Commit Activity By Hour of Day</h4><br/>
+    <a href="$ActByTimeOfDay"><img src="$ActByTimeOfDay"></a>
+    </td>    
+</tr>
+<tr>
+    <td><h4>Author Commits Trend Histogram</h4><br/>	
+    <a href="$AuthorsCommitTrend"><img src="$AuthorsCommitTrend"></a>
+    </td>    
+</tr>
+<tr>
+    <td><h4>Author Activity</h4><br/>
+    <a href="$AuthActivity"><img src="$AuthActivity"></a>
+    </td>    
+</tr>
+</table>
+<table id="pb" width="90%">
+<th align="center"><h3>Log Message Tag Cloud</h3></th>
+</tr>
+<tr id='tagcloud'>
+<td align="center">$TagCloud</td>
+</tr>
+<th align="center"><h3>Author Cloud</h3></th>
+</tr>
+<tr id='authcloud'>
+<td align="center">$AuthCloud</td>
+</tr>
+</table>
+</body>
+</html>
