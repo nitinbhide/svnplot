@@ -414,6 +414,7 @@ class SVNLogClient:
         
         logging.debug("Trying to get full information for %s" % url)
         entry_list = self.svnclient.info2( url,revision=rev,recurse=True)
+        logging.debug("entry count = %d" % len(entry_list))
         
         return(entry_list)
     
@@ -423,9 +424,13 @@ class SVNLogClient:
         sub directories
         '''
         entrylist = self.getFullDirInfo(path, revno)
+        dirpath = path
+        if not dirpath.endswith('/'):
+            dirpath = path + '/'
+        assert(dirpath.endswith('/'))
         for pathentry, info_dict in entrylist:
             if info_dict.kind == pysvn.node_kind.file:
-                yield normurlpath(pathentry)
+                yield normurlpath(dirpath+pathentry)
         
         
     def isChildPath(self, filepath):

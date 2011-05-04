@@ -151,8 +151,17 @@ class SVNChangeEntry:
         lc = self.changedpath.get('lc_deleted', 0)
         return(lc)        
 
-    def copyfrom(self):
+    def copyfrom_path(self):
+        '''
+        get corrected copy from path.
+        '''
         path = self.changedpath['copyfrom_path']
+        if self.isDirectory() and path is not None and not path.endswith('/'):
+            path = path + '/'
+        return(makeunicode(path))
+
+    def copyfrom(self):
+        path = self.copyfrom_path()
         rev  = self.changedpath['copyfrom_revision']
         revno = None
         if( rev != None):
