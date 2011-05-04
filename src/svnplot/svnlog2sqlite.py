@@ -184,7 +184,7 @@ class SVNLog2Sqlite:
         assert(dirname.endswith('/'))
         updcur.execute('DROP TABLE IF EXISTS TempRevDirFileList')
         updcur.execute('DROP VIEW IF EXISTS TempRevDirFileListVw')
-        updcur.execute('CREATE TABLE TempRevDirFileList(path text, pathid integer, addrevno integer)')
+        updcur.execute('CREATE TEMP TABLE TempRevDirFileList(path text, pathid integer, addrevno integer)')
         updcur.execute('CREATE INDEX revdirfilelistidx ON TempRevDirFileList (addrevno ASC, path ASC)')
         sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
                     pathtype="F" and revno <=%d and \
