@@ -121,7 +121,7 @@ class SVNChangeEntry:
         return(self.changedpath['action'])
     
     def filepath(self):
-        fpath = normurlpath(self.changedpath['path'])        
+        fpath = normurlpath(self.changedpath['path'])
         return(fpath)
     
     def prev_filepath(self):
@@ -339,7 +339,15 @@ class SVNRevLog:
             change_entry = SVNChangeEntry(self, change)
             if( change_entry.isValidChange()):
                 yield change_entry
-            
+    
+    def getFileChangeEntries(self):
+        '''
+        filter the change entries to return only the file change entries.
+        '''
+        for change_entry in self.getChangeEntries():
+            if change_entry.isDirectory() == False:
+                yield change_entry
+        
     def changedFileCount(self):
         '''includes directory and files. Initially I wanted to only add the changed file paths.
         however it is not possible to detect if the changed path is file or directory from the

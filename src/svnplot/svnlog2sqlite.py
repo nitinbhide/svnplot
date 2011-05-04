@@ -218,7 +218,7 @@ class SVNLog2Sqlite:
             upd_del_dirlist = deleted_dirlist            
             updcur.execute('DROP TABLE IF EXISTS TempRevFileList')
             updcur.execute('DROP VIEW IF EXISTS TempRevFileListVw')
-            updcur.execute('CREATE TABLE TempRevFileList(path text, addrevno integer, \
+            updcur.execute('CREATE TEMP TABLE TempRevFileList(path text, addrevno integer, \
                         copyfrom_path text, copyfrom_pathid integer, copyfrom_rev integer)')
             updcur.execute('CREATE INDEX revfilelistidx ON TempRevFileList (addrevno ASC, path ASC)')
                 
@@ -238,8 +238,8 @@ class SVNLog2Sqlite:
                         VALUES(?,?,?,?,?)',(path, addrevno, sourcepath,sourcepathid, copiedfrom_rev))
             self.dbcon.commit()
             
+            #Now delete the already deleted files from the file list.                
             for change in copied_dirlist:
-                #Now delete the already deleted files from the file list.
                 sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
                     pathtype="F" and revno <=%d and changetype== "D" and \
                     (changedpath like "%s%%" and changedpath != "%s")'% (copiedfrom_rev,copiedfrom_path,copiedfrom_path)
@@ -250,6 +250,12 @@ class SVNLog2Sqlite:
                     
             self.dbcon.commit()
             
+            #Now delete the entries for which 'real' entry is already created in
+            #this 'revision' update.
+            for change_entry in revlog.getFileChangeEntries():
+                filepath = change_entry.filepath()
+                updcur.execute('DELETE FROM TempRevFileList WHERE path=?',(filepath,))
+                
             upd_del_dirlist = []        
             for change in deleted_dirlist:
                 #first check if 'deleted' directory entry is there in the revision filelist
@@ -348,7 +354,7 @@ class SVNLog2Sqlite:
                 #set lines deleted to current line count
                 lc_deleted = row[0]-row[1]                
             if( lc_deleted < 0):
-                logging.error("Found negative linecount for %s(rev %d)" % (copyfrompath,copyfromrev))
+                logging.error("Found negative linecount for %s(rev %d)" % (changedpath,revno))
                 lc_deleted = 0
         
             changedpathid = self.getFilePathId(changedpath, updcur)
@@ -363,8 +369,6 @@ class SVNLog2Sqlite:
         '''
         add dummy log detail entries for getting the correct line count data in case of tagging/branching and deleting the directories.
         '''        
-        entry_type = 'D'
-        lc_updated = 'Y'
         addedfiles = 0
         deletedfiles = 0
         
