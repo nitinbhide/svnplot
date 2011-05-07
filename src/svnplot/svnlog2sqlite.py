@@ -186,10 +186,12 @@ class SVNLog2Sqlite:
         updcur.execute('DROP VIEW IF EXISTS TempRevDirFileListVw')
         updcur.execute('CREATE TEMP TABLE TempRevDirFileList(path text, pathid integer, addrevno integer)')
         updcur.execute('CREATE INDEX revdirfilelistidx ON TempRevDirFileList (addrevno ASC, path ASC)')
-        sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
-                    pathtype="F" and revno <=%d and \
-                    (changedpath like "%s%%" and changedpath != "%s") and \
-                    (changetype== "A" or changetype== "R")' % (revno,dirname,dirname)        
+        sqlquery = 'SELECT DISTINCT SVNPaths.path, changedpathid, SVNLogDetail.revno FROM SVNLogDetail,SVNPaths WHERE \
+                    pathtype="F" and SVNLogDetail.revno <=%d and (changetype== "A" or changetype== "R") \
+                    and SVNLogDetail.changedpathid = SVNPaths.id and \
+                    (SVNPaths.path like "%s%%" and SVNPaths.path != "%s")' \
+                    % (revno,dirname,dirname)
+        
         querycur.execute(sqlquery)
         for sourcepath, sourcepathid, addrevno in querycur:
             updcur.execute('INSERT INTO TempRevDirFileList(path, pathid, addrevno) \
@@ -197,9 +199,11 @@ class SVNLog2Sqlite:
         self.dbcon.commit()
         
         #Now delete the already deleted files from the file list.
-        sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
-                    pathtype="F" and revno <=%d and changetype== "D" and \
-                    (changedpath like "%s%%" and changedpath != "%s")'% (revno,dirname,dirname)
+        sqlquery = 'SELECT DISTINCT SVNPaths.path, SVNLogDetail.changedpathid, SVNLogDetail.revno FROM SVNLogDetail,SVNPaths \
+                   WHERE pathtype="F" and SVNLogDetail.revno <=%d and changetype== "D" \
+                   and SVNLogDetail.changedpathid = SVNPaths.id \
+                    and (SVNPaths.path like "%s%%" and SVNPaths.path!= "%s")' \
+                    % (revno,dirname,dirname)
         querycur.execute(sqlquery)
         for sourcepath, sourcepathid, delrevno in querycur:            
             updcur.execute('DELETE FROM TempRevDirFileList WHERE path=? and addrevno < ?',(sourcepath, delrevno))
@@ -240,6 +244,7 @@ class SVNLog2Sqlite:
             
             #Now delete the already deleted files from the file list.                
             for change in copied_dirlist:
+                copiedfrom_path,copiedfrom_rev = change.copyfrom()
                 sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
                     pathtype="F" and revno <=%d and changetype== "D" and \
                     (changedpath like "%s%%" and changedpath != "%s")'% (copiedfrom_rev,copiedfrom_path,copiedfrom_path)
