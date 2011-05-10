@@ -279,7 +279,8 @@ class SVNLog2Sqlite:
             #in rare case there is a possibility of duplicate values in the TempRevFileList
             #hence try to create a temporary view to get the unique values
             updcur.execute('CREATE TEMP VIEW TempRevFileListVw AS SELECT DISTINCT \
-                path, addrevno, copyfrom_path, copyfrom_pathid,copyfrom_rev FROM TempRevFileList')
+                path, addrevno, copyfrom_path, copyfrom_pathid,copyfrom_rev FROM TempRevFileList \
+                group by path having addrevno=max(addrevno)')
                     
             self.dbcon.commit()
             
