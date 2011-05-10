@@ -231,10 +231,11 @@ class SVNLog2Sqlite:
                 #collect all files added to this directory.
                 assert(copiedfrom_path.endswith('/') == change.filepath_unicode().endswith('/'))
                 
-                sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
-                    pathtype="F" and revno <=%d and \
-                    (changedpath like "%s%%" and changedpath != "%s") and \
-                    (changetype== "A" or changetype== "R")' % (copiedfrom_rev,copiedfrom_path,copiedfrom_path)                
+                sqlquery = 'SELECT DISTINCT SVNPaths.path, changedpathid, revno FROM SVNLogDetail, SVNPaths \
+                    WHERE pathtype="F" and revno <=%d and (changetype== "A" or changetype== "R") and \
+                    SVNPaths.id = SVNLogDetail.changedpathid and \
+                    (SVNPaths.path like "%s%%" and SVNPaths.path!= "%s") \
+                    ' % (copiedfrom_rev,copiedfrom_path,copiedfrom_path)                
                 querycur.execute(sqlquery)
                 for sourcepath, sourcepathid, addrevno in querycur:
                     path = sourcepath.replace(copiedfrom_path, change.filepath_unicode())                    
@@ -245,9 +246,10 @@ class SVNLog2Sqlite:
             #Now delete the already deleted files from the file list.                
             for change in copied_dirlist:
                 copiedfrom_path,copiedfrom_rev = change.copyfrom()
-                sqlquery = 'SELECT DISTINCT changedpath, changedpathid, revno FROM SVNLogDetailVw WHERE \
+                sqlquery = 'SELECT DISTINCT SVNPaths.path, changedpathid, revno FROM SVNLogDetail,SVNPaths WHERE \
                     pathtype="F" and revno <=%d and changetype== "D" and \
-                    (changedpath like "%s%%" and changedpath != "%s")'% (copiedfrom_rev,copiedfrom_path,copiedfrom_path)
+                    SVNPaths.id = SVNLogDetail.changedpathid and \
+                    (SVNPaths.path like "%s%%" and SVNPaths.path != "%s")'% (copiedfrom_rev,copiedfrom_path,copiedfrom_path)
                 querycur.execute(sqlquery)
                 for sourcepath, sourcepathid, delrevno in querycur:
                     path = sourcepath.replace(copiedfrom_path, change.filepath_unicode())                    
