@@ -244,24 +244,36 @@ class SVNChangeEntry:
                     added = self.logclient.getLineCount(filepath, revno)
                 elif( changetype == 'D'):
                     deleted = self.logclient.getLineCount(prev_filepath, prev_revno)
+                elif (changetype == 'R'):
+                    #change type 'R' (replace) means files contents are replaced hence
+                    #calling self.__getDiffLineCount(filepath, revno,prev_filepath, prev_revno)
+                    # will always return 0. In case 'R' there are two possibilities the
+                    # the file path previously exists (in which case we need diff) or
+                    # filepath is newly added (in which case we have to treat it as 'add')
+                    try:
+                        added, deleted = self.__getDiffLineCount(filepath, revno,None, None)
+                    except:
+                        added = self.logclient.getLineCount(filepath, revno)
                 else:
                     #change type is 'changetype != 'A' and changetype != 'D'
                     #directory is modified
-                    
-                    diff_log = self.logclient.getRevFileDiff(filepath, revno,prev_filepath, prev_revno)
-                    diffDict = getDiffLineCountDict(diff_log)
-                    if( len(diffDict)==1):
-                        #for single files the 'diff_log' contains only the 'name of file' and not full path.
-                        #Hence to need to 'extract' the filename from full filepath
-                        filename = u'/'+filepath.rsplit(u'/', 2)[-1]
-                        fname, (added, deleted) = diffDict.popitem()
+                    added, deleted = self.__getDiffLineCount(filepath, revno,prev_filepath, prev_revno)
                     
             logging.debug("DiffLineCount %d : %s : %s : %d : %d " % (revno, filename, changetype, added, deleted))
             self.changedpath['lc_added'] = added
             self.changedpath['lc_deleted'] = deleted
                   
         return(added, deleted)
-        
+    
+    def __getDiffLineCount(self, filepath, revno, prev_filepath, prev_revno):
+        diff_log = self.logclient.getRevFileDiff(filepath, revno,prev_filepath, prev_revno)
+        diffDict = getDiffLineCountDict(diff_log)
+        if( len(diffDict)==1):
+            #for single files the 'diff_log' contains only the 'name of file' and not full path.
+            #Hence to need to 'extract' the filename from full filepath
+            filename = u'/'+filepath.rsplit(u'/', 2)[-1]
+            fname, (added, deleted) = diffDict.popitem()
+        return added, deleted
     
 class SVNRevLog:
     def __init__(self, logclient, revnolog):
