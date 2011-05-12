@@ -268,6 +268,8 @@ class SVNChangeEntry:
     def __getDiffLineCount(self, filepath, revno, prev_filepath, prev_revno):
         diff_log = self.logclient.getRevFileDiff(filepath, revno,prev_filepath, prev_revno)
         diffDict = getDiffLineCountDict(diff_log)
+        added=0
+        deleted=0
         if( len(diffDict)==1):
             #for single files the 'diff_log' contains only the 'name of file' and not full path.
             #Hence to need to 'extract' the filename from full filepath
