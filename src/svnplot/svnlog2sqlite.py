@@ -653,5 +653,3 @@ def RunMain():
 if( __name__ == "__main__"):
     RunMain()
     
-
-#select count(*), SVNPaths.relpathid from SVNLogDetail, SVNPaths where SVNLogDetail.changedpathid=SVNPaths.id and SVNPaths.path like "/cReader/Shared/Java/trunk/%" group by SVNPaths.relpathid    
