@@ -111,26 +111,7 @@ class SVNLog2Sqlite:
             querycur.close()
             
         return(id)
-
-    def getTagRelPathId(self, relpath, updcur):
-        '''
-        query/create the relative filepath id if required.
-        '''
-        id = None
-        assert(relpath != None)
-        
-        querycur=self.dbcon.cursor()
-        querycur.execute('select id from SVNTagRelPaths where relpath = ?', (relpath,))
-        resultrow = querycur.fetchone()
-        if( resultrow == None):
-            updcur.execute('INSERT INTO SVNTagRelPaths(relpath) values(?)', (relpath,))
-            querycur.execute('select id from SVNTagRelPaths where relpath = ?', (relpath,))
-            resultrow = querycur.fetchone()
-        id = resultrow[0]
-        querycur.close()
-            
-        return(id)
-        
+    
     def ConvertRevs(self, startrev, endrev, bUpdLineCount):
         self.printVerbose("Converting revisions %d to %d" % (startrev, endrev))
         if( startrev < endrev):
@@ -393,22 +374,6 @@ class SVNLog2Sqlite:
         self.dbcon.commit()
         return deletedfiles
 
-    def updateRelPaths(self, copydir_list, querycur, updcur):
-        '''
-        update relative paths table for 'copied directory path'.
-        '''
-        for copied_dir in copydir_list:
-            dirpath = copied_dir.filepath()
-            assert(dirpath.endswith('/'))
-            query = 'SELECT id,path from SVNPaths where path like "%s%%"'%dirpath
-            querycur.execute(query)
-            for id, path in querycur:
-                relpath = path.replace(dirpath, '')
-                relpathid = self.getTagRelPathId(relpath,updcur)
-                updcur.execute('UPDATE SVNPaths SET relpathid=? where id=?',(relpathid, id))
-        self.dbcon.commit()
-        
-            
     def addDummyLogDetail(self,revlog, querycur, updcur):
         '''
         add dummy log detail entries for getting the correct line count data in case of tagging/branching and deleting the directories.
@@ -431,8 +396,7 @@ class SVNLog2Sqlite:
                 logging.debug("Adding dummy file addition entries")
                 deleted_dirlist = self.__createRevFileList(revlog, copied_dirlist, deleted_dirlist,
                                     querycur, updcur)
-                addedfiles  = self.__addDummyAdditionDetails(revlog.revno, querycur, updcur)
-                self.updateRelPaths(copied_dirlist, querycur, updcur)
+                addedfiles  = self.__addDummyAdditionDetails(revlog.revno, querycur, updcur)                
             if len(deleted_dirlist) > 0:
                 logging.debug("Adding dummy file deletion entries")
                 for deleted_dir in deleted_dirlist:
@@ -485,7 +449,6 @@ class SVNLog2Sqlite:
         cur.execute("create table if not exists SVNLogDetail(revno integer, changedpathid integer, changetype text, copyfrompathid integer, copyfromrev integer, \
                     pathtype text, linesadded integer, linesdeleted integer, lc_updated char, entrytype char)")
         cur.execute("CREATE TABLE IF NOT EXISTS SVNPaths(id INTEGER PRIMARY KEY AUTOINCREMENT, path text, relpathid INTEGER DEFAULT null)")
-        cur.execute("CREATE TABLE IF NOT EXISTS SVNTagRelPaths(id INTEGER PRIMARY KEY AUTOINCREMENT, relpath text)")
         try:
                 #create VIEW IF NOT EXISTS was not supported in default sqlite version with Python 2.5
                 cur.execute("CREATE VIEW SVNLogDetailVw AS select SVNLogDetail.*, ChangedPaths.path as changedpath, CopyFromPaths.path as copyfrompath \
@@ -502,7 +465,6 @@ class SVNLog2Sqlite:
         cur.execute("CREATE INDEX if not exists svnlogdtlchangepathidx ON SVNLogDetail (changedpathid ASC)")
         cur.execute("CREATE INDEX if not exists svnlogdtlcopypathidx ON SVNLogDetail (copyfrompathid ASC)")
         cur.execute("CREATE INDEX IF NOT EXISTS svnpathidx ON SVNPaths (path ASC)")
-        cur.execute("CREATE INDEX IF NOT EXISTS svntagrelpathidx ON SVNTagRelPaths (relpath ASC)")
         self.dbcon.commit()
         
         #Table structure is changed slightly. I have added a new column in SVNLogDetail table.
