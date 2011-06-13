@@ -50,8 +50,8 @@ class SVNLog2Sqlite:
                 rootUrl = self.svnclient.getRootUrl()
                 self.printVerbose("Root url found : %s" % rootUrl)
                 (startrevno, endrevno) = self.svnclient.findStartEndRev(svnrevstartdate, svnrevenddate)
-                self.printVerbose("Start-End Rev no : %d-%d" % (startrevno, endrevno))
-                startrevno = max(startrevno,laststoredrev+1) 
+                self.printVerbose("Repository Start-End Rev no : %d-%d" % (startrevno, endrevno))
+                startrevno = max(startrevno,laststoredrev+1)
                 self.ConvertRevs(startrevno, endrevno, bUpdLineCount)
                 #every thing is ok. Commit the changes.
                 self.dbcon.commit()
@@ -114,7 +114,8 @@ class SVNLog2Sqlite:
     
     def ConvertRevs(self, startrev, endrev, bUpdLineCount):
         self.printVerbose("Converting revisions %d to %d" % (startrev, endrev))
-        if( startrev < endrev):
+        if( startrev <= endrev):
+            self.printVerbose("Conversion started")
             querycur = self.dbcon.cursor()
             updcur = self.dbcon.cursor()
             logging.info("Updating revision from %d to %d" % (startrev, endrev))
