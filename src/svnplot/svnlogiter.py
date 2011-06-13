@@ -23,7 +23,7 @@ from operator import itemgetter
 from StringIO import StringIO
 from svnlogclient import *
 
-class SVNRevLogIter:
+class SVNRevLogIter(object):
     def __init__(self, logclient, startRevNo, endRevNo, cachesize=50):
         self.logclient = logclient
         self.startrev = startRevNo
@@ -56,7 +56,7 @@ class SVNRevLogIter:
                 svnrevlog = SVNRevLog(self.logclient, revlog)
                 yield svnrevlog
 
-class SVNChangeEntry:
+class SVNChangeEntry(object):
     '''
     one change log entry inside one revision log. One revision can contain multiple changes.
     '''
@@ -277,7 +277,7 @@ class SVNChangeEntry:
             fname, (added, deleted) = diffDict.popitem()
         return added, deleted
     
-class SVNRevLog:
+class SVNRevLog(object):
     def __init__(self, logclient, revnolog):
         self.logclient = logclient
         if( isinstance(revnolog, pysvn.PysvnLog) == False):
