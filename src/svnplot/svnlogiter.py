@@ -40,7 +40,7 @@ class SVNRevLogIter:
         if( self.startrev == 0):
             self.startrev = self.endrev
         
-        while (self.startrev < self.endrev):
+        while (self.startrev <= self.endrev):
             logging.info("updating logs %d to %d" % (self.startrev, self.endrev))
             self.revlogcache = self.logclient.getLogs(self.startrev, self.endrev,
                                                           cachesize=self.cachesize, detailedLog=True)
