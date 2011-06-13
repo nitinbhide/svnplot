@@ -196,7 +196,7 @@ def sqlite_daynames():
     return(daynames)
 
 
-class SVNStats:
+class SVNStats(object):
     def __init__(self, svndbpath):
         self.svndbpath = svndbpath
         self.__searchpath = '/%'
@@ -246,6 +246,8 @@ class SVNStats:
             
     def __del__(self):
         self.closedb()
+        super(SVNStats,self).__del__()
+        
         
     def SetVerbose(self, verbose):       
         self.verbose = verbose
