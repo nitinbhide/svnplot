@@ -26,7 +26,7 @@ You will need following additional libraries for using SVNPlot
    
    If you want to use Matplotlib based SVNPlot (svnplot.py) then you will need.
    3. http://numpy.scipy.org/- Matplotlib uses NumPy and SVNPlot uses Matplotlib for plotting.
-   4. http://matplotlib.sourforge.net/ - You need at least version 0.98.5.2 
+   4. http://matplotlib.sourceforge.net/ - You need at least version 0.98.5.2 
 
 	
 ============
