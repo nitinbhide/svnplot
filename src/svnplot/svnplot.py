@@ -593,11 +593,14 @@ class SVNPlot(SVNPlotMatplotLib):
         dates, loc = self.svnstats.getLoCTrendForAuthor(devname)        
         ax = self._drawDateLineGraph(dates, loc, ax)
         return(ax)    
-
+    
 def RunMain():
     usage = "usage: %prog [options] <svnsqlitedbpath> <graphdir>"
     parser = OptionParser(usage)
 
+    parser.add_option("-g", "--log", action="store_true", dest="enablelogging", default=False,
+                      help="Enable logging during the execution(True/False). Name of generate logfile is svnlog2sqlite.log.")
+    
     parser.add_option("-n", "--name", dest="reponame",
                       help="repository name")
     parser.add_option("-s","--search", dest="searchpath", default="/",
@@ -637,7 +640,15 @@ def RunMain():
                 print "using default html template"
             else:
                 print "using template : %s" % options.template
-                
+
+        if(options.enablelogging==True):
+            logfile = os.path.join(graphdir, 'svnplot.log')
+            logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s',
+                    filename=logfile,
+                    filemode='w')
+            print "Debug Logging to file %s" % logfile
+            
         svnstats = SVNStats(svndbpath)     
         svnplot = SVNPlot(svnstats, dpi=options.dpi, template=options.template)
         svnplot.SetVerbose(options.verbose)
