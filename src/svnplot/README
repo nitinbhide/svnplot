@@ -117,6 +117,10 @@ Changes from 0.6.x to 0.7.x
 7. Fixes issue 47 : wrong line count.
 8. Fixes issue 48 and 49.
 9. improved root url detection
+10. Bug fixes for linecount computation errors 
+11. Bug fixes for unknown_node_kind error fixes.
+12. Fixes a bug where rare case svnlog2sqlite.py got an 'Inconsistent line ending style' and stopped.
+13. Fixes a bug in svnplot where svnplot crashed in end with error 'super' object has no attribute '__del__' 
 
 ============
 License
