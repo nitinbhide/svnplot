@@ -246,8 +246,8 @@ class SVNStats(object):
             
     def __del__(self):
         self.closedb()
-        super(SVNStats,self).__del__()
-        
+        #base class Object. doesnot have __del__
+        #super(SVNStats,self).__del__()        
         
     def SetVerbose(self, verbose):       
         self.verbose = verbose
