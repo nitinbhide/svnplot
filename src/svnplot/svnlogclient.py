@@ -518,12 +518,19 @@ class SVNLogClient:
         logging.info("Trying to get linecount for %s" % (filepath))
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
         url = self.getUrl(filepath)
-        contents = self.svnclient.cat(url, revision = rev)
-        matches = re.findall("$", contents, re.M )
-        if( matches != None):
-            linecount = len(matches)
+        #contents = self.svnclient.cat(url, revision = rev)
+        #matches = re.findall("$", contents, re.M )
+        #linecount1 = 0
+        #if( matches != None):
+        #    linecount1 = len(matches)
+        #export the file to a tempfolder url
+        outpath = os.tempnam(self.tmppath, 'svnplot')
+        self.svnclient.export(url,dest_path=outpath,revision=rev,ignore_externals=True,recurse=False)
+        with open(outpath,'r') as f:
+            contents = f.readlines()            
+        linecount = len(contents)
         logging.debug("%s linecount : %d" % (filepath, linecount))
-        
+        os.unlink(outpath)                
         return(linecount)
     
     def getLineCount(self, filepath, revno):
