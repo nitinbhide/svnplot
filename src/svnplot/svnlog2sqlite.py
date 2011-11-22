@@ -177,7 +177,7 @@ class SVNLog2Sqlite:
                 print "Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno)
             querycur.close()
             updcur.close()    
-                    
+                
     def __createRevFileListForDir(self, revno, dirname, querycur, updcur):
         '''
         create the file list for a revision in a temporary table.
@@ -522,7 +522,9 @@ def getLogfileName(sqlitedbpath):
     create log file in using the directory path from the sqlitedbpath
     '''
     dir, file = os.path.split(sqlitedbpath)
-    logfile = os.path.join(dir, 'svnlog2sqlite.log')
+    pfile, ext = os.path.splitext(file) #finding the name of the database created database_file_name.db
+    lognamefile = 'svnlog2sqlite.' + pfile + '.log' #creates a log file with the same name database_file_name.log
+    logfile = os.path.join(dir, lognamefile)
     return(logfile)
     
 def parse_svndate(svndatestr):
