@@ -487,7 +487,7 @@ class SVNStats(object):
             dates.append(self.__endDate)
             fc.append(fc[-1])
 
-        date, fc = strip_zeros(dates, fc)
+        dates, fc = strip_zeros(dates, fc)
 
         return(dates, fc)            
 
