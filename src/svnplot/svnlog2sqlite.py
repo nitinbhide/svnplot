@@ -121,6 +121,7 @@ class SVNLog2Sqlite:
             logging.info("Updating revision from %d to %d" % (startrev, endrev))
             svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, startrev, endrev)
             revcount = 0
+            expected_revcount = endrev - startrev
             lc_updated = 'N'
             if( bUpdLineCount == True):
                 lc_updated = 'Y'
@@ -167,12 +168,12 @@ class SVNLog2Sqlite:
                             
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                     lastrevno = revlog.revno                    
-                    #commit after every change
-                    if( revcount % 10 == 0):
-                        self.dbcon.commit()                        
+                    #commit after every 10 revisions or number revisions is less than 10, commit after every revision
+                    if( revcount % 10 == 0 or expected_revcount-revcount < 10):
+                        self.dbcon.commit()
+                        self.printVerbose("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
                 logging.debug("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
-                self.printVerbose("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
-
+                
             if( self.verbose == False):            
                 print "Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno)
             querycur.close()
