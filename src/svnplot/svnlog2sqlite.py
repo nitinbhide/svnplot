@@ -33,12 +33,15 @@ BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'od
 class SVNLog2Sqlite:
     def __init__(self, svnrepopath, sqlitedbpath,verbose=False,**kwargs):
         username=kwargs.pop('username', None)
-        password=kwargs.pop('password',None)
+        password=kwargs.pop('password',None)        
         logging.info("Repo url : " + svnrepopath)
         self.svnclient = svnlogiter.SVNLogClient(svnrepopath,BINARYFILEXT,username=username, password=password)
         self.dbpath =sqlitedbpath
         self.dbcon =None
         self.verbose = verbose
+        self.commit_after_numrev = kwargs.pop('commit_after_numrev', 10)
+        if self.commit_after_numrev < 1:
+            self.commit_after_numrev = 1
         
     def convert(self, svnrevstartdate, svnrevenddate, bUpdLineCount=True, maxtrycount=3):
         #First check if this a full conversion or a partial conversion
@@ -120,8 +123,7 @@ class SVNLog2Sqlite:
             updcur = self.dbcon.cursor()
             logging.info("Updating revision from %d to %d" % (startrev, endrev))
             svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, startrev, endrev)
-            revcount = 0
-            expected_revcount = endrev - startrev
+            revcount = 0            
             lc_updated = 'N'
             if( bUpdLineCount == True):
                 lc_updated = 'Y'
@@ -169,7 +171,7 @@ class SVNLog2Sqlite:
                         #print "%d : %s : %s : %d : %d " % (revlog.revno, filename, changetype, linesadded, linesdeleted)
                     lastrevno = revlog.revno                    
                     #commit after every 10 revisions or number revisions is less than 10, commit after every revision
-                    if( revcount % 10 == 0 or expected_revcount-revcount < 10):
+                    if( revcount % self.commit_after_numrev == 0):
                         self.dbcon.commit()
                         self.printVerbose("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
                 logging.debug("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
@@ -573,6 +575,8 @@ def RunMain():
                       help="username to be used for repository authentication")
     parser.add_option("-p", "--password", dest="password",default=None, action="store", type="string",
                       help="password to be used for repository authentication")
+    parser.add_option("-c", "--commit", dest="commit_after_numrev",default=10, action="store", type="int",
+                      help="Commit to sqlite database after given number of revisions (Default 10)")
     (options, args) = parser.parse_args()
     
     if( len(args) < 2 ):
@@ -613,7 +617,9 @@ def RunMain():
             print "Debug Logging to file %s" % logfile
 
         conv = None            
-        conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose, username=options.username, password=options.password)
+        conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose,
+                username=options.username, password=options.password,
+                commit_after_numrev=options.commit_after_numrev)
         conv.convert(svnrevstartdate, svnrevenddate, options.updlinecount)        
         
 if( __name__ == "__main__"):
