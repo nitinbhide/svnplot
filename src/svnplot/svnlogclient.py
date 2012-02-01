@@ -526,10 +526,15 @@ class SVNLogClient:
         #export the file to a tempfolder url
         outpath = os.tempnam(self.tmppath, 'svnplot')
         self.svnclient.export(url,dest_path=outpath,revision=rev,ignore_externals=True,recurse=False)
-        with open(outpath,'r') as f:
-            contents = f.readlines()            
-        linecount = len(contents)
-        logging.debug("%s linecount : %d" % (filepath, linecount))
+        if( not os.path.islink(outpath)):
+            with open(outpath,'r') as f:
+                contents = f.readlines()            
+            linecount = len(contents)
+            logging.debug("%s linecount : %d" % (filepath, linecount))
+        else:
+            linecount = 0
+            logging.debug("%s is symbolic link" % filepath)
+
         os.unlink(outpath)                
         return(linecount)
     
