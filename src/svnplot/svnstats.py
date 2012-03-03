@@ -197,10 +197,11 @@ def sqlite_daynames():
 
 
 class SVNStats(object):
-    def __init__(self, svndbpath):
+    def __init__(self, svndbpath,firstrev,lastrev):
         self.svndbpath = svndbpath
         self.__searchpath = '/%'
-        self.__startDate=None
+        self.__startRev=None
+        self.__endRev = None
         self.__endDate = None
         self.verbose = False        
         self.bugfixkeywords = ['bug', 'fix']
@@ -210,9 +211,9 @@ class SVNStats(object):
                         |already|after|by|on|or|so|also|got|get|do|don't|from|all|but|\
                         |yet|to|in|out|of|for|if|yes|no|not|may|can|could|at|as|with|without", re.IGNORECASE)
         self.dbcon = None
-        self.initdb()
+        self.initdb(firstrev,lastrev)
         
-    def initdb(self):
+    def initdb(self,firstrev,lastrev):
         if( self.dbcon != None):
             self.closedb()
             
@@ -229,14 +230,52 @@ class SVNStats(object):
         self.cur = self.dbcon.cursor()
         #set the LIKE operator to case sensitive behavior
         self.cur.execute("pragma case_sensitive_like(TRUE)")
-        #set the start date and end date to min and maxium dates in database table.
-        self.cur.execute("select min(commitdate), max(commitdate) from SVNLog")
+        self.cur.execute("select max(commitdate),min(commitdate) from SVNLog")
         onedaydiff = datetime.timedelta(1)
         row = self.cur.fetchone()
-        
-        self.__startDate = (datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")-onedaydiff).date()
-        self.__endDate = (datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")+onedaydiff).date()
-        
+        self.__endDate = (datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")+onedaydiff).date()
+        self.__startDate = (datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")-onedaydiff).date()
+        self.cur.execute("select min(revno), max(revno) from SVNLog")
+        row = self.cur.fetchone()
+        onerev = row[0]
+        headrev = row[1]
+
+        if firstrev == lastrev == None:
+            self.__startRev = onerev
+            self.__endRev = headrev
+
+        if firstrev == None and lastrev != None:
+            if (lastrev > headrev and lastrev < onerev):
+                logging.debug("Error: Wrong last revision number")
+                exit(-1)
+            #set the start date to min date and end date to date of the lastrev revision in database table.
+            self.__startRev = onerev
+            #self.cur.execute('select commitdate from SVNLog where revno = ?', (lastrev,))
+            #row = self.cur.fetchone()
+            self.__endRev = lastrev
+        if firstrev != None and lastrev == None:
+            #set the start date to the date of firstrev revision date and end date to max date in database table.
+            if (firstrev > headrev and firstrev < onerev):
+                logging.debug("Error: Wrong first revision number")
+                exit(-1) 
+            self.__endRev = headrev
+            #self.cur.execute('select commitdate from SVNLog where revno = ?', (firstrev,))
+            #row = self.cur.fetchone()
+            self.__startRev = firstrev        
+ 
+        if firstrev != None and lastrev != None:
+            #set the start date to the date of firstrev revision date and end date to max date in database table.
+            #self.cur.execute('select commitdate from SVNLog where revno = ?', (lastrev,))
+            #row = self.cur.fetchone()
+            if (firstrev > headrev and firstrev < onerev and lastrev > headrev and lastrev < onerev):
+                logging.debug("Error: Wrong revisions number")
+                exit(-1)
+            self.__endRev = lastrev
+
+            #self.cur.execute('select commitdate from SVNLog where revno = ?', (firstrev,))
+            #row = self.cur.fetchone()
+            self.__startRev = firstrev    
+                
     def closedb(self):
         if( self.dbcon != None):
             self.cur.close()            
@@ -258,9 +297,9 @@ class SVNStats(object):
         Default value is '/%' which searches all paths in the repository.
         Use self.SetSearchPath('/trunk/%') for searching inside the 'trunk' folder only
         '''
-        self.SetSearchParam(searchpath, self.__startDate, self.__endDate)
+        self.SetSearchParam(searchpath, self.__startRev, self.__endRev)
 
-    def SetSearchParam(self, searchpath='/', startdate=None, enddate=None):
+    def SetSearchParam(self, searchpath='/', startrev=None, endrev=None):
         '''
         The search parameters the statistics generation will be restricted to commits which
         fulfill these parameters.
@@ -275,8 +314,8 @@ class SVNStats(object):
         if( self.__searchpath.endswith('%')==True):
             self.__searchpath = self.__searchpath[:-1]
         self._printProgress("Set the search path to %s" % self.__searchpath)
-        self.__startDate = startdate
-        self.__endDate = enddate
+        self.__startRev = startrev
+        self.__endRev = endrev
         self.__createSearchParamView()
 
     def getSearchPathRelName(self, filename):
@@ -296,10 +335,10 @@ class SVNStats(object):
         self.cur.execute("DROP TABLE IF EXISTS search_view")
         selQuery = "SELECT DISTINCT SVNLog.revno as revno from SVNLog, SVNLogDetailVw where (SVNLog.revno = SVNLogDetailVw.revno \
                     and SVNLogDetailVw.changedpath like '%s%%'" % self.__searchpath
-        if( self.__startDate != None):
-            selQuery = selQuery + "and julianday(SVNLog.commitdate) >= julianday('%s')" % self.__startDate
-        if( self.__endDate != None):
-            selQuery = selQuery + "and julianday(SVNLog.commitdate) <= julianday('%s')" % self.__endDate
+        if( self.__startRev != None):
+            selQuery = selQuery + "and SVNLog.revno >= %s " % self.__startRev
+        if( self.__endRev != None):
+            selQuery = selQuery + "and SVNLog.revno <= %s " % self.__endRev
         #print "Sel query : %s" % selQuery
 
         selQuery = selQuery +")"
@@ -954,9 +993,9 @@ class SVNStats(object):
         stats = dict()
         #get head revision
         self.cur.execute('select min(revno), max(revno), count(*) from \
-                          (select SVNLog.revno as revno from SVNLog,SVNLogDetailVw \
-                             where SVNLog.revno == SVNLogDetailVw.revno and \
-                             SVNLogDetailVw.changedpath like ? group by SVNLog.revno)',(self.sqlsearchpath,))
+                          (select search_view.revno as revno from search_view,SVNLogDetailVw \
+                             where search_view.revno == SVNLogDetailVw.revno and \
+                             SVNLogDetailVw.changedpath like ? group by search_view.revno)',(self.sqlsearchpath,))
         row = self.cur.fetchone()
         firstrev = row[0]
         lastrev = row[1]
