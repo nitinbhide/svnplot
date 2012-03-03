@@ -120,7 +120,10 @@ Changes from 0.6.x to 0.7.x
 10. Bug fixes for linecount computation errors 
 11. Bug fixes for unknown_node_kind error fixes.
 12. Fixes a bug where rare case svnlog2sqlite.py got an 'Inconsistent line ending style' and stopped.
-13. Fixes a bug in svnplot where svnplot crashed in end with error 'super' object has no attribute '__del__' 
+13. Fixes a bug in svnplot where svnplot crashed in end with error 'super' object has no attribute '__del__'
+14. Fixes issue 82 : wrong line count in case of symlinks in the repository. (Patch contributed by EmTeedee DeLowbacca)
+15. Added new options 'firstrev' and 'lastrev' to svnplot.py and svnplot-js.py for generating statistics from revisions
+   [firstrev:lastrev].  (Patch contributed by Georgios Koloventzos)
 
 ============
 License
