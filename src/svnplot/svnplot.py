@@ -616,6 +616,10 @@ def RunMain():
                       action="store", type="string", help="template filename (optional)")
     parser.add_option("-m","--maxdir",dest="maxdircount", default=10, type="int",
                       help="limit the number of directories on the graph to the x largest directories")
+    parser.add_option("-l","--lastrev",dest="lastrev", default=None, type="int",
+                      help="The last revision number to create plots") 
+    parser.add_option("-f","--firstrev",dest="firstrev", default=None, type="int",
+                      help="The first revision number to create plots")                                          
     
     (options, args) = parser.parse_args()
     
@@ -640,6 +644,15 @@ def RunMain():
                 print "using default html template"
             else:
                 print "using template : %s" % options.template
+            if (options.lastrev == None):
+                print "end in last revision the database has"
+            else:
+                print "end in %s revision" % options.lastrev
+            if (options.firstrev == None):
+                print "start from first revision the database has"
+            else:
+                print "start from %s revision" % options.firstrev
+            
 
         if(options.enablelogging==True):
             logfile = os.path.join(graphdir, 'svnplot.log')
@@ -649,7 +662,7 @@ def RunMain():
                     filemode='w')
             print "Debug Logging to file %s" % logfile
             
-        svnstats = SVNStats(svndbpath)     
+        svnstats = SVNStats(svndbpath,options.firstrev,options.lastrev)     
         svnplot = SVNPlot(svnstats, dpi=options.dpi, template=options.template)
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
