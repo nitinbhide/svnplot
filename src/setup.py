@@ -7,17 +7,22 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 --------------------------------------------------------------------------------------
 Setup file for installing svnplot
 '''
+import distribute_setup
+distribute_setup.use_setuptools()
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 
-setup(name='SVNPlot', version ='0.7.6',
+setup(name='SVNPlot', version ='0.7.7',
       description='python module to generate graphs and statistics from Subversion repository data',
       author='Nitin Bhide',
       author_email='nitinbhide@gmail.com',
       license = 'http://www.opensource.org/licenses/bsd-license.php',
       url='http://code.google.com/p/svnplot',
-      requires = ['matplotlib', 'numpy', 'pysvn'],
-      packages=['svnplot'],
+      install_requires=['matplotlib', 'numpy'],
+      dependency_links = [
+        "http://pysvn.tigris.org/servlets/ProjectDocumentList?folderID=1768"
+        ],
+      packages=find_packages(),
       package_dir = {'svnplot': 'svnplot'},
       package_data= {'svnplot':['readme.txt', 'README', 'javascript/*.js', 'javascript/jqplot/*.*',
                      'javascript/jqplot/plugins/*.js']},
