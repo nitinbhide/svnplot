@@ -12,17 +12,17 @@ distribute_setup.use_setuptools()
 
 from setuptools import setup, find_packages
 
-setup(name='SVNPlot', version ='0.7.7',
+setup(name='SVNPlot', version ='0.7.7',      
       description='python module to generate graphs and statistics from Subversion repository data',
       author='Nitin Bhide',
       author_email='nitinbhide@gmail.com',
       license = 'http://www.opensource.org/licenses/bsd-license.php',
       url='http://code.google.com/p/svnplot',
-      install_requires=['matplotlib', 'numpy'],
+      install_requires=['pysvn','numpy', 'matplotlib'],
       dependency_links = [
         "http://pysvn.tigris.org/servlets/ProjectDocumentList?folderID=1768"
         ],
-      packages=find_packages(),
+      #packages=find_packages('src'),
       package_dir = {'svnplot': 'svnplot'},
       package_data= {'svnplot':['readme.txt', 'README', 'javascript/*.js', 'javascript/jqplot/*.*',
                      'javascript/jqplot/plugins/*.js']},
@@ -34,5 +34,6 @@ setup(name='SVNPlot', version ='0.7.7',
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Version Control"
         ],
+      zip_safe=False,
      )
 
