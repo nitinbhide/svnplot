@@ -26,6 +26,7 @@ setup(name='SVNPlot', version ='0.7.7',
       package_dir = {'svnplot': 'svnplot'},
       package_data= {'svnplot':['readme.txt', 'README', 'javascript/*.js', 'javascript/jqplot/*.*',
                      'javascript/jqplot/plugins/*.js']},
+      exclude_package_data= { '': ['.svn/*']},
       classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
