@@ -1,5 +1,5 @@
 
-SVNPlot - Ver 0.7.1
+SVNPlot - Ver 0.7.7
 
 ============
 Introduction
