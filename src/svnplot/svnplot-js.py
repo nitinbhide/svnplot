@@ -991,6 +991,11 @@ def RunMain():
                       help="limit the number of directories on the graph to the x largest directories")
     parser.add_option("-j", "--copyjs", dest="copyjs", default=True, action="store_true",
                       help="Copy the required excanvas,jquery and jqPlot javascript and css file to output directory")
+    parser.add_option("-l","--lastrev",dest="lastrev", default=None, type="int",
+                      help="The last revision number to create plots") 
+    parser.add_option("-f","--firstrev",dest="firstrev", default=None, type="int",
+                      help="The first revision number to create plots")                                          
+    
     
     (options, args) = parser.parse_args()
     
@@ -1016,7 +1021,17 @@ def RunMain():
             else:
                 print "using template : %s" % options.template
                 
-        svnstats = SVNStats(svndbpath)     
+            if (options.lastrev == None):
+                print "end in last revision the database has"
+            else:
+                print "end in %s revision" % options.lastrev
+            if (options.firstrev == None):
+                print "start from first revision the database has"
+            else:
+                print "start from %s revision" % options.firstrev
+            
+            
+        svnstats = SVNStats(svndbpath,options.firstrev,options.lastrev)     
         svnplot = SVNPlotJS(svnstats, template=options.template)
         svnplot.SetVerbose(options.verbose)
         svnplot.SetRepoName(options.reponame)
