@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 svnlog2sqlite.py
 Copyright (C) 2009 Nitin Bhide (nitinbhide@gmail.com)
