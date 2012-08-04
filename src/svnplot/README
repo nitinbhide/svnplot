@@ -1,5 +1,5 @@
 
-SVNPlot - Ver 0.7.7
+SVNPlot - Ver 0.7.8
 
 ============
 Introduction
@@ -124,6 +124,8 @@ Changes from 0.6.x to 0.7.x
 14. Fixes issue 82 : wrong line count in case of symlinks in the repository. (Patch contributed by EmTeedee DeLowbacca)
 15. Added new options 'firstrev' and 'lastrev' to svnplot.py and svnplot-js.py for generating statistics from revisions
    [firstrev:lastrev].  (Patch contributed by Georgios Koloventzos)
+16. Fixed a regression in svnplot-js.py introduced in 0.7.7
+17. Fixed issue 83. (Thanks to stephane.gourichon).
 
 ============
 License

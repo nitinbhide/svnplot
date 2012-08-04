@@ -15,7 +15,7 @@ distribute_setup.use_setuptools()
 
 from setuptools import setup, find_packages
 
-setup(name='SVNPlot', version ='0.7.7',      
+setup(name='SVNPlot', version ='0.7.8',      
       description='python module to generate graphs and statistics from Subversion repository data',
       author='Nitin Bhide',
       author_email='nitinbhide@gmail.com',
