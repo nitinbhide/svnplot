@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 svnplot.py
 Copyright (C) 2009 Nitin Bhide nitinbhide@gmail.com
