@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 setup.py
 Copyright (C) 2009 Nitin Bhide (nitinbhide@gmail.com)
@@ -7,7 +8,9 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 --------------------------------------------------------------------------------------
 Setup file for installing svnplot
 '''
+import sys
 import distribute_setup
+
 distribute_setup.use_setuptools()
 
 from setuptools import setup, find_packages
@@ -37,4 +40,5 @@ setup(name='SVNPlot', version ='0.7.7',
         ],
       zip_safe=False,
      )
+
 
