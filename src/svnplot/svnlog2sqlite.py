@@ -41,6 +41,7 @@ class SVNLog2Sqlite:
         self.dbcon =None
         self.verbose = verbose
         self.commit_after_numrev = kwargs.pop('commit_after_numrev', 10)
+        self.filediff = kwargs.pop('filediff', False)
         if self.commit_after_numrev < 1:
             self.commit_after_numrev = 1
         
@@ -123,7 +124,7 @@ class SVNLog2Sqlite:
             querycur = self.dbcon.cursor()
             updcur = self.dbcon.cursor()
             logging.info("Updating revision from %d to %d" % (startrev, endrev))
-            svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, startrev, endrev)
+            svnloglist = svnlogiter.SVNRevLogIter(self.svnclient, startrev, endrev, bUseFileDiff=self.filediff)
             revcount = 0            
             lc_updated = 'N'
             if( bUpdLineCount == True):
@@ -578,6 +579,9 @@ def RunMain():
                       help="password to be used for repository authentication")
     parser.add_option("-c", "--commit", dest="commit_after_numrev",default=10, action="store", type="int",
                       help="Commit to sqlite database after given number of revisions (Default 10)")
+    parser.add_option("", "--filediff", dest="filediff",default=False, action="store_true", 
+                      help="Force use file diff to calculate line count (will be slow)")
+    
     (options, args) = parser.parse_args()
     
     if( len(args) < 2 ):
@@ -617,10 +621,11 @@ def RunMain():
                     filemode='w')
             print "Debug Logging to file %s" % logfile
 
+        filediff = options.filediff
         conv = None            
         conv = SVNLog2Sqlite(svnrepopath, sqlitedbpath,verbose=options.verbose,
                 username=options.username, password=options.password,
-                commit_after_numrev=options.commit_after_numrev)
+                commit_after_numrev=options.commit_after_numrev, filediff=filediff)
         conv.convert(svnrevstartdate, svnrevenddate, options.updlinecount)        
         
 if( __name__ == "__main__"):

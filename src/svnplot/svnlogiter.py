@@ -24,12 +24,13 @@ from StringIO import StringIO
 from svnlogclient import *
 
 class SVNRevLogIter(object):
-    def __init__(self, logclient, startRevNo, endRevNo, cachesize=50):
+    def __init__(self, logclient, startRevNo, endRevNo, cachesize=50, bUseFileDiff=False):
         self.logclient = logclient
         self.startrev = startRevNo
         self.endrev = endRevNo
         self.revlogcache = None
         self.cachesize = cachesize
+        self.bUseFileDiff = bUseFileDiff
         
     def __iter__(self):
         return(self.next())
@@ -53,7 +54,7 @@ class SVNRevLogIter(object):
                 #then log is not available or its end of log entries
                 if( len(revlog) == 0):
                     raise StopIteration
-                svnrevlog = SVNRevLog(self.logclient, revlog)
+                svnrevlog = SVNRevLog(self.logclient, revlog, self.bUseFileDiff)
                 yield svnrevlog
 
 class SVNChangeEntry(object):
@@ -278,8 +279,9 @@ class SVNChangeEntry(object):
         return added, deleted
     
 class SVNRevLog(object):
-    def __init__(self, logclient, revnolog):
+    def __init__(self, logclient, revnolog, bUseFileDiff):
         self.logclient = logclient
+        self.bUseFileDiff=bUseFileDiff
         if( isinstance(revnolog, pysvn.PysvnLog) == False):
             self.revlog = self.logclient.getLog(revnolog, detailedLog=True)
         else:
@@ -471,7 +473,10 @@ class SVNRevLog(object):
         Hence for large sized repositories, repository with many large commits, and
         repositories which are local file system, it is better to use file level revision
         diff. For other cases it is better to query diff of entire revision at a time.
-        '''
+        '''        
+        if self.bUseFileDiff==True:
+            return True
+        
         # repourl is not same as repository root (e.g. <root>/trunk) then we have to
         # use the file revision diffs.
         usefilerevdiff = True
