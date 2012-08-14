@@ -9,8 +9,8 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 Setup file for installing svnplot
 '''
 import sys
-import distribute_setup
 
+import distribute_setup
 distribute_setup.use_setuptools()
 
 from setuptools import setup, find_packages
@@ -25,11 +25,12 @@ setup(name='SVNPlot', version ='0.7.8',
       dependency_links = [
         "http://pysvn.tigris.org/servlets/ProjectDocumentList?folderID=1768"
         ],
-      #packages=find_packages('src'),
+      packages=['svnplot'],
       package_dir = {'svnplot': 'svnplot'},
       package_data= {'svnplot':['readme.txt', 'README', 'javascript/*.js', 'javascript/jqplot/*.*',
                      'javascript/jqplot/plugins/*.js']},
-      exclude_package_data= { '': ['.svn/*']},
+      scripts = ['svnlog2sqlite.py', 'svnplot.py', 'svnplot-js.py'],
+      exclude_package_data= { '': ['.svn/*']},      
       classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -40,5 +41,3 @@ setup(name='SVNPlot', version ='0.7.8',
         ],
       zip_safe=False,
      )
-
-
