@@ -21,7 +21,7 @@ setup(name='SVNPlot', version ='0.7.8',
       author_email='nitinbhide@gmail.com',
       license = 'http://www.opensource.org/licenses/bsd-license.php',
       url='http://code.google.com/p/svnplot',
-      install_requires=['pysvn','numpy', 'matplotlib'],
+      install_requires=['numpy', 'matplotlib'],
       dependency_links = [
         "http://pysvn.tigris.org/servlets/ProjectDocumentList?folderID=1768"
         ],
@@ -29,7 +29,7 @@ setup(name='SVNPlot', version ='0.7.8',
       package_dir = {'svnplot': 'svnplot'},
       package_data= {'svnplot':['readme.txt', 'README', 'javascript/*.js', 'javascript/jqplot/*.*',
                      'javascript/jqplot/plugins/*.js']},
-      scripts = ['svnlog2sqlite.py', 'svnplot.py', 'svnplot-js.py'],
+      scripts = ['svnlog2sqlite.py', 'svnplot.py', 'svnplotjs.py'],
       exclude_package_data= { '': ['.svn/*']},      
       classifiers=[
         "Development Status :: 4 - Beta",
