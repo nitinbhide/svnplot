@@ -383,7 +383,7 @@ class SVNStats(object):
     def getAuthorList(self, numAuthors=None):
         #Find out the unique developers and their number of commit sorted in 'descending' order
         self.cur.execute("select SVNLog.author, count(*) as commitcount from SVNLog, search_view \
-                        where search_view.revno = SVNLog.revno group by SVNLog.author order by commitcount desc")
+                        where search_view.revno = SVNLog.revno group by SVNLog.author COLLATE NOCASE order by commitcount desc")
         
         #get the auhor list (ignore commitcount) and store it. Since LogGraphLineByDev also does an sql query. It will otherwise
         # get overwritten
@@ -608,7 +608,7 @@ class SVNStats(object):
         self.cur.execute("select SVNLog.author, sum(SVNLog.addedfiles), sum(SVNLog.changedfiles), \
                          sum(SVNLog.deletedfiles), count(distinct SVNLog.revno) as commitcount from SVNLog, SVNLogDetailVw \
                          where SVNLog.revno = SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? \
-                         group by SVNLog.author order by commitcount DESC LIMIT 0, ?"
+                         group by SVNLog.author COLLATE NOCASE order by commitcount DESC LIMIT 0, ?"
                          , (self.sqlsearchpath, numAuthors,))
 
         authlist = []
