@@ -20,7 +20,7 @@ You will need following additional libraries for using SVNPlot
    1. sqlite3 - is default installed with python
    2. http://pysvn.tigris.org/- Python SVN bindings.
    
-   If you are going to use Javascript canvas based graphs (svnplot-js.py), 
+   If you are going to use Javascript canvas based graphs (svnplot-js.py), you will need
    3. JqPlot (http://www.jqplot.com/) - Excellent Javascript canvas based plotting library. It is included 	
 	  in the svnplot installation
    
@@ -28,6 +28,10 @@ You will need following additional libraries for using SVNPlot
    3. http://numpy.scipy.org/- Matplotlib uses NumPy and SVNPlot uses Matplotlib for plotting.
    4. http://matplotlib.sourceforge.net/ - You need at least version 0.98.5.2 
 
+After installing svnplot, three scripts are copied in python 'scripts' folder. 
+	(a) svnlog2sqlite.py (b) svnplot.py (c) svnplotjs.py
+
+You can copy these scripts to any other folder to run svnplot scripts.
 	
 ============
 Quick Start
