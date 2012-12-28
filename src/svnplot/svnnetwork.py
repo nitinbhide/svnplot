@@ -190,6 +190,16 @@ class SVNNetworkBase(NX.Graph):
                 wt += self[node1][node2].get('weight', wt)
             self.add_edge(node1, node2, {'weight':wt})        
 
+    def _getMaxDate(self):
+        cur = self.dbcon.cursor()
+        sqlquery= "select max(commitdate) from SVNLog, SVNLogDetailVw \
+                  where SVNLog.revno= SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like '%s%%'"
+        cur.execute(sqlquery)
+        row = cur.fetchone()
+        maxdate = datetime.datetime.strptime(row[0],"%Y-%m-%d %H:%M:%S").date()
+        cur.close()
+        return maxdate
+        
     def getRevisionNode(self, revno):
         revnode = self._revNodes.get(revno)
         if( revnode is None):
@@ -613,9 +623,10 @@ class SVNFileNetwork(SVNNetworkBase):
         #self._inverseWeights()
     
     def _updateEdgeWeights(self):
-        curdate = datetime.date.today()
-        for node1,node2 in self.edges_iter(None, False):
-            self._updateEdgeWtDecay(node1,node2, curdate)
+        #curdate = datetime.date.today()
+        maxdate = self._getMaxDate()        
+        for node1,node2 in self.edges_iter(None, data=False):
+            self._updateEdgeWtDecay(node1,node2, maxdate)
         
     def _addEdgeAuthorFile(self, prevrev, currev):
         pass
@@ -732,9 +743,7 @@ class SVNFileNetwork(SVNNetworkBase):
         print "%s" % '-'*40
         print "Graph Radius : %f" % NX.radius(self)
         print "Graph Diameter : %f" % NX.diameter(self)
-        for n1, n2, prop in self.edges_iter(data=True):
-            print 'wt %d' % prop['weight']
-            
+        
         weighted = True
         closenessdict = NX.closeness_centrality(self, distance=weighted)
         print "%s" % '-'*40
