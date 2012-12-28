@@ -337,7 +337,7 @@ class SVNNetworkBase(NX.Graph):
         
         cur.close()
 
-    def _minWtEdgeFilter(self, node1, node2, wt):
+    def _minWtEdgeFilter(self, node1, node2, wt):        
         return( wt < self._minWt)
         
     def filterEdges(self, condition=None):
@@ -345,14 +345,17 @@ class SVNNetworkBase(NX.Graph):
         condition : can be a lambda function similar to
                 'condition=lambda node1, node2, wt:wt < 2'
         '''
+        logging.debug("From SVNNetworkBase.filterEdges")
+        
         if( condition == None):
             #default : Remove edges with weight less than _minWt 
             condition = self._minWtEdgeFilter
 
-        print "min weight = %f"%self._minWt            
-        logging.debug("From SVNNetworkBase.filterEdges")
-        edges = [(node1, node2) for node1,node2,wt in self.edges_iter(None, True) if condition(node1, node2, wt)==True]
+        logging.info("Filtering edges, min weight = %f"%self._minWt)        
+        
+        edges = [(node1, node2) for node1,node2,nodedata in self.edges_iter(None, data=True) if condition(node1, node2, nodedata['weight'])==True]        
         if( len(edges) > 0):
+            logging.debug('removing %d edges' % len(edges))
             self.remove_edges_from(edges)
         self.filterEmptyNodes()
         
@@ -610,7 +613,7 @@ class SVNFileNetwork(SVNNetworkBase):
         #self._inverseWeights()
     
     def _updateEdgeWeights(self):
-        curdate = datetime.date.today()        
+        curdate = datetime.date.today()
         for node1,node2 in self.edges_iter(None, False):
             self._updateEdgeWtDecay(node1,node2, curdate)
         
@@ -865,7 +868,7 @@ def RunMain():
             
         print "NOTE : network graph analysis functions take time. Have patience !!!"
         if options.all_net:            
-            #GenerateAuthorNet(args[0], args[1], args[2])
+            GenerateAuthorNet(args[0], args[1], args[2])
             GenerateFileNet(args[0], args[1])
             exit(0)
         
