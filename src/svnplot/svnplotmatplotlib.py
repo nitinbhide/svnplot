@@ -10,10 +10,14 @@ SVNPlotMatplotLib implementation. Matplotlib based graph implementation.
 __revision__ = '$Revision:$'
 __date__     = '$Date:$'
 
-import matplotlib.pyplot as plt
-from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
-from matplotlib.ticker import FixedLocator, FormatStrFormatter
-from matplotlib.font_manager import FontProperties
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
+    from matplotlib.ticker import FixedLocator, FormatStrFormatter
+    from matplotlib.font_manager import FontProperties
+except:
+    print 'matplotlib package not found'
+    print 'Please download and install matplotlib from http://matplotlib.org/'
 
 import os.path, sys
 import math
