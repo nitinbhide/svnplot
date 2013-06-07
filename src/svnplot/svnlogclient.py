@@ -20,7 +20,12 @@ import tempfile
 from os.path import normpath
 from operator import itemgetter
 from StringIO import StringIO
-import pysvn
+
+try:
+    import pysvn
+except:
+    print "pysvn package not found."
+    print "Please download and install it from http://pysvn.tigris.org/project_downloads.html"    
 
 SVN_HEADER_ENCODING = 'utf-8'
 URL_NORM_RE = re.compile('[/]+')
