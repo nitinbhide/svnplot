@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 '''
 setup.py
 Copyright (C) 2009 Nitin Bhide (nitinbhide@gmail.com)
@@ -8,29 +7,22 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 --------------------------------------------------------------------------------------
 Setup file for installing svnplot
 '''
-import sys
 
-import distribute_setup
-distribute_setup.use_setuptools()
+from distutils.core import setup
 
-from setuptools import setup, find_packages
-
-setup(name='SVNPlot', version ='0.7.9',      
+setup(name='SVNPlot', version ='0.7.9',
       description='python module to generate graphs and statistics from Subversion repository data',
       author='Nitin Bhide',
       author_email='nitinbhide@gmail.com',
       license = 'http://www.opensource.org/licenses/bsd-license.php',
       url='http://code.google.com/p/svnplot',
-      install_requires=['numpy', 'matplotlib'],
-      dependency_links = [
-        "http://pysvn.tigris.org/servlets/ProjectDocumentList?folderID=1768"
-        ],
+      requires = ['matplotlib', 'numpy', 'pysvn'],
       packages=['svnplot'],
       package_dir = {'svnplot': 'svnplot'},
       package_data= {'svnplot':['readme.txt', 'README', 'javascript/*.js', 'javascript/jqplot/*.*',
                      'javascript/jqplot/plugins/*.js']},
       scripts = ['svnlog2sqlite.py', 'svnplot.py', 'svnplotjs.py'],
-      exclude_package_data= { '': ['.svn/*']},      
+      
       classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -39,5 +31,6 @@ setup(name='SVNPlot', version ='0.7.9',
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Version Control"
         ],
-      zip_safe=False,
+      
      )
+
