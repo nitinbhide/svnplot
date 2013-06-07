@@ -21,7 +21,7 @@ setup(name='SVNPlot', version ='0.7.9',
       package_dir = {'svnplot': 'svnplot'},
       package_data= {'svnplot':['readme.txt', 'README', 'javascript/*.js', 'javascript/jqplot/*.*',
                      'javascript/jqplot/plugins/*.js']},
-      scripts = ['svnlog2sqlite.py', 'svnplot.py', 'svnplotjs.py'],
+      #scripts = ['svnlog2sqlite.py', 'svnplot.py', 'svnplotjs.py'],
       
       classifiers=[
         "Development Status :: 4 - Beta",
