@@ -80,6 +80,9 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
         
     return(temperature)    
     
+def _sqrt(num):
+    return math.sqrt(num)
+    
 def pairwise(iterable):
     "s -> (0, s0,s1), (1, s1,s2), (2, s2, s3), ..."
     a, b = itertools.tee(iterable)
@@ -197,7 +200,7 @@ def sqlite_daynames():
 
 
 class SVNStats(object):
-    def __init__(self, svndbpath,firstrev,lastrev):
+    def __init__(self, svndbpath,firstrev=None,lastrev=None):
         self.svndbpath = svndbpath
         self.__searchpath = '/%'
         self.__startRev=None
@@ -224,6 +227,7 @@ class SVNStats(object):
         self.dbcon.create_function("dirname", 3, dirname)
         self.dbcon.create_function("filetype", 1, filetype)
         self.dbcon.create_function("getTemperatureAtTime", 4, getTemperatureAtTime)
+        self.dbcon.create_function("sqrt", 1, _sqrt)
         self.dbcon.create_aggregate("deltaavg", 1, DeltaAvg)
         self.dbcon.create_aggregate("deltastddev", 1, DeltaStdDev)
                                     
@@ -380,6 +384,11 @@ class SVNStats(object):
         sqlstr = sqlstr + " )"
         return(sqlstr)
     
+    def runQuery(self, sqlquery):
+        self.cur.execute(sqlquery)
+        for row in self.cur:
+            yield row
+            
     def getAuthorList(self, numAuthors=None):
         #Find out the unique developers and their number of commit sorted in 'descending' order
         self.cur.execute("select SVNLog.author, count(*) as commitcount from SVNLog, search_view \
@@ -1264,3 +1273,4 @@ class SVNStats(object):
             commitcountlist.append(commitcount)
 
         return(strip_zeros(datelist,commitcountlist))
+    
