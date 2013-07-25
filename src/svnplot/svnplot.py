@@ -162,9 +162,12 @@ HTMLIndexTemplate ='''
     <td align="center" ><h4>Daily Commits</h4><br/>
         <a href="$DailyCommitTrend"><img src="$DailyCommitTrend" width="$thumbwid" height="$thumbht"></a>
     </td>
-    <td align="center">&nbsp;</td>
+    <td align="center"><h4>Wasted Effort Trend</h4><br/>
+        <a href="$WasteEffortTrend"><img src="$WasteEffortTrend" width="$thumbwid" height="$thumbht"></a>
+    </td>
     <td align="center" >&nbsp;</td>    
 </tr>
+
 
 <th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
 </tr>
@@ -200,7 +203,7 @@ GraphNameDict = dict(ActByWeek="actbyweekday", ActByTimeOfDay="actbytimeofday", 
                      AvgLoC="avgloc", AuthActivity="authactivity",CommitAct="commitactivity",
                      DirSizePie="dirsizepie", DirSizeLine="dirsizeline", DirFileCountPie="dirfilecount",
                      FileTypes="filetypes", AuthorsCommitTrend="authorscommit",
-                     DailyCommitTrend='dailycommits')
+                     DailyCommitTrend='dailycommits', WasteEffortTrend="wastetrend")
                          
 class SVNPlot(SVNPlotMatplotLib):
     def __init__(self, svnstats, dpi=100, format='png',template=None):
@@ -228,6 +231,7 @@ class SVNPlot(SVNPlotMatplotLib):
         self.CommitActivityIdxGraph(self._getGraphFileName(dirpath, "CommitActivityIdx"))
         self.AuthorsCommitTrend(self._getGraphFileName(dirpath, "AuthorsCommitTrend"))
         self.DailyCommitCountGraph(self._getGraphFileName(dirpath, "DailyCommitTrend"))
+        self.WastedEffortTrendGraph(self._getGraphFileName(dirpath, "WasteEffortTrend"))
         #LoC and FileCount Graphs
         self.LocGraph(self._getGraphFileName(dirpath, "LoC"))
         self.LocChurnGraph(self._getGraphFileName(dirpath,"LoCChurn"))
@@ -524,7 +528,15 @@ class SVNPlot(SVNPlotMatplotLib):
         ax.set_ylabel('Commit Count')        
         ax.set_title('Daily Commit Count Trend')
         self._closeDateLineGraph(ax, filename)        
-                        
+    
+    def WastedEffortTrendGraph(self, filename):
+        self._printProgress("Wasted Effort Trend Graph")
+        datelist, linesadded, linesdeleted, wasteratio = self.svnstats.getWasteEffortStats()
+        ax = self._drawDateLineGraph(datelist, wasteratio)
+        ax.set_ylabel('Waste Ratio')        
+        ax.set_title('Waste Ratio Trend')
+        self._closeDateLineGraph(ax, filename)
+        
     def _drawLocGraph(self):
         dates, loc = self.svnstats.getLoCStats()        
         ax = self._drawDateLineGraph(dates, loc)

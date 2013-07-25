@@ -163,7 +163,8 @@ class DeltaAvg:
 
 class DeltaStdDev:
     '''
-    tries to calculate standard deviation in single pass.
+    tries to calculate standard deviation in single pass. It calculates the
+    standard deviation value of difference between consecutive rows
     '''
     def __init__(self):
         self.delta_sum = 0.0
@@ -877,6 +878,41 @@ class SVNStats(object):
             
         return(strip_zeros(dates, loc))
 
+    def getWasteEffortStats(self):
+        '''
+        generate the stats for ratio of total effort against wasted effort.
+        Deleted Lines are treated as 'wasted' efforts
+        Added lines are treated as 'real' efforts. The daily trend of this ratio
+        is returned.
+        returns 3 lists (date, total linesadded, total lines deleted, waste ratio)        
+        '''
+        sqlquery = '''select date(SVNLog.commitdate,"localtime") as "commitdate [date]",
+            sum(linesadded), sum(linesdeleted) from SVNLog, SVNLogDetailVw
+            where SVNLog.revno = SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like "%s" 
+                        group by "commitdate [date]" order by commitdate ASC'''
+        
+        sqlquery = sqlquery % self.sqlsearchpath
+        
+        dates = []
+        linesadded = []
+        linedeleted = []
+        wasteratio = []
+        total_linesadded = 0
+        total_linesdeleted = 0
+        
+        self.cur.execute(sqlquery)
+        
+        for dt, added, deleted in self.cur:
+            total_linesadded = total_linesadded+added
+            total_linesdeleted = total_linesdeleted+deleted
+            dates.append(dt)
+            linesadded.append(total_linesadded)
+            linedeleted.append(total_linesdeleted)
+            wasteratio.append((total_linesdeleted*1.0/total_linesadded))
+            
+        print wasteratio
+        return dates, linesadded, linedeleted, wasteratio
+    
     def getBugfixCommitsTrendStats(self):
         '''
         get the trend of bug fix commits over time. Bug fix commit are commit where log message contains words
