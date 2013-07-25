@@ -111,7 +111,7 @@ class SVNLogClient:
         self.username = None
         self.password = None
         self._updateTempPath()
-        self.svnrepourl = svnrepourl
+        self.svnrepourl = urllib.unquote(svnrepourl)
         self.svnclient = pysvn.Client()
         self.svnclient.exception_style = 1
         self.svnclient.callback_get_login = self.get_login
@@ -582,6 +582,7 @@ class SVNLogClient:
         if( self.svnrooturl == None):
             raise RuntimeError , "Repository Root not found"
             
+        self.svnrooturl = urllib.unquote(self.svnrooturl)
         return(self.svnrooturl)
     
     def getUrl(self, path):
