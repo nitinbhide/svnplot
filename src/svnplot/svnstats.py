@@ -908,9 +908,11 @@ class SVNStats(object):
             dates.append(dt)
             linesadded.append(total_linesadded)
             linedeleted.append(total_linesdeleted)
-            wasteratio.append((total_linesdeleted*1.0/total_linesadded))
-            
-        print wasteratio
+            if total_linesadded > 0:
+                wasteratio.append((total_linesdeleted*1.0/total_linesadded))
+            else:
+                wasteratio.append(0)
+                
         return dates, linesadded, linedeleted, wasteratio
     
     def getBugfixCommitsTrendStats(self):
