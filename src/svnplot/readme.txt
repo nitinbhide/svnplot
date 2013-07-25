@@ -130,7 +130,10 @@ Changes from 0.6.x to 0.7.x
    [firstrev:lastrev].  (Patch contributed by Georgios Koloventzos)
 16. Fixed a regression in svnplot-js.py introduced in 0.7.7
 17. Fixed issue 83. (Thanks to stephane.gourichon).
-
+18. Fixed issue where the details of commits (line count, changed etc) were not updated for local repositories.
+19. Added the 'Wasted Effort Ratio Trend' graph. Its a graph of 'lines deleted'/'lines added'. Lines deleted are essentially
+    efforts wasted.
+	
 ============
 License
 ============
