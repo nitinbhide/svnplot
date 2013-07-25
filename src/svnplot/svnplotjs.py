@@ -138,6 +138,8 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	$ActivityByTimeOfDayRecentTable
 	$AuthorActivityGraph
 	$DailyCommitCountGraph
+    $WasteEffortTrend
+    
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
                     locgraph('LoCGraph', showLegend);
@@ -158,6 +160,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
                     authorsCommitTrend('AuthorsCommitTrend',showLegend);
                     authorActivityGraph('AuthorActivityGraph', showLegend);
                     dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
+                    wasteEffortTrend('WasteEffortTrend', showLegend);
                 };
                 
                 function showGraphBox(graphFunc, showLegend) {
@@ -277,9 +280,11 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         <div id="AuthorsCommitTrend" class="graph" onclick ="showGraphBox(authorsCommitTrend, true);"></div>
     </td>
     <td align="center">
-    <div id="AuthorActivityGraph" class="graph" onclick ="showGraphBox(authorActivityGraph, true);"></div>
+        <div id="AuthorActivityGraph" class="graph" onclick ="showGraphBox(authorActivityGraph, true);"></div>
     </td>
-    
+    <td align="center">
+        <div id="WasteEffortTrend" class="graph" onclick ="showGraphBox(wasteEffortTrend, true);"></div>
+    </td>    
 </tr>
 <th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
 </tr>
@@ -898,6 +903,30 @@ class SVNPlotJS(SVNPlotBase):
         
         return(self.__getGraphScript(template, {"DATA":outstr}))
     
+    def WasteEffortTrend(self):
+        self._printProgress("Calculating Waste effort trend graph")
+        template = '''        
+            function wasteEffortTrend(divElemId,showLegend) {
+            var data = [$DATA];
+            var plot = $.jqplot(divElemId, [data], {
+                title:'Waste Effort Trend',
+                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},
+                    yaxis:{min:0}
+                },
+                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
+                );
+              return(plot);
+            };
+        '''
+        
+        datelist, linesadded, linesdeleted, wasteratio = self.svnstats.getWasteEffortStats()        
+        
+        assert(len(datelist) == len(wasteratio))
+        datalist = ['[\'%s\', %.4f]' % (date,fc) for date, fc in zip(datelist, wasteratio)]            
+        outstr = ',\n'.join(datalist)
+        
+        return(self.__getGraphScript(template, {"DATA":outstr}))
+        
     def _getGraphParamDict(self, thumbsize, maxdircount = 10):
         graphParamDict = dict()
             
@@ -933,7 +962,8 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["AuthorsCommitTrend"] = self.AuthorsCommitTrend()
         graphParamDict["AuthorActivityGraph"] = self.AuthorActivityGraph()
         graphParamDict["DailyCommitCountGraph"] = self.DailyCommitCountGraph()
-    
+        graphParamDict["WasteEffortTrend"] = self.WasteEffortTrend()
+        
         return(graphParamDict)
                 
     def printAnomalies(self, searchpath='/%'):

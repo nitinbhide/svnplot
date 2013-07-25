@@ -44,6 +44,8 @@
 
 	$AuthorActivityGraph
 	$DailyCommitCountGraph
+	$WasteRatioTrend
+	
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
 				locgraph('LoCGraph',showLegend);
@@ -63,6 +65,7 @@
 				authorsCommitTrend('AuthorsCommitTrend',showLegend);
 				authorActivityGraph('AuthorActivityGraph', showLegend);
 				dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
+				wasteRatioTrend('WasteRatioTrend', showLegend);
             };                			  
 	</script>	
 </head>
@@ -199,6 +202,11 @@
 <tr>	
     <td align="center" >
     <div id="DailyCommitCountGraph" class="graph"></div>
+    </td>    
+</tr>
+<tr>	
+    <td align="center" >
+    <div id="WasteRatioTrend" class="graph"></div>
     </td>    
 </tr>
 </table>
