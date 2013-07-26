@@ -5,7 +5,7 @@ include svnplot/svnplot-long.tmpl
 include svnplot/svnplot-js.tmpl
 include svnplot/javascript/*
 include svnlog2sqlite.py
-include svnplot.py
+include svngraphs.py
 include svnplotjs.py
 
 prune svnplot/javascript/.svn/*
