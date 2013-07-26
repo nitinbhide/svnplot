@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-svnplot.py
+svngraphs.py
 Copyright (C) 2009 Nitin Bhide (nitinbhide@gmail.com)
 
 This module is part of SVNPlot (http://code.google.com/p/svnplot) and is released under
