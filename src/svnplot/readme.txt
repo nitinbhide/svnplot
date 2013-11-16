@@ -133,6 +133,7 @@ Changes from 0.6.x to 0.7.x
 18. Fixed issue where the details of commits (line count, changed etc) were not updated for local repositories.
 19. Added the 'Wasted Effort Ratio Trend' graph. Its a graph of 'lines deleted'/'lines added'. Lines deleted are essentially
     efforts wasted.
+20. Fixed issue 93. (Problem with accented characters)
 	
 ============
 License
