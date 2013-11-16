@@ -977,10 +977,11 @@ class SVNStats(object):
                          group by SVNLogDetailVw.revno",(self.sqlsearchpath,))
 
         wordFreq = dict()
-        pattern = re.compile('\W+')
+        pattern = re.compile('\s+', re.UNICODE)
+        
         for msg, in self.cur:
             #split the words in msg
-            wordlist = re.split(pattern, msg)
+            wordlist = pattern.split(msg)
             for word in filter(self.__isValidWord, wordlist):
                 word = word.lower()
                 count = wordFreq.get(word, 0)        
@@ -1039,10 +1040,18 @@ class SVNStats(object):
         '''
         stats = dict()
         #get head revision
-        self.cur.execute('select min(revno), max(revno), count(*) from \
-                          (select search_view.revno as revno from search_view,SVNLogDetailVw \
-                             where search_view.revno == SVNLogDetailVw.revno and \
-                             SVNLogDetailVw.changedpath like ? group by search_view.revno)',(self.sqlsearchpath,))
+        #check if SVNLogDetailVw is updated. If yes, use the 'search_view' query
+        self.cur.execute('select count(*) from SVNLogDetailVw')
+        
+        logdetailcount = self.cur.fetchone()[0]
+        if logdetailcount > 0:
+            self.cur.execute('select min(revno), max(revno), count(*) from \
+                              (select search_view.revno as revno from search_view,SVNLogDetailVw \
+                                 where search_view.revno == SVNLogDetailVw.revno and \
+                                 SVNLogDetailVw.changedpath like ? group by search_view.revno)',(self.sqlsearchpath,))
+        else:
+            self.cur.execute('select min(revno), max(revno), count(*) from SVNLog')
+            
         row = self.cur.fetchone()
         firstrev = row[0]
         lastrev = row[1]
