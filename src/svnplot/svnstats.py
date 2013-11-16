@@ -10,48 +10,21 @@ This is a helper class for getting the actual subversion statistics from the dat
 SVNPlot and other classes will use this to query the data and then render it as
 graphs or html tables or json data.
 '''
+import logging
 
 import sqlite3
 import calendar, datetime
-import os.path, sys
+import sys
 import string, re
 import math
 import operator
-import logging
-import itertools
+
+from .util import *
 
 COOLINGRATE = 0.06/24.0 #degree per hour
 TEMPINCREMENT = 10.0 # degrees per commit
 AMBIENT_TEMP = 1.1
 
-def filetype(path):
-    '''
-    get the file type (i.e. extension) from the path
-    '''
-    (root, ext) = os.path.splitext(path)
-    return(ext)
-
-def dirname(searchpath, path, depth):
-    '''
-    get directory name till given depth (relative to searchpath) from the full file path
-    '''
-    assert(searchpath != None and searchpath != "")
-    assert(path.startswith(searchpath) == True)
-    #replace the search path and then compare the depth
-    path = path.replace(searchpath, "", 1)
-    #first split the path and remove the filename
-    pathcomp = os.path.dirname(path).split('/')
-    #now join the split path upto given depth only
-    dirpath = '/'.join(pathcomp[0:depth])
-    #Now add the dirpath to searchpath to get the final directory path
-    dirpath = searchpath+dirpath
-    return(dirpath)
-
-def parent_dirname(path):
-    '''
-    get parent directory name.
-    '''
-    return(os.path.dirname(path))
 
 def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
     '''
@@ -83,13 +56,6 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
 def _sqrt(num):
     return math.sqrt(num)
     
-def pairwise(iterable):
-    "s -> (0, s0,s1), (1, s1,s2), (2, s2, s3), ..."
-    a, b = itertools.tee(iterable)
-    #goto next item in the iterable b.
-    b.next()    
-    return itertools.izip(itertools.count(0), a, b)
-
 def update_bin(binlist, binvalues, value):
     '''
     return the index of bin from the binlist, where the 'value' belongs.
@@ -101,7 +67,6 @@ def update_bin(binlist, binvalues, value):
             if( value >= binmin and value < binmax):
                 binvalues[idx] = binvalues[idx]+1
                 return
-
     
 def histogram_data(binlist, indata):
     '''
@@ -120,24 +85,6 @@ def histogram_data(binlist, indata):
             update_bin(binlist, binvalues, value)
             
     return(binvalues)
-
-def strip_zeros(dates, data):
-    '''
-    strips the dates with data is zero at start of the list
-    '''
-    filtered_dates = dates
-    filtered_data = data
-    if( len(data) > 0 and data[0] == 0):
-        filtered_dates = []
-        filtered_data = []
-        filter=True
-        for dt, datedata in zip(dates, data):
-            if( filter == True and datedata == 0):
-                continue
-            filter=False
-            filtered_dates.append(dt)
-            filtered_data.append(datedata)
-    return(filtered_dates, filtered_data)
         
 class DeltaAvg:
     '''
@@ -188,9 +135,6 @@ class DeltaStdDev:
             stddev = math.sqrt(stddev)                        
         return(stddev)
 
-def timedelta2days(tmdelta):
-    return(tmdelta.days + tmdelta.seconds/(3600.0*24.0))
-
 def sqlite_daynames():
     #calendar.day_abbr starts with Monday while for dayofweek returned by strftime 0 is Sunday.
     # so to get the correct day of week string, the day names list must be corrected in such a way
@@ -198,7 +142,6 @@ def sqlite_daynames():
     daynames = [day for day in calendar.day_abbr]
     daynames = daynames[6:]+daynames[0:6]
     return(daynames)
-
 
 class SVNStats(object):
     def __init__(self, svndbpath,firstrev=None,lastrev=None):
