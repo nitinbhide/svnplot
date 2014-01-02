@@ -119,6 +119,8 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	<script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
 	<script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
 	<script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
+    <script type="text/javascript" src="d3.v3.js"></script>
+    <script type="text/javascript" src="d3.layout.cloud.js"></script>
     $LocTable
 	$LoCChurnTable	
 	$ContriLoCTable
@@ -139,7 +141,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	$AuthorActivityGraph
 	$DailyCommitCountGraph
     $WasteEffortTrend
-    
+
     <script type="text/javascript">
 			 function showAllGraphs(showLegend) {
                     locgraph('LoCGraph', showLegend);
@@ -176,8 +178,44 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
                     var graphboxId = 'GraphPopBox';
                     var graphBoxElem = document.getElementById(graphboxId);
                     graphBoxElem.style.display='none';
-                }
-	</script>	
+                };
+
+                function showCloud(cloudData, w, h){
+                    var fill = d3.scale.category20();
+
+                    d3.layout.cloud().size([w, h])
+                    .words(cloudData.map(function(x) {
+                          return {text: x[0], size: x[1]};
+                          }))
+                    .padding(2)
+                    .rotate(function() { return ~~(Math.random() * 90); })
+                    .font("Impact")
+                    .fontSize(function(d) { return d.size;})
+                    .on("end", draw)
+                    .start();
+                     
+                    function draw(words) {
+                        d3.select("body").append("svg")
+                            .attr("width", w)
+                            .attr("height", h)
+                          .append("g")
+                            .attr("transform", "translate(" + [w/2, h/2] + ")") 
+                          .selectAll("text")
+                            .data(words)
+                          .enter().append("text")
+                            .style("font-size", function(d) { return d.size + "px"; })
+                            .style("font-family", "Impact")
+                            .style("fill", function(d, i) {return fill(i);})
+                            .on("mouseover", function(){d3.select(this).style("fill", "black");})
+                            .on("mouseout", function(d, i){d3.select(this).style("fill", fill(i));})
+                            .attr("text-anchor", "middle")
+                            .attr("transform", function(d) {
+                              return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                            })
+                            .text(function(d) { return d.text; });
+                      }
+                };
+	</script>
 </head>
 <body onLoad="showAllGraphs(false);">
 <table align="center" frame="box">
@@ -286,17 +324,16 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         <div id="WasteEffortTrend" class="graph" onclick ="showGraphBox(wasteEffortTrend, true);"></div>
     </td>    
 </tr>
-<th colspan=3 align="center"><h3>Log Message Tag Cloud</h3></th>
-</tr>
-<tr id='tagcloud'>
-<td colspan=3 align="center">$TagCloud</td>
-</tr>
-<th colspan=3 align="center"><h3>Author Cloud</h3></th>
-</tr>
-<tr id='authcloud'>
-<td colspan=3 align="center">$AuthCloud</td>
-</tr>
 </table>
+<table width="100%">
+<th><h3>Log Message Tag Cloud</h3></th>
+<script type="text/javascript"> showCloud($TagCloud, 960, 300);</script>
+</table>
+<table width="100%">
+<th align="center"><h3>Author Cloud</h3></th>
+<td align="center"><script type="text/javascript">onLoad = showCloud($AuthCloud, 960, 300);</script></td>
+</table>
+</tr>
     <div id="GraphPopBox">
         <h3 id="closebtn" onClick="hideGraphBox();">Close[X]</h3>
         <div id="Graph_big"></div>
@@ -988,7 +1025,9 @@ class SVNPlotJS(SVNPlotBase):
                       'jqplot/plugins/jqplot.categoryAxisRenderer.min.js',
                       'jqplot/plugins/jqplot.barRenderer.min.js',
                       'jqplot/plugins/jqplot.dateAxisRenderer.min.js',
-                      'jqplot/plugins/jqplot.pieRenderer.min.js']
+                      'jqplot/plugins/jqplot.pieRenderer.min.js',
+                      'd3.v3/d3.layout.cloud.js',
+                      'd3.v3/d3.v3.js']
         
         try:
             srcdir = os.path.dirname(os.path.abspath(__file__))
