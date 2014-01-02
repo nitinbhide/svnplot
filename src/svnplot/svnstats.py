@@ -18,6 +18,7 @@ import sys
 import string, re
 import math
 import operator
+from collections import Counter
 
 from .util import *
 
@@ -919,7 +920,7 @@ class SVNStats(object):
         self.cur.execute("select SVNLog.msg from SVNLog, SVNLogDetailVw where SVNLog.revno = SVNLogDetailVw.revno and SVNLogDetailVw.changedpath like ? \
                          group by SVNLogDetailVw.revno",(self.sqlsearchpath,))
 
-        wordFreq = dict()
+        wordFreq = Counter()
         pattern = re.compile('\s+', re.UNICODE)
         
         for msg, in self.cur:
@@ -927,8 +928,8 @@ class SVNStats(object):
             wordlist = pattern.split(msg)
             for word in filter(self.__isValidWord, wordlist):
                 word = word.lower()
-                count = wordFreq.get(word, 0)        
-                wordFreq[word] = count+1
+                wordFreq[word] += 1
+                
         #Filter words with frequency less than minWordFreq
         invalidWords = [word for word,freq in wordFreq.items() if (freq < minWordFreq)]
         for word in invalidWords:
