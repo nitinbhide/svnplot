@@ -20,8 +20,8 @@ import StringIO
 import svnstats
 import heatmapclr
 
-MINFONTSIZE=-2
-MAXFONTSIZE=8
+MINFONTSIZE=10
+MAXFONTSIZE=30
 
 def getTagFontSize(freq, minFreqLog, maxFreqLog):
     #change the font size between "-2" to "+8" relative to current font size
@@ -128,7 +128,7 @@ class SVNPlotBase:
     def AuthorCloud(self, maxAuthCount=50):
         self._printProgress("Calculating Author Tag Cloud")
         authCloud = self.svnstats.getAuthorCloud()
-        tagHtmlStr = ''
+        tagDataStr = '[]'
         if( len(authCloud) > 0):
             #sort and extract maximum of the "maxAuthCount" number of author based on the
             #activity index
@@ -148,28 +148,20 @@ class SVNPlotBase:
             #results later. So make sure there is some difference between min and max freq.
             maxFreq = max(minFreq*1.2, maxFreq)
             maxFreqLog = math.log(maxFreq)
-                
-            minActivity = min(authTagList, key=operator.itemgetter(2))[2]
-            maxActivity = max(authTagList, key=operator.itemgetter(2))[2]
-            maxActivity = max(minActivity*1.2, maxActivity)
-
-            normlizer = lambda actIdx : normalize_activityidx(actIdx, minActivity, maxActivity)
-            #minActivityLog = math.log(minActivity)
-            #maxActivityLog = math.log(maxActivity)                        
-            #normlizer = lambda actIdx : (math.log(actIdx)-minActivityLog)/(maxActivityLog-minActivityLog)
 
             #Now sort the authers by author names
             authTagList = sorted(authTagList, key=operator.itemgetter(0))
-            #change the font size between "-2" to "+8" relative to current font size
-            tagHtmlStr = ' '.join([('<font size="%+d" color="%s">%s</font>\n'%
-                                    (getTagFontSize(freq, minFreqLog, maxFreqLog), getActivityClr(normlizer, actIdx), auth))
-                                       for auth, freq, actIdx in authTagList])
-        return(tagHtmlStr)             
+            
+            #Create a list of list for javascript input
+            wordsMap = [[str(auth), getTagFontSize(freq, minFreqLog, maxFreqLog)] for auth, freq, actIdx in authTagList]
+            tagDataStr = str(wordsMap)
+
+        return(tagDataStr)             
 
     def TagCloud(self, numWords=50):
         self._printProgress("Calculating tag cloud for log messages")
         words = self.svnstats.getLogMsgWordFreq(5)
-        tagHtmlStr = ''
+        tagDataStr = '[]'
         if( len(words) > 0):
             #first get sorted wordlist (reverse sorted by frequency)
             tagWordList = sorted(words.items(), key=operator.itemgetter(1),reverse=True)
@@ -180,7 +172,9 @@ class SVNPlotBase:
             minFreqLog = math.log(minFreq)
             maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
             maxFreqLog = math.log(maxFreq)
-            #change the font size between "-2" to "+8" relative to current font size
-            tagHtmlStr = ' '.join([('<font size="%+d">%s</font>\n'%(getTagFontSize(freq, minFreqLog, maxFreqLog), x))
-                                       for x,freq in tagWordList])                
-        return(tagHtmlStr)
+            
+            #Create a list of list for javascript input
+            wordsMap = [[str(x), getTagFontSize(freq, minFreqLog, maxFreqLog)] for x, freq in tagWordList]
+            tagDataStr = str(wordsMap)
+             
+        return(tagDataStr)
