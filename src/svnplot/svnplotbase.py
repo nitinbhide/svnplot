@@ -55,7 +55,7 @@ def normalize_activityidx(actIdx, minActivity, maxActivity):
     assert(normactidx >=0.0)
     return(normactidx)
     
-class SVNPlotBase:
+class SVNPlotBase(object):
     def __init__(self, svnstats, dpi=100,format='png'):
         self.svnstats = svnstats
         self.reponame = ""        
