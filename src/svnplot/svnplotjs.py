@@ -39,13 +39,14 @@ import sqlite3
 import os.path
 import sys
 import string
-import StringIO
+import pdb
 import math
 import shutil
 import json
 
 from svnstats import *
 from svnplotbase import *
+from graphbase import *
 
 HTMLBasicStatsTmpl = '''
 <table align="center">
@@ -113,7 +114,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	</script>
 </head>
 <body>
-<table align="center" frame="box">
+<table align="center" frame="box" width="100%">
     <caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
     <tr>
         <th colspan=3 align="center"><h3>General Statistics</h3></th>
@@ -143,12 +144,24 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
             </table>
         </td>
     </tr>
-</tale>
+    </table>
+    $GRAPH_HTML    
+<script>
+    // graph javascript
+    $GRAPH_JS
+</script>
+
 </body>
 </html>
 '''
 
 class SVNPlotJS(SVNPlotBase):
+    '''
+    Javascript based plots from subversion log data
+    '''
+    #list of graphs (function names)
+    GRAPHS_LIST = ['ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
+                   'CommitActivityIdxGraph', 'LocGraph'] 
     def __init__(self, svnstats, template=None):
         SVNPlotBase.__init__(self, svnstats)
         self.commitGraphHtPerAuthor = 2 #In inches
@@ -179,42 +192,52 @@ class SVNPlotJS(SVNPlotBase):
         htmlfile.close()
         if( copyjs == True):
             self.__copyJSFiles(dirpath)
-
-    def ActivityByWeekdayFunc(self):
-        pass
-        
+    
     def ActivityByWeekdayAll(self):
         self._printProgress("Calculating Activity by day of week graph")
         
         data, labels = self.svnstats.getActivityByWeekday()
+        y_axis = GraphAxisData()
+        graph = GraphBar("ActivityByWeekdayAll", y_axis=y_axis, title="Activity By Weekday")
+        graph.data(zip(labels, data))
         
-        pass
+        return graph
 
     def ActivityByWeekdayRecent(self, months=3):
         self._printProgress("Calculating Activity by day of week graph")
         
         data, labels = self.svnstats.getActivityByWeekday(months)
+        assert(len(data) == len(labels))
         
-        pass
-                
-
-    def ActivityByTimeOfDayFunc(self):
-        pass
-        
+        title = "Activity By Weekday (%d months)" % months
+        y_axis = GraphAxisData()
+        graph = GraphBar("ActivityByWeekdayRecent", y_axis=y_axis, title=title)
+        graph.data(zip(labels, data))
+        return graph                
+    
     def ActivityByTimeOfDayAll(self):
         self._printProgress("Calculating Activity by time of day graph")
         
         data, labels = self.svnstats.getActivityByTimeOfDay()
+        assert(len(data) == len(labels))
         
-        pass
-
+        title = "Activity By Time of Day"
+        y_axis = GraphAxisData()
+        graph = GraphBar("ActivityByTimeOfDay", y_axis=y_axis, title=title)
+        graph.data(zip(labels, data))
+        return graph
+                
     def ActivityByTimeOfDayRecent(self, months=3):
         self._printProgress("Calculating Activity by time of day graph")
         
         data, labels = self.svnstats.getActivityByTimeOfDay(months)
         assert(len(data) == len(labels))
         
-        pass
+        title = "Activity By Time of Day (%d months)" % months
+        y_axis = GraphAxisData()
+        graph = GraphBar("ActivityByTimeOfDayRecent", y_axis=y_axis, title=title)
+        graph.data(zip(labels, data))
+        return graph
 
     def CommitActivityIdxGraph(self):
         '''
@@ -224,7 +247,13 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating Commit Activity Index by time of day graph")
         cmdates, temperaturelist = self.svnstats.getRevActivityTemperature()
         
-        pass
+        title = "Commit Activity Index"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLine("CommitActIdx", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph.data(zip(cmdates, temperaturelist))
+        return graph
         
     def LocGraph(self):
         self._printProgress("Calculating LoC graph")
@@ -232,7 +261,13 @@ class SVNPlotJS(SVNPlotBase):
         dates, loc = self.svnstats.getLoCStats()
         assert(len(dates) == len(loc))
 
-        pass
+        title = "Lines of Code"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLine("LocGraph", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph.data(zip(dates, loc))
+        return graph
 
     def LocGraphAllDev(self):
         self._printProgress("Calculating Developer Contribution graph")
@@ -347,7 +382,38 @@ class SVNPlotJS(SVNPlotBase):
         datelist, linesadded, linesdeleted, wasteratio = self.svnstats.getWasteEffortStats()        
         
         pass
+    
+    def getGraphJS(self, graphs):
+        '''
+        generate the javascript code for graphs
+        '''
+        graph_js_io = StringIO()
         
+        for graph in graphs:
+            graph_js_io.write(graph.getJS())
+                            
+        return graph_js_io.getvalue()
+    
+    def getGraphHTML(self, graphs):
+        '''
+        generate the HTML code for graphs
+        '''
+        graph_io = StringIO()
+        
+        for graph in graphs:
+            graph_io.write(graph.getHTML())
+            
+        return graph_io.getvalue()
+    
+    def getGraphs(self):
+        graphs = []
+        for graphfuncName in SVNPlotJS.GRAPHS_LIST:
+            graphfunc = getattr(self, graphfuncName, None)
+            assert(graphfunc != None)
+            print graphfuncName
+            graphs.append(graphfunc())
+        return graphs
+    
     def _getGraphParamDict(self, thumbsize, maxdircount = 10):
         graphParamDict = dict()
             
@@ -364,7 +430,10 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["BasicStats"] = self.BasicStats(HTMLBasicStatsTmpl)
         graphParamDict["ActiveFiles"] = self.ActiveFiles()
         graphParamDict["ActiveAuthors"] = self.ActiveAuthors()
-
+        
+        graphs = self.getGraphs()
+        graphParamDict["GRAPH_JS"] = self.getGraphJS(graphs)
+        graphParamDict["GRAPH_HTML"] = self.getGraphHTML(graphs)        
         
         return(graphParamDict)
                 
