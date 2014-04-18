@@ -163,13 +163,15 @@ class SVNPlotJS(SVNPlotBase):
     #list of graphs (function names)
     GRAPHS_LIST = [
         #LoC graphs
-        'LocGraph', 'AvgFileLocGraph','LoCDevContributionGraph',
+        'LocGraph', 'AvgFileLocGraph','LoCDevContributionGraph', 'WasteEffortTrend',
         # File Count Graphs
         'FileCountGraph', 'FileTypesGraph',
         #Directory Size Graphs
+        'DirectorySizeLineGraph',
         #Commit Activity Graphs
+        'CommitActivityIdxGraph', 'DailyCommitCountGraph', 
         'ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
-        'CommitActivityIdxGraph', 'AuthorsCommitTrend'] 
+        'AuthorsCommitTrend'] 
     def __init__(self, svnstats, template=None):
         SVNPlotBase.__init__(self, svnstats)
         self.commitGraphHtPerAuthor = 2 #In inches
@@ -395,7 +397,16 @@ class SVNPlotJS(SVNPlotBase):
         dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
         numDirs = len(dirlist)
 
-        pass
+        title = "Directory Size(Lines of Code)"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLine("DirSizeLoC", x_axis=x_axis, y_axis=y_axis, title=title)
+                
+        for dirname in dirlist:
+            dates, loclist = self.svnstats.getDirLocTrendStats(dirname)
+            graph.addDataSeries(dirname, zip(dates, loclist))
+        return graph
 
     def AuthorsCommitTrend(self):
         self._printProgress("Calculating Author commits trend histogram graph")
@@ -417,14 +428,28 @@ class SVNPlotJS(SVNPlotBase):
                 
         datelist, cmitcountlist = self.svnstats.getDailyCommitCount()        
         
-        pass
+        title = "Daily Commit Count"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLine("DailyCommitCount", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph.data(zip(datelist,cmitcountlist))
+        return graph
     
     def WasteEffortTrend(self):
         self._printProgress("Calculating Waste effort trend graph")
         
         datelist, linesadded, linesdeleted, wasteratio = self.svnstats.getWasteEffortStats()        
         
-        pass
+        title = "Wasted Effort Trend"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLine("WastedEffort", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph.addDataSeries("Lines Added", zip(datelist,linesadded))
+        graph.addDataSeries("Lines Deleted", zip(datelist,linesdeleted))
+        graph.addDataSeries("Waste Ratio", zip(datelist,wasteratio))
+        return graph
     
     def getGraphJS(self, graphs):
         '''
