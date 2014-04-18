@@ -161,7 +161,7 @@ class SVNPlotJS(SVNPlotBase):
     '''
     #list of graphs (function names)
     GRAPHS_LIST = ['ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
-                   'CommitActivityIdxGraph', 'LocGraph'] 
+                   'CommitActivityIdxGraph', 'LocGraph', 'FileCountGraph', 'AvgFileLocGraph'] 
     def __init__(self, svnstats, template=None):
         SVNPlotBase.__init__(self, svnstats)
         self.commitGraphHtPerAuthor = 2 #In inches
@@ -290,12 +290,18 @@ class SVNPlotJS(SVNPlotBase):
         
     def FileCountGraph(self):
         self._printProgress("Calculating File Count graph")
-        
-        
-        dates, fclist = self.svnstats.getFileCountStats()        
-        
+            
+        dates, fclist = self.svnstats.getFileCountStats()            
         assert(len(dates) == len(fclist))
-        pass
+        
+        title = "File Count"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLine("FileCount", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph.data(zip(dates, fclist))
+        
+        return graph
 
     def FileTypesGraph(self):
         self._printProgress("Calculating File Types graph")
@@ -309,8 +315,18 @@ class SVNPlotJS(SVNPlotBase):
             
     def AvgFileLocGraph(self):
         self._printProgress("Calculating Average File Size graph")
-            
-        pass
+        
+        dates, avgloclist = self.svnstats.getAvgLoC()                
+        
+        assert(len(dates) == len(avgloclist))
+        
+        title = "Average File LoC"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLine("AvgFileLoC", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph.data(zip(dates, avgloclist))
+        return graph
 
     def AuthorActivityGraph(self):
         self._printProgress("Calculating Author Activity graph")
