@@ -161,8 +161,15 @@ class SVNPlotJS(SVNPlotBase):
     Javascript based plots from subversion log data
     '''
     #list of graphs (function names)
-    GRAPHS_LIST = ['ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
-                   'CommitActivityIdxGraph', 'LocGraph', 'FileCountGraph', 'AvgFileLocGraph', 'FileTypesGraph'] 
+    GRAPHS_LIST = [
+        #LoC graphs
+        'LocGraph', 'AvgFileLocGraph','LoCDevContributionGraph',
+        # File Count Graphs
+        'FileCountGraph', 'FileTypesGraph',
+        #Directory Size Graphs
+        #Commit Activity Graphs
+        'ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
+        'CommitActivityIdxGraph', 'AuthorsCommitTrend'] 
     def __init__(self, svnstats, template=None):
         SVNPlotBase.__init__(self, svnstats)
         self.commitGraphHtPerAuthor = 2 #In inches
@@ -271,15 +278,25 @@ class SVNPlotJS(SVNPlotBase):
         graph.data(zip(dates, loc))
         return graph
 
-    def LocGraphAllDev(self):
+    def LoCDevContributionGraph(self):
         self._printProgress("Calculating Developer Contribution graph")
         
         authList = self.svnstats.getAuthorList(self.authorsToDisplay)
         authLabelList = []
         
-        pass
-    
-            
+        title = "Contributed Lines of Code"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLine("LoCDevContributionGraph", x_axis=x_axis, y_axis=y_axis, title=title)
+                 
+        for author in authList:
+            dates, loc = self.svnstats.getLoCTrendForAuthor(author)
+            if( len(dates) > 0):
+                graph.addDataSeries(author, zip(dates, loc))                
+                    
+        return graph
+                
     def LocChurnGraph(self):
         self._printProgress("Calculating LoC and Churn graph")
        
@@ -389,7 +406,11 @@ class SVNPlotJS(SVNPlotBase):
         binlabels = ["0-1 hr", "1-4 hrs", "4hrs-1 day", "1-2 days", "2-4 days", "4-8 days", "8-16 days"]
         data = self.svnstats.getAuthorsCommitTrendHistorgram(binsList)
         
-        pass
+        title = "Author Commits Trend"
+        y_axis = GraphAxisData()
+        graph = GraphBar("AuthorCommitsTrend", y_axis=y_axis, title=title)
+        graph.data(zip(binlabels, data))
+        return graph
     
     def DailyCommitCountGraph(self):
         self._printProgress("Calculating Daily commit count graph")

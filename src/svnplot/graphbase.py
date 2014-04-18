@@ -78,13 +78,17 @@ class GraphXYBase(object):
         self.x_axis = x_axis 
         self.y_axis = y_axis
         self.title = title
+        self.dataSeries = dict()
         
     def getGraphFuncName(self):
         return self.name;
     
-    def data(self, dt):
-        self.data = dt
+    def addDataSeries(self, name, dt):
+        self.dataSeries[name] = dt
 
+    def data(self, dt):
+        self.addDataSeries('', dt)
+    
     def getID(self):
         return self.name
     
@@ -99,8 +103,10 @@ class GraphXYBase(object):
         if self.y_axis:
             y2json = self.y_axis.data2json
             
-        values = [{ 'x' : x2json(d[0]), 'y': y2json(d[1]) } for d in self.data]
-        jsdata = [{ 'key' : self.name, 'values' : values}]
+        jsdata = []
+        for name, data in self.dataSeries.iteritems():            
+            values = [{ 'x' : x2json(d[0]), 'y': y2json(d[1]) } for d in data]
+            jsdata.append({ 'key' : name, 'values' : values})
         return json.dumps(jsdata)
         
     def get_properties(self):
