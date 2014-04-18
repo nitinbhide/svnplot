@@ -167,7 +167,7 @@ class SVNPlotJS(SVNPlotBase):
         # File Count Graphs
         'FileCountGraph', 'FileTypesGraph',
         #Directory Size Graphs
-        'DirectorySizeLineGraph',
+        'DirectorySizeLineGraph','DirectorySizePieGraph', 'DirFileCountPieGraph',
         #Commit Activity Graphs
         'CommitActivityIdxGraph', 'DailyCommitCountGraph', 
         'ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
@@ -370,8 +370,10 @@ class SVNPlotJS(SVNPlotBase):
         
         assert(len(dirlist) == len(dirsizelist))
 
-        pass
-    
+        title = "Directory Sizes"
+        graph = GraphPie("DirSize", title=title)
+        graph.data(zip(dirlist, dirsizelist))
+        return graph
         
     def DirFileCountPieGraph(self, depth=2, maxdircount=10):
         '''
@@ -381,7 +383,10 @@ class SVNPlotJS(SVNPlotBase):
 
         dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
 
-        pass
+        title = "Directory File Count"
+        graph = GraphPie("DirFileCount", title=title)
+        graph.data(zip(dirlist, dirsizelist))
+        return graph
     
            
     def DirectorySizeLineGraph(self, depth=2, maxdircount=10):
