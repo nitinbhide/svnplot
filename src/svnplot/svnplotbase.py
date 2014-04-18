@@ -15,7 +15,7 @@ import math
 import string
 import operator
 import logging
-import StringIO
+from StringIO import StringIO
 
 import svnstats
 import heatmapclr
@@ -104,7 +104,7 @@ class SVNPlotBase(object):
         '''
         self._printProgress("Calculating Active (hot) files list")
         hotfiles = self.svnstats.getHotFiles(10)
-        outstr = StringIO.StringIO()
+        outstr = StringIO()
         outstr.write("<ol>\n")
         for filepath, temperatur, revcount in hotfiles:
             outstr.write("<li>%s (rev count: %d)</li>\n"% (self.svnstats.getSearchPathRelName(filepath),revcount))
@@ -118,7 +118,7 @@ class SVNPlotBase(object):
         '''
         self._printProgress("Calculating Active authors list")
         hotauthors = self.svnstats.getActiveAuthors(10)
-        outstr = StringIO.StringIO()
+        outstr = StringIO()
         outstr.write("<ol>\n")
         for author, temperatur in hotauthors:
             outstr.write("<li>%s</li>\n"%author)
