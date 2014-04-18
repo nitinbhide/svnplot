@@ -214,6 +214,35 @@ class GraphBar(GraphXYBase):
         prop['VALUE_FORMAT'] = self.valueFormat
         return prop
     
+class GraphPie(GraphBar):
+    '''
+    pie chart with d3js and nvd3.js
+    '''
+    JS_TEMPLATE = '''
+    function $FUNC_NAME() {
+        var chart = nv.models.pieChart()
+            .showLabels(true);
+        var elem_sel = "#$ID";
+        
+        var graphElem = d3.select(elem_sel);
+        
+        graphElem.select('h3').text("$TITLE");
+        var graphData = $GRAPH_DATA[0];        
+        graphElem.select('div.graph svg')
+            .datum(graphData.values)            
+            .call(chart);
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    }
+    
+    $FUNC_NAME();
+    '''
+    def __init__(self, name, title=None):
+        super(GraphPie, self).__init__(name, y_axis=None,title=title)
+        
+
 class GraphHorizontalBar(GraphBar):
     '''
     Bar char with d3js and nvd3.js
