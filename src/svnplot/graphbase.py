@@ -26,7 +26,7 @@ class GraphAxisData(object):
         '''
         self.name = name
         self.color = color
-        self.tickFormat = '''d3.format(',f')'''
+        self.tickFormat = '''d3.format(',.0f')'''
 
     def setTickFormat(self, tickformat):
         '''
@@ -69,7 +69,7 @@ class GraphXYBase(object):
     <div id="$ID">
         <h3 style="text-align:center"></h3>
         <div class="graph">
-            <svg style="height:500px;width:800px"></svg>
+            <svg></svg>
         </div>        
     </div>
     '''
@@ -174,7 +174,8 @@ class GraphBar(GraphXYBase):
     JS_TEMPLATE = '''
     function $FUNC_NAME() {
         var chart = nv.models.discreteBarChart()
-            .showValues(true) ;
+            .showValues(true)
+            .valueFormat($VALUE_FORMAT);
         var elem_sel = "#$ID";
         
         chart.yAxis
@@ -197,5 +198,47 @@ class GraphBar(GraphXYBase):
     '''
     def __init__(self, name, y_axis=None, title=None):
         super(GraphBar, self).__init__(name, y_axis=y_axis,title=title)
+        self.setValueFormat('''d3.format(',.0f')''')
+        
+    def setValueFormat(self, valueFormat):
+        self.valueFormat = valueFormat
     
+    def get_properties(self):
+        prop = super(GraphBar, self).get_properties()
+        prop['VALUE_FORMAT'] = self.valueFormat
+        return prop
     
+class GraphHorizontalBar(GraphBar):
+    '''
+    Bar char with d3js and nvd3.js
+    '''
+    JS_TEMPLATE = '''
+    function $FUNC_NAME() {
+        var chart = nv.models.multiBarHorizontalChart()
+            .showValues(true)
+            .showControls(false)
+            .valueFormat($VALUE_FORMAT);
+        var elem_sel = "#$ID";
+        
+        chart.yAxis
+            .tickFormat($Y_TICK_FORMAT);
+
+        var graphElem = d3.select(elem_sel);
+        
+        graphElem.select('h3').text("$TITLE");
+        var graphData = $GRAPH_DATA;        
+        graphElem.select('div.graph svg')
+            .datum(graphData)            
+            .call(chart);
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    }
+    
+    $FUNC_NAME();
+    '''
+    def __init__(self, name, y_axis=None, title=None):
+        super(GraphHorizontalBar, self).__init__(name, y_axis=y_axis,title=title)    
+        
+        

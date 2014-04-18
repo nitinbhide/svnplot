@@ -69,10 +69,11 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <title>Subversion Stats Plot for $RepoName</title>
     <style type="text/css">
 	    h3 {background-color: transparent;margin:2}
-	    h4 {background-color: transparent;margin:1}	
+	    h4 {background-color: transparent;margin:1}
+            div.graph svg { width:800px; height:500px;}
 	</style>
     <link type="text/css" rel="stylesheet" href="nv.d3.css"></link>
-	<script type="text/javascript" src="d3.v3.js"></script>
+    <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="d3.layout.cloud.js"></script>
     <script type="text/javascript" src="nv.d3.js"></script>    
     <script type="text/javascript">			 
@@ -161,7 +162,7 @@ class SVNPlotJS(SVNPlotBase):
     '''
     #list of graphs (function names)
     GRAPHS_LIST = ['ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
-                   'CommitActivityIdxGraph', 'LocGraph', 'FileCountGraph', 'AvgFileLocGraph'] 
+                   'CommitActivityIdxGraph', 'LocGraph', 'FileCountGraph', 'AvgFileLocGraph', 'FileTypesGraph'] 
     def __init__(self, svnstats, template=None):
         SVNPlotBase.__init__(self, svnstats)
         self.commitGraphHtPerAuthor = 2 #In inches
@@ -237,6 +238,7 @@ class SVNPlotJS(SVNPlotBase):
         y_axis = GraphAxisData()
         graph = GraphBar("ActivityByTimeOfDayRecent", y_axis=y_axis, title=title)
         graph.data(zip(labels, data))
+        
         return graph
 
     def CommitActivityIdxGraph(self):
@@ -310,8 +312,12 @@ class SVNPlotJS(SVNPlotBase):
         ftypelist, ftypecountlist = self.svnstats.getFileTypesStats(self.fileTypesToDisplay)
         assert(len(ftypelist) == len(ftypecountlist))
         
-        pass
+        title = "File Types"
+        y_axis = GraphAxisData()        
+        graph = GraphHorizontalBar("FileTypesCount", y_axis=y_axis, title=title)
+        graph.data(zip(ftypelist, ftypecountlist))
         
+        return graph
             
     def AvgFileLocGraph(self):
         self._printProgress("Calculating Average File Size graph")
