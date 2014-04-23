@@ -68,50 +68,62 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->	
     <title>Subversion Stats Plot for $RepoName</title>
     <style type="text/css">
-	    h3 {background-color: transparent;margin:2}
-	    h4 {background-color: transparent;margin:1}
-            div.graph svg { width:800px; height:500px;}
+	    h3 {background-color: lightgrey;margin:2;text-align:center;}
+	    h4 {background-color: lightgrey;margin:1}
+        div.graph { margin:10px; padding:25px; border:1px solid; height:500px;}        
+        div#LogMsgCloud, div#AuthorCloud { height:360px; }
+
 	</style>
     <link type="text/css" rel="stylesheet" href="nv.d3.css"></link>
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="d3.layout.cloud.js"></script>
     <script type="text/javascript" src="nv.d3.js"></script>    
     <script type="text/javascript">			 
-        function showCloud(cloudData, w, h){
+        function showCloud(cloudData, idSel){
             var fill = d3.scale.category20();
 
-            d3.layout.cloud().size([w, h])
-            .words(cloudData.map(function(x) {
-                    return {text: x[0], size: x[1]};
-                    }))
-            .padding(2)
-            .rotate(function() { return ~~(Math.random() * 90); })
-            .font("Impact")
-            .fontSize(function(d) { return d.size;})
-            .on("end", draw)
-            .start();
-                     
+            var selElem = d3.select(idSel);
+            var w = parseInt(selElem.style("width"))-10;
+            var h = parseInt(selElem.style("height"))-10;
+            
+            d3.layout.cloud()
+                .size([w, h])
+                .words(cloudData.map(function(x) {
+                        return {text: x[0], size: x[1]};
+                        }))
+                .padding(2)
+                .rotate(function() { return 0;})
+                .font("Impact")
+                .fontSize(function(d) { return d.size;})
+                .on("end", draw)
+                .start();
+
             function draw(words) {
-                d3.select("body").append("svg")
-                    .attr("width", w)
-                    .attr("height", h)
+                    d3.select(idSel).append("svg")
                     .append("g")
-                    .attr("transform", "translate(" + [w/2, h/2] + ")") 
+                        .attr("transform", "translate(" + [w/2, h/2] + ")") 
                     .selectAll("text")
-                    .data(words)
+                        .data(words)
                     .enter().append("text")
-                    .style("font-size", function(d) { return d.size + "px"; })
-                    .style("font-family", "Impact")
-                    .style("fill", function(d, i) {return fill(i);})
-                    .on("mouseover", function(){d3.select(this).style("fill", "black");})
-                    .on("mouseout", function(d, i){d3.select(this).style("fill", fill(i));})
-                    .attr("text-anchor", "middle")
-                    .attr("transform", function(d) {
-                        return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-                    })
-                    .text(function(d) { return d.text; });
+                        .style("font-size", function(d) { return d.size + "px"; })
+                        .style("font-family", "Impact")
+                        .style("fill", function(d, i) {return fill(i);})
+                        .on("mouseover", function(){d3.select(this).style("fill", "black");})
+                        .on("mouseout", function(d, i){d3.select(this).style("fill", fill(i));})
+                        .attr("text-anchor", "middle")
+                        .attr("transform", function(d) {
+                            return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                        })
+                        .text(function(d) { return d.text; });
                 }
-        };
+        };     
+        
+        function showTagClouds() {
+            var logMsgCloudData = $TagCloud;
+            showCloud(logMsgCloudData, '#LogMsgCloud');
+            var authCloudData = $AuthCloud;
+            showCloud(authCloudData, "#AuthorCloud");
+        }   
 	</script>
 </head>
 <body>
@@ -147,9 +159,16 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     </tr>
     </table>
     $GRAPH_HTML    
+    <div>
+        <h3>Log Message Tag Cloud</h3>
+        <div id="LogMsgCloud"></div>
+        <h3>Author Cloud</h3>    
+        <div id="AuthorCloud"></div>
+    </div>
 <script>
     // graph javascript
-    $GRAPH_JS
+    $GRAPH_JS    
+    showTagClouds();
 </script>
 
 </body>
