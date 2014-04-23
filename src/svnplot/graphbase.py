@@ -67,7 +67,7 @@ class GraphXYBase(object):
     '''
     HTML_TEMPLATE='''
     <div id="$ID">
-        <h3 style="text-align:center"></h3>
+        <h3></h3>
         <div class="graph">
             <svg></svg>
         </div>        
