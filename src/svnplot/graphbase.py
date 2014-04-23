@@ -67,10 +67,12 @@ class GraphXYBase(object):
     '''
     HTML_TEMPLATE='''
     <div id="$ID">
-        <h3></h3>
+        <h4>$TITLE</h4>
+        <div class="graphwrapper">
         <div class="graph">
             <svg></svg>
         </div>        
+        </div>
     </div>
     '''
     def __init__(self, name, x_axis=None, y_axis=None, title=''):
@@ -143,20 +145,34 @@ class GraphLine(GraphXYBase):
     '''
     
     JS_TEMPLATE = '''
-    function $FUNC_NAME() {
+    function $FUNC_NAME(isthumb) {
+
+        var showAxis = true;
+        var showLegend = true;
+        var showTooltip = true;
+        var useInteractiveGuideline=true;
+        var xtickFormat = $X_TICK_FORMAT;
+        var ytickFormat = $Y_TICK_FORMAT;
+        if(isthumb) {
+            showLegend = false;
+            showTooltip = false;
+            useInteractiveGuideline = false;
+        }
         var chart = nv.models.lineChart()
-            .showYAxis(true)
-            .showXAxis(true);
+            .showYAxis(showAxis)
+            .showXAxis(showAxis)
+            .showLegend(showLegend)
+            .tooltips(showTooltip)
+            .useInteractiveGuideline(useInteractiveGuideline);
         var elem_sel = "#$ID";
         
         chart.xAxis
-            .tickFormat($X_TICK_FORMAT);
+            .tickFormat(xtickFormat);
         chart.yAxis
-            .tickFormat($Y_TICK_FORMAT);
+            .tickFormat(ytickFormat);
 
         var graphElem = d3.select(elem_sel);
         
-        graphElem.select('h3').text("$TITLE");
         var graphData = $GRAPH_DATA;        
         graphElem.select('div.graph svg')
             .datum(graphData)            
@@ -165,9 +181,7 @@ class GraphLine(GraphXYBase):
         nv.utils.windowResize(chart.update);
 
         return chart;
-    }
-    
-    $FUNC_NAME();
+    }        
     '''
     def __init__(self, name, x_axis=None, y_axis=None, title=None):
         super(GraphLine, self).__init__(name, x_axis=x_axis, y_axis=y_axis,title=title)
@@ -178,9 +192,24 @@ class GraphBar(GraphXYBase):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME() {
+    function $FUNC_NAME(isthumbnail) {
+        
+        var showValues = true;
+        var showAxis=true;
+        var showLegend=true;
+        var showTooltip=true;
+        var useInteractiveGuideline=true;
+        if(isthumbnail) {
+            showValues = false;
+            showLegend = false;
+            useInteractiveGuideline=false;
+            showTooltip=false;
+        }
         var chart = nv.models.discreteBarChart()
-            .showValues(true)
+            .showValues(showValues)
+            .showYAxis(showAxis)
+            .showXAxis(showAxis)            
+            .tooltips(showTooltip)
             .valueFormat($VALUE_FORMAT);
         var elem_sel = "#$ID";
         
@@ -189,7 +218,6 @@ class GraphBar(GraphXYBase):
 
         var graphElem = d3.select(elem_sel);
         
-        graphElem.select('h3').text("$TITLE");
         var graphData = $GRAPH_DATA;        
         graphElem.select('div.graph svg')
             .datum(graphData)            
@@ -198,9 +226,7 @@ class GraphBar(GraphXYBase):
         nv.utils.windowResize(chart.update);
 
         return chart;
-    }
-    
-    $FUNC_NAME();
+    }        
     '''
     def __init__(self, name, y_axis=None, title=None):
         super(GraphBar, self).__init__(name, y_axis=y_axis,title=title)
@@ -219,14 +245,24 @@ class GraphPie(GraphBar):
     pie chart with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME() {
+    function $FUNC_NAME(isthumbnail) {
+
+        var showLabels = true;
+        var showLegend = true;
+        var showTooltip=true
+        if(isthumbnail) {
+            showLabels = false;
+            showLegend = false;
+            showTooltip = false;
+        }
         var chart = nv.models.pieChart()
-            .showLabels(true);
+            .showLabels(showLabels)
+            .showLegend(showLegend)
+            .tooltips(showTooltip);
         var elem_sel = "#$ID";
         
         var graphElem = d3.select(elem_sel);
         
-        graphElem.select('h3').text("$TITLE");
         var graphData = $GRAPH_DATA[0];        
         graphElem.select('div.graph svg')
             .datum(graphData.values)            
@@ -235,9 +271,7 @@ class GraphPie(GraphBar):
         nv.utils.windowResize(chart.update);
 
         return chart;
-    }
-    
-    $FUNC_NAME();
+    }       
     '''
     def __init__(self, name, title=None):
         super(GraphPie, self).__init__(name, y_axis=None,title=title)
@@ -248,10 +282,20 @@ class GraphHorizontalBar(GraphBar):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME() {
+    function $FUNC_NAME(isthumbnail) {        
+        var showValue = true;
+        var showLegend = true;
+        var showTooltip=true;
+        if(isthumbnail) {
+            showValue = false;
+            showLegend = false;
+            showTooltip=false;
+        }
         var chart = nv.models.multiBarHorizontalChart()
-            .showValues(true)
+            .showValues(showValue)
             .showControls(false)
+            .showLegend(showLegend)
+            .tooltips(showTooltip)
             .valueFormat($VALUE_FORMAT);
         var elem_sel = "#$ID";
         
@@ -260,7 +304,6 @@ class GraphHorizontalBar(GraphBar):
 
         var graphElem = d3.select(elem_sel);
         
-        graphElem.select('h3').text("$TITLE");
         var graphData = $GRAPH_DATA;        
         graphElem.select('div.graph svg')
             .datum(graphData)            
@@ -269,9 +312,7 @@ class GraphHorizontalBar(GraphBar):
         nv.utils.windowResize(chart.update);
 
         return chart;
-    }
-    
-    $FUNC_NAME();
+    }        
     '''
     def __init__(self, name, y_axis=None, title=None):
         super(GraphHorizontalBar, self).__init__(name, y_axis=y_axis,title=title)    

@@ -68,11 +68,19 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->	
     <title>Subversion Stats Plot for $RepoName</title>
     <style type="text/css">
-	    h3 {background-color: lightgrey;margin:2;text-align:center;}
-	    h4 {background-color: lightgrey;margin:1}
-        div.graph { margin:10px; padding:25px; border:1px solid; height:500px;}        
+	    h3 {background-color: lightgrey;margin:2px;text-align:center;}
+	    h4 {font-weight:bold;margin:1px;text-align:center;}
+        table.graphthumbs { width:100%; }
+        table.graphthumbs th {background-color: lightgrey;margin:2;text-align:center;}
+        table.graphthumbs div.graph { height:500px;width:500px; overflow:visible;
+            transform:scale(0.2,0.2) translate(-1000px,-1000px);
+            -ms-transform:scale(0.2,0.2) translate(-1000px,-1000px);
+            -webkit-transform:scale(0.2,0.2) translate(-1000px,-1000px);        
+            }
+        div.graphwrapper { width:100px; height:100px; max-width:120px;max-height:120px; 
+            margin-left: auto ;margin-right: auto ;margin-bottom:10px;} 
+        div.graph { margin:2px; padding:2px; border:1px solid; height:500px;}        
         div#LogMsgCloud, div#AuthorCloud { height:360px; }
-
 	</style>
     <link type="text/css" rel="stylesheet" href="nv.d3.css"></link>
     <script type="text/javascript" src="d3.v3.js"></script>
@@ -127,7 +135,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	</script>
 </head>
 <body>
-<table align="center" frame="box" width="100%">
+<table style="width:100%" align="center" frame="box">
     <caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
     <tr>
         <th colspan=3 align="center"><h3>General Statistics</h3></th>
@@ -158,7 +166,55 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         </td>
     </tr>
     </table>
-    $GRAPH_HTML    
+    <table class="graphthumbs" style="width:100%">
+       <tr>
+            <th colspan=3 style="text-align:center">Line Count Graphs ($SEARCHPATH)</th>        
+       </tr>
+       <tr>
+            <td>$HTML_LocGraph</td>
+            <td>$HTML_AvgFileLocGraph</td>
+            <td>$HTML_LoCDevContributionGraph</td>
+       </tr>
+       <tr>
+            <td>$HTML_WasteEffortTrend</td>
+            <td></td>
+            <td></td>
+       </tr>
+       <tr>
+            <th colspan=3 style="text-align:center">File Count Graphs ($SEARCHPATH)</th>        
+       </tr>
+       <tr>
+            <td>$HTML_FileCountGraph</td>
+            <td>$HTML_FileTypesGraph</td>            
+            <td></td>            
+        </tr>
+        <tr>
+            <th colspan=3 style="text-align:center">Directory Size Graphs ($SEARCHPATH)</th>
+       </tr>
+       <tr>
+            <td>$HTML_DirectorySizeLineGraph</td>
+            <td>$HTML_DirectorySizePieGraph</td>
+            <td>$HTML_DirFileCountPieGraph</td>
+        </tr>
+        <tr>
+            <th colspan=3 style="text-align:center">Commit Activity Graphs</th>
+       </tr>
+       <tr>
+            <td>$HTML_CommitActivityIdxGraph</td>
+            <td>$HTML_ActivityByWeekdayAll</td>
+            <td>$HTML_ActivityByWeekdayRecent</td>
+        </tr>
+        <tr>
+            <td>$HTML_DailyCommitCountGraph</td>
+            <td>$HTML_ActivityByTimeOfDayAll</td>
+            <td>$HTML_ActivityByTimeOfDayRecent</td>
+        </tr>         
+        <tr>
+            <td>$HTML_AuthorsCommitTrend</td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
     <div>
         <h3>Log Message Tag Cloud</h3>
         <div id="LogMsgCloud"></div>
@@ -168,6 +224,10 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 <script>
     // graph javascript
     $GRAPH_JS    
+    function drawGraphs() {
+        $DRAWGRAPH_JS
+    }
+    drawGraphs();
     showTagClouds();
 </script>
 
@@ -252,7 +312,7 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "Activity By Time of Day"
         y_axis = GraphAxisData()
-        graph = GraphBar("ActivityByTimeOfDay", y_axis=y_axis, title=title)
+        graph = GraphBar("ActivityByTimeOfDayAll", y_axis=y_axis, title=title)
         graph.data(zip(labels, data))
         return graph
                 
@@ -281,7 +341,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis = GraphTimeAxisData()
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
-        graph = GraphLine("CommitActIdx", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph = GraphLine("CommitActivityIdxGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(cmdates, temperaturelist))
         return graph
         
@@ -338,7 +398,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis = GraphTimeAxisData()
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
-        graph = GraphLine("FileCount", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph = GraphLine("FileCountGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(dates, fclist))
         
         return graph
@@ -352,7 +412,7 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "File Types"
         y_axis = GraphAxisData()        
-        graph = GraphHorizontalBar("FileTypesCount", y_axis=y_axis, title=title)
+        graph = GraphHorizontalBar("FileTypesGraph", y_axis=y_axis, title=title)
         graph.data(zip(ftypelist, ftypecountlist))
         
         return graph
@@ -368,7 +428,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis = GraphTimeAxisData()
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
-        graph = GraphLine("AvgFileLoC", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph = GraphLine("AvgFileLocGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(dates, avgloclist))
         return graph
 
@@ -390,7 +450,7 @@ class SVNPlotJS(SVNPlotBase):
         assert(len(dirlist) == len(dirsizelist))
 
         title = "Directory Sizes"
-        graph = GraphPie("DirSize", title=title)
+        graph = GraphPie("DirectorySizePieGraph", title=title)
         graph.data(zip(dirlist, dirsizelist))
         return graph
         
@@ -403,10 +463,9 @@ class SVNPlotJS(SVNPlotBase):
         dirlist, dirsizelist = self.svnstats.getDirFileCountStats(depth, maxdircount)
 
         title = "Directory File Count"
-        graph = GraphPie("DirFileCount", title=title)
+        graph = GraphPie("DirFileCountPieGraph", title=title)
         graph.data(zip(dirlist, dirsizelist))
         return graph
-    
            
     def DirectorySizeLineGraph(self, depth=2, maxdircount=10):
         '''
@@ -425,7 +484,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis = GraphTimeAxisData()
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
-        graph = GraphLine("DirSizeLoC", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph = GraphLine("DirectorySizeLineGraph", x_axis=x_axis, y_axis=y_axis, title=title)
                 
         for dirname in dirlist:
             dates, loclist = self.svnstats.getDirLocTrendStats(dirname)
@@ -443,7 +502,7 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "Author Commits Trend"
         y_axis = GraphAxisData()
-        graph = GraphBar("AuthorCommitsTrend", y_axis=y_axis, title=title)
+        graph = GraphBar("AuthorsCommitTrend", y_axis=y_axis, title=title)
         graph.data(zip(binlabels, data))
         return graph
     
@@ -456,7 +515,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis = GraphTimeAxisData()
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
-        graph = GraphLine("DailyCommitCount", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph = GraphLine("DailyCommitCountGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(datelist,cmitcountlist))
         return graph
     
@@ -469,34 +528,30 @@ class SVNPlotJS(SVNPlotBase):
         x_axis = GraphTimeAxisData()
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
-        graph = GraphLine("WastedEffort", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph = GraphLine("WasteEffortTrend", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.addDataSeries("Lines Added", zip(datelist,linesadded))
         graph.addDataSeries("Lines Deleted", zip(datelist,linesdeleted))
         graph.addDataSeries("Waste Ratio", zip(datelist,wasteratio))
         return graph
     
-    def getGraphJS(self, graphs):
+    def getGraphParams(self, graphs):
         '''
         generate the javascript code for graphs
         '''
         graph_js_io = StringIO()
-        
+        graph_drawfunc_io = StringIO()
+        graphParams = dict()
+
         for graph in graphs:
             graph_js_io.write(graph.getJS())
-                            
-        return graph_js_io.getvalue()
-    
-    def getGraphHTML(self, graphs):
-        '''
-        generate the HTML code for graphs
-        '''
-        graph_io = StringIO()
-        
-        for graph in graphs:
-            graph_io.write(graph.getHTML())
+            graph_drawfunc_io.write("%s(true);\n" % graph.getGraphFuncName())
+            graphParams['HTML_%s' % graph.getID()] = graph.getHTML()
             
-        return graph_io.getvalue()
-    
+        graphParams['GRAPH_JS'] = graph_js_io.getvalue()
+        graphParams['DRAWGRAPH_JS'] = graph_drawfunc_io.getvalue()
+
+        return graphParams
+        
     def getGraphs(self):
         graphs = []
         for graphfuncName in SVNPlotJS.GRAPHS_LIST:
@@ -513,7 +568,7 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["thumbht"]="%dpx" % thumbsize
         
         graphParamDict["RepoName"]=self.reponame
-        graphParamDict["SEARCHPATH"]=""
+        graphParamDict["SEARCHPATH"]="/"
         if( self.svnstats.searchpath != None and self.svnstats.searchpath != '/'):
             graphParamDict["SEARCHPATH"]= "(%s)" % self.svnstats.searchpath
         
@@ -523,9 +578,8 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["ActiveFiles"] = self.ActiveFiles()
         graphParamDict["ActiveAuthors"] = self.ActiveAuthors()
         
-        graphs = self.getGraphs()
-        graphParamDict["GRAPH_JS"] = self.getGraphJS(graphs)
-        graphParamDict["GRAPH_HTML"] = self.getGraphHTML(graphs)        
+        graphs = self.getGraphs()        
+        graphParamDict.update(self.getGraphParams(graphs))        
         
         return(graphParamDict)
                 
