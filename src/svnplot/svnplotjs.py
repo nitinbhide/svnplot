@@ -304,7 +304,16 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
             var graphCanvasId = 'Graph_big'
             var plot = graphFunc(graphCanvasId);
             plot.tooltips(true);
-            plot.useInteractiveGuideline(true);
+            if(plot['useInteractiveGuideline']) {
+                plot.useInteractiveGuideline(true);
+            }
+
+            plot.margin({right:25});
+            if(plot.interactiveLayer){
+                var tooltip = plot.interactiveLayer.tooltip;            
+                tooltip.distance(5);
+                tooltip.fixedTop(10);
+            }
             plot.update();
             nv.utils.windowResize(plot.update);
         };
