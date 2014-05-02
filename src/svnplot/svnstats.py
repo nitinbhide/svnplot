@@ -853,7 +853,7 @@ class SVNStats(object):
             linesadded.append(total_linesadded)
             linedeleted.append(total_linesdeleted)
             if total_linesadded > 0:
-                wasteratio.append((total_linesdeleted*1.0/total_linesadded))
+                wasteratio.append((total_linesdeleted*1.0/total_linesadded)*100.0)
             else:
                 wasteratio.append(0)
                 
