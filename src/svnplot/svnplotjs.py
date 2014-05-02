@@ -123,12 +123,12 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
              width:200px; height:200px; max-width:220px;max-height:220px; 
             margin-left: auto ;margin-right: auto ;margin-bottom:10px; } 
         
-        // graph specific CSS
-        // grid lines for two y axis looks really bad for LoCChurnGraph. Hence hide it
+        /* graph specific CSS
+         grid lines for two y axis looks really bad for LoCChurnGraph. Hence hide it */
         .LocChurnGraph .y1.axis .tick line { display:none; }
         .LocChurnGraph .y2.axis .tick line { display:none; }
 
-        // tag cloud CSS        
+        /* tag cloud CSS        */
         div#LogMsgCloud, div#AuthorCloud { height:360px; }
 	</style>
     <link type="text/css" rel="stylesheet" href="nv.d3.css"></link>
