@@ -1,0 +1,5 @@
+syntax: glob
+*.pyc
+src/build/*
+src/dist/*
+src/MANIFEST
