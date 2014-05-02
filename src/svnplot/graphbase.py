@@ -146,26 +146,15 @@ class GraphLine(GraphXYBase):
     
     JS_TEMPLATE = '''
     function $FUNC_NAME(isthumb) {
-
-        var showAxis = true;
-        var showLegend = true;
-        var showTooltip = true;
-        var useInteractiveGuideline=true;
-        var xtickFormat = $X_TICK_FORMAT;
-        var ytickFormat = $Y_TICK_FORMAT;
         if(isthumb) {
-            showLegend = false;
-            showTooltip = false;
-            useInteractiveGuideline = false;
+            showTooltip = false;            
         }
         var chart = nv.models.lineChart()
-            .showYAxis(showAxis)
-            .showXAxis(showAxis)
-            .showLegend(showLegend)
-            .tooltips(showTooltip)
-            .useInteractiveGuideline(useInteractiveGuideline);
+            .tooltips(showTooltip)            
         var elem_sel = "#$ID";
         
+        var xtickFormat = $X_TICK_FORMAT;
+        var ytickFormat = $Y_TICK_FORMAT;
         chart.xAxis
             .tickFormat(xtickFormat);
         chart.yAxis
@@ -192,23 +181,13 @@ class GraphBar(GraphXYBase):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(isthumbnail) {
-        
-        var showValues = true;
-        var showAxis=true;
-        var showLegend=true;
+    function $FUNC_NAME(isthumbnail) {        
         var showTooltip=true;
-        var useInteractiveGuideline=true;
         if(isthumbnail) {
-            showValues = false;
-            showLegend = false;
-            useInteractiveGuideline=false;
             showTooltip=false;
         }
         var chart = nv.models.discreteBarChart()
-            .showValues(showValues)
-            .showYAxis(showAxis)
-            .showXAxis(showAxis)            
+            .showValues(true)
             .tooltips(showTooltip)
             .valueFormat($VALUE_FORMAT);
         var elem_sel = "#$ID";
@@ -246,18 +225,13 @@ class GraphPie(GraphBar):
     '''
     JS_TEMPLATE = '''
     function $FUNC_NAME(isthumbnail) {
-
-        var showLabels = true;
-        var showLegend = true;
         var showTooltip=true
         if(isthumbnail) {
-            showLabels = false;
-            showLegend = false;
             showTooltip = false;
         }
         var chart = nv.models.pieChart()
-            .showLabels(showLabels)
-            .showLegend(showLegend)
+            .showLabels(true)
+            .showLegend(true)
             .tooltips(showTooltip);
         var elem_sel = "#$ID";
         
@@ -283,18 +257,14 @@ class GraphHorizontalBar(GraphBar):
     '''
     JS_TEMPLATE = '''
     function $FUNC_NAME(isthumbnail) {        
-        var showValue = true;
-        var showLegend = true;
         var showTooltip=true;
         if(isthumbnail) {
-            showValue = false;
-            showLegend = false;
             showTooltip=false;
         }
         var chart = nv.models.multiBarHorizontalChart()
-            .showValues(showValue)
+            .showValues(true)
             .showControls(false)
-            .showLegend(showLegend)
+            .showLegend(true)
             .tooltips(showTooltip)
             .valueFormat($VALUE_FORMAT);
         var elem_sel = "#$ID";
