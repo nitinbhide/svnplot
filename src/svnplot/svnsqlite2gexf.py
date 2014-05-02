@@ -21,7 +21,6 @@ links are created to all co-authors who are active in the sqlite db contents.
 
 This version of svnsqlite2gexf.py has been tested with SVNPlot version 0.6.1 .
 '''
-from __future__ import with_statement
 import string
 import sqlite3
 import math
@@ -29,8 +28,12 @@ import logging
 from os.path import splitext
 
 from optparse import OptionParser
-from numpy import *
-from numpy import matrix
+
+try:
+    from numpy import *
+    from numpy import matrix
+except:
+    print "numpy not found. Please install numpy"
 
 
 class SVNSqlite2Gephi:

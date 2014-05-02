@@ -28,10 +28,19 @@ import calendar
 import string
 from datetime import datetime
 from optparse import OptionParser
-from numpy import *
-from numpy import matrix
-from numpy import linalg
-import scipy
+
+try:
+    from numpy import *
+    from numpy import matrix
+    from numpy import linalg
+except:
+    print "Numpy not found. Please install numpy"
+
+try:
+    import scipy
+except:
+    print "scipy not found. Please install scipy"
+    
 import pdb
 
 class SVNSqlite2Ora:
