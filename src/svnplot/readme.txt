@@ -1,5 +1,5 @@
 
-SVNPlot - Ver 0.7.8
+SVNPlot - Ver 0.8.0
 
 ============
 Introduction
@@ -83,10 +83,12 @@ Quick Start
 ==============================================
 Changes in 0.8.0 
 ==============================================
-1. Removed support for matplotlib based graphs.
-2. Changed javascript graph library. Now using d3js and nvd3 libraries.
-3. Add Waste Ratio trend graph.
-4. Added d3js based tag cloud for author tagcloud and commit message tag cloud.
+1. Main development and binary releases are now moved to bitbucket. Issuebase is still on google code.
+2. Repository is moved to 'mercurial' repository than subversion repository.
+3. Removed support for matplotlib based graphs.
+4. Changed javascript graph library. Now using d3js and nvd3 libraries.
+5. Add Waste Ratio trend graph.
+6. Added d3js based tag cloud for author tagcloud and commit message tag cloud.
 
 ==============================================
 Changes from 0.6.1 to 0.7.0
