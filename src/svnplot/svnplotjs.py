@@ -308,8 +308,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
                 plot.useInteractiveGuideline(true);
             }
 
-            plot.margin({right:25});
-            if(plot.interactiveLayer){
+            if(plot['interactiveLayer']){
                 var tooltip = plot.interactiveLayer.tooltip;            
                 tooltip.distance(5);
                 tooltip.fixedTop(10);
