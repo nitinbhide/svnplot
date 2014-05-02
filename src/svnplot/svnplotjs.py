@@ -288,10 +288,12 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 
     function drawGraphThumb(graphFunc, elem_id) {
         var graph = graphFunc(elem_id);
-        graph.tooltips(false);
+        graph.tooltips(false);        
+        var capture = true; // set to 'true' to ensure that 'click' events on the thumbnails 
+                            // are called not the click events on the 'thumbnail graph'
         d3.select('#'+elem_id).on('click', function() {
                 showGraphBox(graphFunc);
-            });
+            }, true);
     }
     function drawGraphs() {        
         drawGraphThumb(LocGraph, "LocGraph");
