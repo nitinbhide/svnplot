@@ -70,16 +70,22 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <style type="text/css">
 	    h3 {background-color: lightgrey;margin:2px;text-align:center;}
 	    h4 {font-weight:bold;margin:1px;text-align:center;}
+        
         table.graphthumbs { width:100%; }
         table.graphthumbs th {background-color: lightgrey;margin:2;text-align:center;}
-        table.graphthumbs div.graph { height:500px;width:500px; overflow:visible;
-            transform:scale(0.2,0.2) translate(-1000px,-1000px);
-            -ms-transform:scale(0.2,0.2) translate(-1000px,-1000px);
-            -webkit-transform:scale(0.2,0.2) translate(-1000px,-1000px);        
+        table.graphthumbs div.graph { height:600px;width:600px; 
+            overflow:visible;
+            transform:scale(0.3,0.3) translate(-600px,-600px);
+            -ms-transform:scale(0.3,0.3) translate(-600px,-600px);
+            -webkit-transform:scale(0.3,0.3) translate(-600px,-600px);        
             }
-        div.graphwrapper { width:100px; height:100px; max-width:120px;max-height:120px; 
+        
+        div.graphwrapper { width:200px; height:200px; max-width:220px;max-height:220px; 
             margin-left: auto ;margin-right: auto ;margin-bottom:10px;} 
-        div.graph { margin:2px; padding:2px; border:1px solid; height:500px;}        
+        div.graph { margin:2px; padding:2px; border:1px solid; height:600px;}        
+        div.graphwrapper.full {
+        //full graph display css
+        }
         div#LogMsgCloud, div#AuthorCloud { height:360px; }
 	</style>
     <link type="text/css" rel="stylesheet" href="nv.d3.css"></link>

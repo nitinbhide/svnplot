@@ -66,12 +66,12 @@ class GraphXYBase(object):
     base class for typical one dimension (pie chart) or two dimension (line chart) graph types
     '''
     HTML_TEMPLATE='''
-    <div id="$ID">
+    <div class="graphsection">
         <h4>$TITLE</h4>
-        <div class="graphwrapper">
-        <div class="graph">
-            <svg></svg>
-        </div>        
+        <div class="graphwrapper" id="$ID">
+            <div class="graph">
+                <svg></svg>
+            </div>        
         </div>
     </div>
     '''
