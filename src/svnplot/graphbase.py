@@ -75,12 +75,14 @@ class GraphXYBase(object):
         self.y_axis = y_axis
         self.title = title
         self.dataSeries = dict()
+        self.dataSeriesProps = dict()
         
     def getGraphFuncName(self):
         return self.name;
     
-    def addDataSeries(self, name, dt):
+    def addDataSeries(self, name, dt, **kwargs):
         self.dataSeries[name] = dt
+        self.dataSeriesProps[name] = dict(kwargs)
 
     def data(self, dt, name=''):
         self.addDataSeries(name, dt)
@@ -99,7 +101,9 @@ class GraphXYBase(object):
         jsdata = []
         for name, data in self.dataSeries.iteritems():            
             values = [{ 'x' : x2json(d[0]), 'y': y2json(d[1]) } for d in data]
-            jsdata.append({ 'key' : name, 'values' : values})
+            data_series = dict(key=name, values =values)
+            data_series.update(self.dataSeriesProps[name])
+            jsdata.append(data_series)
         return json.dumps(jsdata)
         
     def get_properties(self):
@@ -154,6 +158,7 @@ class GraphLine(GraphXYBase):
             .datum(graphData)            
             .call(chart);
         
+        nv.addGraph(chart);        
         return chart;
     }        
     '''
@@ -186,6 +191,7 @@ class GraphBar(GraphXYBase):
             .datum(graphData)            
             .call(chart);
         
+        nv.addGraph(chart);
         return chart;
     }        
     '''
@@ -201,6 +207,49 @@ class GraphBar(GraphXYBase):
         prop['VALUE_FORMAT'] = self.valueFormat
         return prop
     
+class GraphLineWith2Yaxis(GraphXYBase):
+    '''
+    combination of line and bar graph
+    '''
+    JS_TEMPLATE = '''
+    function $FUNC_NAME(id) {        
+        var elem_sel = "#" + id;
+        var graphElem = d3.select(elem_sel);
+        var graphHtml = "<h4>$TITLE</h4>" +
+                "<div class='graphwrapper'><div class='graph'></div></div>";
+        graphElem.html(graphHtml);
+        
+       var chart = nv.models.multiChart();
+                        
+        var xtickFormat = $X_TICK_FORMAT;
+        chart.xAxis
+            .tickFormat(xtickFormat)
+            .axisLabel($X_AXISLABEL);
+
+        chart.yAxis1
+            .tickFormat($Y_TICK_FORMAT)
+            .axisLabel($Y_AXISLABEL);
+                    
+       chart.yAxis2
+            .tickFormat($Y_TICK_FORMAT)
+            .axisLabel($Y_AXISLABEL);
+            
+        var graphData = $GRAPH_DATA;        
+        graphElem.select('div.graph').append('svg')
+            .datum(graphData)            
+            .call(chart);
+        
+        nv.addGraph(chart);
+        return chart;
+    }        
+    '''
+    def __init__(self, name, x_axis=None, y_axis=None, title=None):
+        super(GraphLineWith2Yaxis, self).__init__(name, x_axis=x_axis, y_axis=y_axis,title=title)
+    
+    def addDataSeries(self, name, dt, **kwargs):
+        kwargs['type'] = kwargs.get('type', 'line')
+        super(GraphLineWith2Yaxis, self).addDataSeries(name, dt, **kwargs)
+
 class GraphPie(GraphBar):
     '''
     pie chart with d3js and nvd3.js
@@ -223,6 +272,7 @@ class GraphPie(GraphBar):
             .datum(graphData.values)            
             .call(chart);
         
+        nv.addGraph(chart);        
         return chart;
     }       
     '''
@@ -257,6 +307,7 @@ class GraphHorizontalBar(GraphBar):
             .datum(graphData)            
             .call(chart);        
 
+        nv.addGraph(chart);        
         return chart;
     }        
     '''
