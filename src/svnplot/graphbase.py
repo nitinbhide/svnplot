@@ -27,6 +27,7 @@ class GraphAxisData(object):
         self.name = name
         self.color = color
         self.tickFormat = '''d3.format(',.0f')'''
+        self.axisLabel = ''
 
     def setTickFormat(self, tickformat):
         '''
@@ -34,6 +35,9 @@ class GraphAxisData(object):
         '''
         self.tickFormat = tickformat
     
+    def setAxisLabel(self, axisLabel):
+        self.axisLabel = axisLabel
+
     def data2json(self, d):
         return d
     
@@ -78,8 +82,8 @@ class GraphXYBase(object):
     def addDataSeries(self, name, dt):
         self.dataSeries[name] = dt
 
-    def data(self, dt):
-        self.addDataSeries('', dt)
+    def data(self, dt, name=''):
+        self.addDataSeries(name, dt)
         
     def getJS(self):
         raise NotImplementedError
@@ -107,8 +111,10 @@ class GraphXYBase(object):
         properties['TITLE'] = self.title        
         if self.y_axis:
             properties['Y_TICK_FORMAT']  = self.y_axis.tickFormat
+            properties['Y_AXISLABEL'] = self.y_axis.axisLabel;
         if self.x_axis:
             properties['X_TICK_FORMAT']  = self.x_axis.tickFormat
+            properties['X_AXISLABEL'] = self.x_axis.axisLabel;
         return properties
         
     def getJS(self):
@@ -137,10 +143,11 @@ class GraphLine(GraphXYBase):
         var xtickFormat = $X_TICK_FORMAT;
         var ytickFormat = $Y_TICK_FORMAT;
         chart.xAxis
-            .tickFormat(xtickFormat);
+            .tickFormat(xtickFormat)
+            .axisLabel($X_AXISLABEL);
         chart.yAxis
-            .tickFormat(ytickFormat);
-
+            .tickFormat(ytickFormat)
+            .axisLabel($Y_AXISLABEL);
         
         var graphData = $GRAPH_DATA;        
         graphElem.select('div.graph').append('svg')
@@ -171,7 +178,8 @@ class GraphBar(GraphXYBase):
             .valueFormat($VALUE_FORMAT);
         
         chart.yAxis
-            .tickFormat($Y_TICK_FORMAT);
+            .tickFormat($Y_TICK_FORMAT)
+            .axisLabel($Y_AXISLABEL);
         
         var graphData = $GRAPH_DATA;        
         graphElem.select('div.graph').append('svg')
@@ -241,7 +249,8 @@ class GraphHorizontalBar(GraphBar):
             .valueFormat($VALUE_FORMAT);
         
         chart.yAxis
-            .tickFormat($Y_TICK_FORMAT);
+            .tickFormat($Y_TICK_FORMAT)
+            .axisLabel($Y_AXISLABEL);
         
         var graphData = $GRAPH_DATA;        
         graphElem.select('div.graph').append('svg')
