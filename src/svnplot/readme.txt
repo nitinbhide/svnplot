@@ -20,12 +20,12 @@ You will need following additional libraries for using SVNPlot
    1. sqlite3 - is default installed with python
    2. http://pysvn.tigris.org/- Python SVN bindings.
    
-   If you are going to use Javascript canvas based graphs (svnplot-js.py), you will need
-   3. JqPlot (http://www.jqplot.com/) - Excellent Javascript canvas based plotting library. It is included 	
+   If you are going to use Javascript canvas based graphs (svnplotjs.py), you will need
+   3. d3js (http://d3js.org) and nvd3js (http://nvd3.org/) - Excellent Javascript graph library. It is included 	
 	  in the svnplot installation
    
-   If you want to use Matplotlib based SVNPlot (svnplot.py) then you will need.
-   3. http://numpy.scipy.org/- Matplotlib uses NumPy and SVNPlot uses Matplotlib for plotting.
+   If you want to use additional script like svnsqlite2ora or svnsqlite2gexf then you will need.
+   3. http://numpy.scipy.org/- 
    4. http://matplotlib.sourceforge.net/ - You need at least version 0.98.5.2 
 
 After installing svnplot, three scripts are copied in python 'scripts' folder. 
@@ -79,6 +79,14 @@ Quick Start
    svnplot-js.py [options] <svnsqlitedbpath> <output directory> 
    
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
+
+==============================================
+Changes in 0.8.0 
+==============================================
+1. Removed support for matplotlib based graphs.
+2. Changed javascript graph library. Now using d3js and nvd3 libraries.
+3. Add Waste Ratio trend graph.
+4. Added d3js based tag cloud for author tagcloud and commit message tag cloud.
 
 ==============================================
 Changes from 0.6.1 to 0.7.0
