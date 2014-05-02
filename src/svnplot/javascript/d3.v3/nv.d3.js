@@ -769,8 +769,12 @@ window.nv.tooltip.* also has various helper methods.
                 width = parseInt(container.offsetWidth),
                 windowWidth = nv.utils.windowSize().width,
                 windowHeight = nv.utils.windowSize().height,
-                scrollTop = window.pageYOffset,
-                scrollLeft = window.pageXOffset,
+            // nitin bhide : bug fix for tooltip display where individual element has scroolbars rather browser window
+                // scroll bars. (e.g. using overflow:auto).
+                //scrollTop = window.pageYOffset,
+                //scrollLeft = window.pageXOffset,
+                scrollTop = container.scrollTop,
+                scrollLeft = container.scrollLeft,
                 left, top;
 
             windowHeight = window.innerWidth >= document.body.scrollWidth ? windowHeight : windowHeight - 16;
