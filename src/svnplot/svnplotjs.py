@@ -118,7 +118,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
             -ms-transform:scale(0.3,0.3) translate(-600px,-600px);
             -webkit-transform:scale(0.3,0.3) translate(-600px,-600px);        
         }
-        
+                
         table.graphthumbs div.graphwrapper {
              width:200px; height:200px; max-width:220px;max-height:220px; 
             margin-left: auto ;margin-right: auto ;margin-bottom:10px; } 
@@ -243,7 +243,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
        </tr>
        <tr>
             <td><div class="graphsection" id="WasteEffortTrend"></div></td>
-            <td></td>
+            <td><div class="graphsection" id="LocChurnGraph"></div></td>
             <td></td>
        </tr>
        <tr>
@@ -322,6 +322,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         drawGraphThumb(AvgFileLocGraph, "AvgFileLocGraph");
         drawGraphThumb(LoCDevContributionGraph, "LoCDevContributionGraph");
         drawGraphThumb(WasteEffortTrend, "WasteEffortTrend");
+        drawGraphThumb(LocChurnGraph, "LocChurnGraph");
         drawGraphThumb(FileCountGraph, "FileCountGraph");
         drawGraphThumb(FileTypesGraph, "FileTypesGraph");
         drawGraphThumb(DirectorySizeLineGraph, "DirectorySizeLineGraph");
@@ -355,7 +356,7 @@ class SVNPlotJS(SVNPlotBase):
     #list of graphs (function names)
     GRAPHS_LIST = [
         #LoC graphs
-        'LocGraph', 'AvgFileLocGraph','LoCDevContributionGraph', 'WasteEffortTrend',
+        'LocGraph', 'AvgFileLocGraph','LoCDevContributionGraph', 'LocChurnGraph', 'WasteEffortTrend',
         # File Count Graphs
         'FileCountGraph', 'FileTypesGraph',
         #Directory Size Graphs
@@ -498,8 +499,15 @@ class SVNPlotJS(SVNPlotBase):
         assert(len(dates) == len(loc))
         dates, churnlist = self.svnstats.getChurnStats()
 
+        title = "LoC and Churn"
+        x_axis = GraphTimeAxisData()
+        x_axis.setTimeFormat('%b %y')
+        y_axis = GraphAxisData()
+        graph = GraphLineWith2Yaxis("LocChurnGraph", x_axis=x_axis, y_axis=y_axis, title=title)
+        graph.addDataSeries("Churn", zip(dates, churnlist), yAxis=2, color='red')
+        graph.addDataSeries("LoC", zip(dates, loc), yAxis=1)
          
-        pass
+        return graph
         
     def FileCountGraph(self):
         self._printProgress("Calculating File Count graph")
