@@ -128,7 +128,7 @@ class SVNPlotBase(object):
     def AuthorCloud(self, maxAuthCount=50):
         self._printProgress("Calculating Author Tag Cloud")
         authCloud = self.svnstats.getAuthorCloud()
-        tagDataStr = '[]'
+        tagData = []
         if( len(authCloud) > 0):
             #sort and extract maximum of the "maxAuthCount" number of author based on the
             #activity index
@@ -139,42 +139,26 @@ class SVNPlotBase(object):
                 #if less than or equal zero remove, otherwise clrNorm fails 
                 if (x[2] <= 0):
                     authTagList.remove(x)
- 
-            #now calculate the maximum value from the sorted list.
-            minFreq = min(authTagList, key=operator.itemgetter(1))[1]
-            minFreqLog = math.log(minFreq)
-            maxFreq = max(authTagList, key=operator.itemgetter(1))[1]
-            #if there is only one author or minFreq and maxFreq is same, then it will give wrong
-            #results later. So make sure there is some difference between min and max freq.
-            maxFreq = max(minFreq*1.2, maxFreq)
-            maxFreqLog = math.log(maxFreq)
-
+             
             #Now sort the authers by author names
             authTagList = sorted(authTagList, key=operator.itemgetter(0))
             
             #Create a list of list for javascript input
-            wordsMap = [[str(auth), getTagFontSize(freq, minFreqLog, maxFreqLog)] for auth, freq, actIdx in authTagList]
-            tagDataStr = str(wordsMap)
-
-        return(tagDataStr)             
+            tagsData = [{'text':str(auth), 'count':freq, 'color': actIdx} for auth, freq, actIdx in authTagList]
+            
+        return(tagsData)             
 
     def TagCloud(self, numWords=50):
         self._printProgress("Calculating tag cloud for log messages")
         words = self.svnstats.getLogMsgWordFreq(5)
-        tagDataStr = '[]'
+        tagData = []
         if( len(words) > 0):
             #first get sorted wordlist (reverse sorted by frequency)
             tagWordList = sorted(words.items(), key=operator.itemgetter(1),reverse=True)
             #now extract top 'numWords' from the list and then sort it with alphabetical order.
             tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
-            #now calculate the maximum value from the sorted list.
-            minFreq = min(tagWordList, key=operator.itemgetter(1))[1]
-            minFreqLog = math.log(minFreq)
-            maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
-            maxFreqLog = math.log(maxFreq)
             
             #Create a list of list for javascript input
-            wordsMap = [[str(x), getTagFontSize(freq, minFreqLog, maxFreqLog)] for x, freq in tagWordList]
-            tagDataStr = str(wordsMap)
+            tagData = [{ 'text':str(x), 'count':freq} for x, freq in tagWordList]
              
-        return(tagDataStr)
+        return(tagData)
