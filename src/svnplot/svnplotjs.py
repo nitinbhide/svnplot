@@ -401,7 +401,7 @@ class SVNPlotJS(SVNPlotBase):
         data, labels = self.svnstats.getActivityByWeekday()
         y_axis = GraphAxisData()
         graph = GraphBar("ActivityByWeekdayAll", y_axis=y_axis, title="Activity By Weekday")
-        graph.data(zip(labels, data))
+        graph.data(zip(labels, data), name="Number of Commits")
         
         return graph
 
@@ -414,7 +414,7 @@ class SVNPlotJS(SVNPlotBase):
         title = "Activity By Weekday (%d months)" % months
         y_axis = GraphAxisData()
         graph = GraphBar("ActivityByWeekdayRecent", y_axis=y_axis, title=title)
-        graph.data(zip(labels, data))
+        graph.data(zip(labels, data), name="Number of Commits")
         return graph                
     
     def ActivityByTimeOfDayAll(self):
@@ -426,7 +426,7 @@ class SVNPlotJS(SVNPlotBase):
         title = "Activity By Time of Day"
         y_axis = GraphAxisData()
         graph = GraphBar("ActivityByTimeOfDayAll", y_axis=y_axis, title=title)
-        graph.data(zip(labels, data))
+        graph.data(zip(labels, data), name="Number of Commits")
         return graph
                 
     def ActivityByTimeOfDayRecent(self, months=3):
@@ -438,7 +438,7 @@ class SVNPlotJS(SVNPlotBase):
         title = "Activity By Time of Day (%d months)" % months
         y_axis = GraphAxisData()
         graph = GraphBar("ActivityByTimeOfDayRecent", y_axis=y_axis, title=title)
-        graph.data(zip(labels, data))
+        graph.data(zip(labels, data), name="Number of Commits")
         
         return graph
 
@@ -455,7 +455,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("CommitActivityIdxGraph", x_axis=x_axis, y_axis=y_axis, title=title)
-        graph.data(zip(cmdates, temperaturelist))
+        graph.data(zip(cmdates, temperaturelist), name="Activity Index")
         return graph
         
     def LocGraph(self):
@@ -469,7 +469,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("LocGraph", x_axis=x_axis, y_axis=y_axis, title=title)
-        graph.data(zip(dates, loc))
+        graph.data(zip(dates, loc), name="Number of Lines")
         return graph
 
     def LoCDevContributionGraph(self):
@@ -512,7 +512,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("FileCountGraph", x_axis=x_axis, y_axis=y_axis, title=title)
-        graph.data(zip(dates, fclist))
+        graph.data(zip(dates, fclist), name="Number of files")
         
         return graph
 
@@ -542,7 +542,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("AvgFileLocGraph", x_axis=x_axis, y_axis=y_axis, title=title)
-        graph.data(zip(dates, avgloclist))
+        graph.data(zip(dates, avgloclist), "Average line count")
         return graph
 
     def AuthorActivityGraph(self):
@@ -577,7 +577,7 @@ class SVNPlotJS(SVNPlotBase):
 
         title = "Directory File Count"
         graph = GraphPie("DirFileCountPieGraph", title=title)
-        graph.data(zip(dirlist, dirsizelist))
+        graph.data(zip(dirlist, dirsizelist), name="Number of files")
         return graph
            
     def DirectorySizeLineGraph(self, depth=2, maxdircount=10):
@@ -616,7 +616,7 @@ class SVNPlotJS(SVNPlotBase):
         title = "Author Commits Trend"
         y_axis = GraphAxisData()
         graph = GraphBar("AuthorsCommitTrend", y_axis=y_axis, title=title)
-        graph.data(zip(binlabels, data))
+        graph.data(zip(binlabels, data), "Commit Frequency")
         return graph
     
     def DailyCommitCountGraph(self):
@@ -629,7 +629,7 @@ class SVNPlotJS(SVNPlotBase):
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("DailyCommitCountGraph", x_axis=x_axis, y_axis=y_axis, title=title)
-        graph.data(zip(datelist,cmitcountlist))
+        graph.data(zip(datelist,cmitcountlist), "Commit Count")
         return graph
     
     def WasteEffortTrend(self):
