@@ -130,22 +130,27 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <script type="text/javascript" src="d3.layout.cloud.js"></script>
     <script type="text/javascript" src="nv.d3.js"></script>    
     <script type="text/javascript">			 
-        function showCloud(cloudData, idSel){
-            var fill = d3.scale.category20();
+        function showCloud(wordsAndFreq, idSel, fillScale){
+            var fill = fillScale;
 
             var selElem = d3.select(idSel);
             var w = parseInt(selElem.style("width"))-10;
             var h = parseInt(selElem.style("height"))-10;
             
+            var minFreq = d3.min(wordsAndFreq, function(d) { return d.count});
+            var maxFreq = d3.max(wordsAndFreq, function(d) { return d.count});
+            
+            var fontSize = d3.scale.log();
+            fontSize.domain([minFreq, maxFreq]);
+            fontSize.range([15,100])
+
             d3.layout.cloud()
                 .size([w, h])
-                .words(cloudData.map(function(x) {
-                        return {text: x[0], size: x[1]};
-                        }))
+                .words(wordsAndFreq)
                 .padding(2)
                 .rotate(function() { return 0;})
                 .font("Impact")
-                .fontSize(function(d) { return d.size;})
+                .fontSize(function(d) { return fontSize(d.count);})
                 .on("end", draw)
                 .start();
 
@@ -156,11 +161,11 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
                     .selectAll("text")
                         .data(words)
                     .enter().append("text")
-                        .style("font-size", function(d) { return d.size + "px"; })
+                        .style("font-size", function(d) { return fontSize(+d.count)+ "px"; })
                         .style("font-family", "Impact")
-                        .style("fill", function(d, i) {return fill(i);})
+                        .style("fill", function(d, i) {return fill(d.color);})
                         .on("mouseover", function(){d3.select(this).style("fill", "black");})
-                        .on("mouseout", function(d, i){d3.select(this).style("fill", fill(i));})
+                        .on("mouseout", function(d, i){d3.select(this).style("fill", fill(d.color));})
                         .attr("text-anchor", "middle")
                         .attr("transform", function(d) {
                             return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
@@ -171,9 +176,26 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         
         function showTagClouds() {
             var logMsgCloudData = $TagCloud;
-            showCloud(logMsgCloudData, '#LogMsgCloud');
+            var fillScale = function(d) { return d3.rgb(0,0,0); }
+            showCloud(logMsgCloudData, '#LogMsgCloud', fillScale);
+
             var authCloudData = $AuthCloud;
-            showCloud(authCloudData, "#AuthorCloud");
+
+            // color is author activity index
+            var minColor = 0, maxColor=0;
+            // color scale is reversed ColorBrewer RdYlBu (heatmap colors)
+            var colors =  ["#a50026", "#d73027","#f46d43","#fdae61","#fee090","#ffffbf",
+                            "#e0f3f8","#abd9e9","#74add1","#4575b4","#313695"];
+            colors.reverse();
+            var fill =  d3.scale.linear();
+            fill.range(colors);
+                    
+            minColor = d3.min(authCloudData, function(d) { return d.color});
+            maxColor = d3.max(authCloudData, function(d) { return d.color});
+            var step = (Math.log(maxColor+1)-Math.log(minColor))/colors.length;            
+            fill.domain(d3.range(Math.log(minColor), Math.log(maxColor+1), step));          
+            
+            showCloud(authCloudData, "#AuthorCloud", fill);
         }   
         
 	</script>
@@ -659,8 +681,8 @@ class SVNPlotJS(SVNPlotBase):
         if( self.svnstats.searchpath != None and self.svnstats.searchpath != '/'):
             graphParamDict["SEARCHPATH"]= "(%s)" % self.svnstats.searchpath
         
-        graphParamDict["TagCloud"] = self.TagCloud()
-        graphParamDict["AuthCloud"] = self.AuthorCloud()
+        graphParamDict["TagCloud"] = json.dumps(self.TagCloud())
+        graphParamDict["AuthCloud"] = json.dumps(self.AuthorCloud())
         graphParamDict["BasicStats"] = self.BasicStats(HTMLBasicStatsTmpl)
         graphParamDict["ActiveFiles"] = self.ActiveFiles()
         graphParamDict["ActiveAuthors"] = self.ActiveAuthors()
