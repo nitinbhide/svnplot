@@ -76,7 +76,11 @@ class GraphXYBase(object):
         self.title = title
         self.dataSeries = dict()
         self.dataSeriesProps = dict()
-        
+    
+    @property
+    def graphClass(self):
+        return self.getGraphFuncName()
+
     def getGraphFuncName(self):
         return self.name;
     
@@ -119,6 +123,8 @@ class GraphXYBase(object):
         if self.x_axis:
             properties['X_TICK_FORMAT']  = self.x_axis.tickFormat
             properties['X_AXISLABEL'] = self.x_axis.axisLabel;
+        properties['GRAPH_CLASS'] = self.graphClass
+
         return properties
         
     def getJS(self):
@@ -139,7 +145,7 @@ class GraphLine(GraphXYBase):
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
         var graphHtml = "<h4>$TITLE</h4>" + 
-                "<div class='graphwrapper'><div class='graph'></div></div>";
+                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         
         var chart = nv.models.lineChart();            
@@ -175,7 +181,7 @@ class GraphBar(GraphXYBase):
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);
         var graphHtml = "<h4>$TITLE</h4>" +
-                "<div class='graphwrapper'><div class='graph'></div></div>";
+                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         
         var chart = nv.models.discreteBarChart()
@@ -216,7 +222,7 @@ class GraphLineWith2Yaxis(GraphXYBase):
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);
         var graphHtml = "<h4>$TITLE</h4>" +
-                "<div class='graphwrapper'><div class='graph'></div></div>";
+                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         
        var chart = nv.models.multiChart();
@@ -259,7 +265,7 @@ class GraphPie(GraphBar):
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);
         var graphHtml = "<h4>$TITLE</h4>"+
-                "<div class='graphwrapper'><div class='graph'></div></div>";
+                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         
 
@@ -289,7 +295,7 @@ class GraphHorizontalBar(GraphBar):
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);
         var graphHtml = "<h4>$TITLE</h4>"+
-                "<div class='graphwrapper'><div class='graph'></div></div>";
+                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         
         var chart = nv.models.multiBarHorizontalChart()
