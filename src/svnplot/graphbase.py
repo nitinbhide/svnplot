@@ -65,16 +65,6 @@ class GraphXYBase(object):
     '''
     base class for typical one dimension (pie chart) or two dimension (line chart) graph types
     '''
-    HTML_TEMPLATE='''
-    <div class="graphsection">
-        <h4>$TITLE</h4>
-        <div class="graphwrapper" id="$ID">
-            <div class="graph">
-                <svg></svg>
-            </div>        
-        </div>
-    </div>
-    '''
     def __init__(self, name, x_axis=None, y_axis=None, title=''):
         self.name = name #graph name. Used as function name as well
         self.x_axis = x_axis 
@@ -90,10 +80,7 @@ class GraphXYBase(object):
 
     def data(self, dt):
         self.addDataSeries('', dt)
-    
-    def getID(self):
-        return self.name
-    
+        
     def getJS(self):
         raise NotImplementedError
 
@@ -115,8 +102,7 @@ class GraphXYBase(object):
         '''
         get the dictionary for graph properties like ID, name etc
         '''
-        properties = dict()
-        properties['ID'] = self.getID()
+        properties = dict()        
         properties['FUNC_NAME'] = self.getGraphFuncName()
         properties['TITLE'] = self.title        
         if self.y_axis:
@@ -124,13 +110,7 @@ class GraphXYBase(object):
         if self.x_axis:
             properties['X_TICK_FORMAT']  = self.x_axis.tickFormat
         return properties
-    
-    def getHTML(self):
-        template_string = type(self).HTML_TEMPLATE
-        tmpl = string.Template(template_string)
-        values = self.get_properties()
-        return tmpl.substitute(values)
-    
+        
     def getJS(self):
         template_string = type(self).JS_TEMPLATE
         tmpl = string.Template(template_string)
@@ -145,13 +125,14 @@ class GraphLine(GraphXYBase):
     '''
     
     JS_TEMPLATE = '''
-    function $FUNC_NAME(isthumb) {
-        if(isthumb) {
-            showTooltip = false;            
-        }
-        var chart = nv.models.lineChart()
-            .tooltips(showTooltip)            
-        var elem_sel = "#$ID";
+    function $FUNC_NAME(id) {
+        var elem_sel = "#" + id;
+        var graphElem = d3.select(elem_sel);        
+        var graphHtml = "<h4>$TITLE</h4>" + 
+                "<div class='graphwrapper'><div class='graph'></div></div>";
+        graphElem.html(graphHtml);
+        
+        var chart = nv.models.lineChart();            
         
         var xtickFormat = $X_TICK_FORMAT;
         var ytickFormat = $Y_TICK_FORMAT;
@@ -160,15 +141,12 @@ class GraphLine(GraphXYBase):
         chart.yAxis
             .tickFormat(ytickFormat);
 
-        var graphElem = d3.select(elem_sel);
         
         var graphData = $GRAPH_DATA;        
-        graphElem.select('div.graph svg')
+        graphElem.select('div.graph').append('svg')
             .datum(graphData)            
             .call(chart);
-
-        nv.utils.windowResize(chart.update);
-
+        
         return chart;
     }        
     '''
@@ -181,29 +159,25 @@ class GraphBar(GraphXYBase):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(isthumbnail) {        
-        var showTooltip=true;
-        if(isthumbnail) {
-            showTooltip=false;
-        }
+    function $FUNC_NAME(id) {        
+        var elem_sel = "#" + id;
+        var graphElem = d3.select(elem_sel);
+        var graphHtml = "<h4>$TITLE</h4>" +
+                "<div class='graphwrapper'><div class='graph'></div></div>";
+        graphElem.html(graphHtml);
+        
         var chart = nv.models.discreteBarChart()
             .showValues(true)
-            .tooltips(showTooltip)
             .valueFormat($VALUE_FORMAT);
-        var elem_sel = "#$ID";
         
         chart.yAxis
             .tickFormat($Y_TICK_FORMAT);
-
-        var graphElem = d3.select(elem_sel);
         
         var graphData = $GRAPH_DATA;        
-        graphElem.select('div.graph svg')
+        graphElem.select('div.graph').append('svg')
             .datum(graphData)            
             .call(chart);
-
-        nv.utils.windowResize(chart.update);
-
+        
         return chart;
     }        
     '''
@@ -224,26 +198,23 @@ class GraphPie(GraphBar):
     pie chart with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(isthumbnail) {
-        var showTooltip=true
-        if(isthumbnail) {
-            showTooltip = false;
-        }
+    function $FUNC_NAME(id) {
+        var elem_sel = "#" + id;
+        var graphElem = d3.select(elem_sel);
+        var graphHtml = "<h4>$TITLE</h4>"+
+                "<div class='graphwrapper'><div class='graph'></div></div>";
+        graphElem.html(graphHtml);
+        
+
         var chart = nv.models.pieChart()
             .showLabels(true)
-            .showLegend(true)
-            .tooltips(showTooltip);
-        var elem_sel = "#$ID";
-        
-        var graphElem = d3.select(elem_sel);
+            .showLegend(true);            
         
         var graphData = $GRAPH_DATA[0];        
-        graphElem.select('div.graph svg')
+        graphElem.select('div.graph').append('svg')
             .datum(graphData.values)            
             .call(chart);
-
-        nv.utils.windowResize(chart.update);
-
+        
         return chart;
     }       
     '''
@@ -256,30 +227,26 @@ class GraphHorizontalBar(GraphBar):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(isthumbnail) {        
-        var showTooltip=true;
-        if(isthumbnail) {
-            showTooltip=false;
-        }
+    function $FUNC_NAME(id) {        
+        var elem_sel = "#" + id;
+        var graphElem = d3.select(elem_sel);
+        var graphHtml = "<h4>$TITLE</h4>"+
+                "<div class='graphwrapper'><div class='graph'></div></div>";
+        graphElem.html(graphHtml);
+        
         var chart = nv.models.multiBarHorizontalChart()
             .showValues(true)
             .showControls(false)
             .showLegend(true)
-            .tooltips(showTooltip)
             .valueFormat($VALUE_FORMAT);
-        var elem_sel = "#$ID";
         
         chart.yAxis
             .tickFormat($Y_TICK_FORMAT);
-
-        var graphElem = d3.select(elem_sel);
         
         var graphData = $GRAPH_DATA;        
-        graphElem.select('div.graph svg')
+        graphElem.select('div.graph').append('svg')
             .datum(graphData)            
-            .call(chart);
-
-        nv.utils.windowResize(chart.update);
+            .call(chart);        
 
         return chart;
     }        

@@ -71,21 +71,58 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	    h3 {background-color: lightgrey;margin:2px;text-align:center;}
 	    h4 {font-weight:bold;margin:1px;text-align:center;}
         
+        #GraphPopBox {
+            display: none;
+		    position: fixed;
+		    top: 15%;
+		    left: 15%;
+		    right: 15%;
+		    bottom: 15%;
+		    margin:0px;
+		    padding:0px;
+            background-color:#778899;
+		    z-index:1002;		
+		    overflow: none;
+		    #overflow: auto;		
+        }
+        #Graph_big {
+            position:absolute;
+            top:40px;
+            left:5px;
+            bottom:5px;
+            right:5px;
+            border : 2px solid black;
+            padding: 10px;
+            background-color: white;
+		    #border: 16px solid black;		
+            overflow: auto;
+		}
+	    #closebtn {
+            display:block;
+            color:white;
+            float:right;
+            z-index:1005;
+            margin:5px;
+            padding:5px;
+            background-color: transparent;
+	    }	
+        
+        div.graph { margin:2px; padding:2px; border:1px solid; height:500px;}                
+        
         table.graphthumbs { width:100%; }
         table.graphthumbs th {background-color: lightgrey;margin:2;text-align:center;}
-        table.graphthumbs div.graph { height:600px;width:600px; 
-            overflow:visible;
+        table.graphthumbs div.graph { 
+            height:600px;width:600px; 
+            overflow:none;
             transform:scale(0.3,0.3) translate(-600px,-600px);
             -ms-transform:scale(0.3,0.3) translate(-600px,-600px);
             -webkit-transform:scale(0.3,0.3) translate(-600px,-600px);        
-            }
-        
-        div.graphwrapper { width:200px; height:200px; max-width:220px;max-height:220px; 
-            margin-left: auto ;margin-right: auto ;margin-bottom:10px;} 
-        div.graph { margin:2px; padding:2px; border:1px solid; height:600px;}        
-        div.graphwrapper.full {
-        //full graph display css
         }
+        
+        table.graphthumbs div.graphwrapper {
+             width:200px; height:200px; max-width:220px;max-height:220px; 
+            margin-left: auto ;margin-right: auto ;margin-bottom:10px; } 
+                
         div#LogMsgCloud, div#AuthorCloud { height:360px; }
 	</style>
     <link type="text/css" rel="stylesheet" href="nv.d3.css"></link>
@@ -138,6 +175,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
             var authCloudData = $AuthCloud;
             showCloud(authCloudData, "#AuthorCloud");
         }   
+        
 	</script>
 </head>
 <body>
@@ -177,12 +215,12 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
             <th colspan=3 style="text-align:center">Line Count Graphs ($SEARCHPATH)</th>        
        </tr>
        <tr>
-            <td>$HTML_LocGraph</td>
-            <td>$HTML_AvgFileLocGraph</td>
-            <td>$HTML_LoCDevContributionGraph</td>
+            <td><div class="graphsection" id="LocGraph"></div></td>
+            <td><div class="graphsection" id="AvgFileLocGraph"></div></td>
+            <td><div class="graphsection" id="LoCDevContributionGraph"></div></td>
        </tr>
        <tr>
-            <td>$HTML_WasteEffortTrend</td>
+            <td><div class="graphsection" id="WasteEffortTrend"></div></td>
             <td></td>
             <td></td>
        </tr>
@@ -190,33 +228,33 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
             <th colspan=3 style="text-align:center">File Count Graphs ($SEARCHPATH)</th>        
        </tr>
        <tr>
-            <td>$HTML_FileCountGraph</td>
-            <td>$HTML_FileTypesGraph</td>            
+            <td><div class="graphsection" id="FileCountGraph"></div></td>
+            <td><div class="graphsection" id="FileTypesGraph"></div></td>            
             <td></td>            
         </tr>
         <tr>
             <th colspan=3 style="text-align:center">Directory Size Graphs ($SEARCHPATH)</th>
        </tr>
        <tr>
-            <td>$HTML_DirectorySizeLineGraph</td>
-            <td>$HTML_DirectorySizePieGraph</td>
-            <td>$HTML_DirFileCountPieGraph</td>
+            <td><div class="graphsection" id="DirectorySizeLineGraph"></div></td>
+            <td><div class="graphsection" id="DirectorySizePieGraph"></div></td>
+            <td><div class="graphsection" id="DirFileCountPieGraph"></div></td>
         </tr>
         <tr>
             <th colspan=3 style="text-align:center">Commit Activity Graphs</th>
        </tr>
        <tr>
-            <td>$HTML_CommitActivityIdxGraph</td>
-            <td>$HTML_ActivityByWeekdayAll</td>
-            <td>$HTML_ActivityByWeekdayRecent</td>
+            <td><div class="graphsection" id="CommitActivityIdxGraph"></div></td>
+            <td><div class="graphsection" id="ActivityByWeekdayAll"></div></td>
+            <td><div class="graphsection" id="ActivityByWeekdayRecent"></div></td>
         </tr>
         <tr>
-            <td>$HTML_DailyCommitCountGraph</td>
-            <td>$HTML_ActivityByTimeOfDayAll</td>
-            <td>$HTML_ActivityByTimeOfDayRecent</td>
+            <td><div class="graphsection" id="DailyCommitCountGraph"></div></td>
+            <td><div class="graphsection" id="ActivityByTimeOfDayAll"></div></td>
+            <td><div class="graphsection" id="ActivityByTimeOfDayRecent"></div></td>
         </tr>         
         <tr>
-            <td>$HTML_AuthorsCommitTrend</td>
+            <td><div class="graphsection" id="AuthorsCommitTrend"></div></td>
             <td></td>
             <td></td>
         </tr>
@@ -230,12 +268,57 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 <script>
     // graph javascript
     $GRAPH_JS    
-    function drawGraphs() {
-        $DRAWGRAPH_JS
+
+        function showGraphBox(graphFunc) {
+            var graphboxId = 'GraphPopBox';
+            var graphBoxElem = document.getElementById(graphboxId);
+            graphBoxElem.style.display='block';
+            var graphCanvasId = 'Graph_big'
+            var plot = graphFunc(graphCanvasId);
+            plot.tooltips(true);
+            nv.utils.windowResize(plot.update);
+        };
+                
+        function hideGraphBox() {
+            var graphboxId = 'GraphPopBox';
+            var graphBoxElem = document.getElementById(graphboxId);
+            graphBoxElem.style.display='none';
+            d3.select("#Graph_big").selectAll().remove();
+        }
+
+    function drawGraphThumb(graphFunc, elem_id) {
+        var graph = graphFunc(elem_id);
+        graph.tooltips(false);
+        d3.select('#'+elem_id).on('click', function() {
+                showGraphBox(graphFunc);
+            });
+    }
+    function drawGraphs() {        
+        drawGraphThumb(LocGraph, "LocGraph");
+        drawGraphThumb(AvgFileLocGraph, "AvgFileLocGraph");
+        drawGraphThumb(LoCDevContributionGraph, "LoCDevContributionGraph");
+        drawGraphThumb(WasteEffortTrend, "WasteEffortTrend");
+        drawGraphThumb(FileCountGraph, "FileCountGraph");
+        drawGraphThumb(FileTypesGraph, "FileTypesGraph");
+        drawGraphThumb(DirectorySizeLineGraph, "DirectorySizeLineGraph");
+        drawGraphThumb(DirectorySizePieGraph, "DirectorySizePieGraph");
+        drawGraphThumb(DirFileCountPieGraph, "DirFileCountPieGraph");
+        drawGraphThumb(CommitActivityIdxGraph, "CommitActivityIdxGraph");
+        drawGraphThumb(DailyCommitCountGraph, "DailyCommitCountGraph");
+        drawGraphThumb(ActivityByWeekdayAll, "ActivityByWeekdayAll");
+        drawGraphThumb(ActivityByWeekdayRecent, "ActivityByWeekdayRecent");
+        drawGraphThumb(ActivityByTimeOfDayAll, "ActivityByTimeOfDayAll");
+        drawGraphThumb(ActivityByTimeOfDayRecent, "ActivityByTimeOfDayRecent");
+        drawGraphThumb(AuthorsCommitTrend, "AuthorsCommitTrend");
     }
     drawGraphs();
     showTagClouds();
 </script>
+
+<div id="GraphPopBox">
+    <h3 id="closebtn" onClick="hideGraphBox();">Close[X]</h3>
+    <div id="Graph_big"></div>
+ </div>    
 
 </body>
 </html>
@@ -540,23 +623,19 @@ class SVNPlotJS(SVNPlotBase):
         graph.addDataSeries("Waste Ratio", zip(datelist,wasteratio))
         return graph
     
-    def getGraphParams(self, graphs):
+    def getGraphJS(self, graphs):
         '''
         generate the javascript code for graphs
         '''
         graph_js_io = StringIO()
-        graph_drawfunc_io = StringIO()
-        graphParams = dict()
-
+        
         for graph in graphs:
             graph_js_io.write(graph.getJS())
-            graph_drawfunc_io.write("%s(true);\n" % graph.getGraphFuncName())
-            graphParams['HTML_%s' % graph.getID()] = graph.getHTML()
             
-        graphParams['GRAPH_JS'] = graph_js_io.getvalue()
-        graphParams['DRAWGRAPH_JS'] = graph_drawfunc_io.getvalue()
+        graphjs = graph_js_io.getvalue()
+        graph_js_io.close()
 
-        return graphParams
+        return graphjs
         
     def getGraphs(self):
         graphs = []
@@ -584,8 +663,8 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["ActiveFiles"] = self.ActiveFiles()
         graphParamDict["ActiveAuthors"] = self.ActiveAuthors()
         
-        graphs = self.getGraphs()        
-        graphParamDict.update(self.getGraphParams(graphs))        
+        graphs = self.getGraphs()     
+        graphParamDict["GRAPH_JS"] = self.getGraphJS(graphs)
         
         return(graphParamDict)
                 
