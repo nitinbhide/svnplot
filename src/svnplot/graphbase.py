@@ -50,9 +50,9 @@ class GraphTimeAxisData(GraphAxisData):
         super(GraphTimeAxisData, self).__init__(name, color)
         #override the time format function.
         #input time assumed in seconds from EPOCH
-        self.setTimeFormat("%%x")
         self.type = 'timeseries'
-        
+        self.setTimeFormat("%b %Y")
+    
     def setTimeFormat(self, timeformat):
         '''
         timeformat: is treated as javascript string and directly passed to javascript code.
