@@ -308,7 +308,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
             var graphBoxElem = document.getElementById(graphboxId);
             graphBoxElem.style.display='block';
             var graphCanvasId = 'Graph_big'
-            var plot = graphFunc(graphCanvasId);            
+            var plot = graphFunc(graphCanvasId, false);            
         };
                 
         function hideGraphBox() {
@@ -319,9 +319,9 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         }
 
     function drawGraphThumb(graphFunc, elem_id) {
-        var graph = graphFunc(elem_id);
+        var graph = graphFunc(elem_id,true);
         
-        var capture = true; // set to 'true' to ensure that 'click' events on the thumbnails 
+	var capture = true; // set to 'true' to ensure that 'click' events on the thumbnails 
                             // are called not the click events on the 'thumbnail graph'
         d3.select('#'+elem_id).on('click', function() {
                 showGraphBox(graphFunc);
