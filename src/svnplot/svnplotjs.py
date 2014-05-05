@@ -466,7 +466,6 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "Commit Activity Index"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("CommitActivityIdxGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(cmdates, temperaturelist), name="Activity Index")
@@ -480,7 +479,6 @@ class SVNPlotJS(SVNPlotBase):
 
         title = "Lines of Code"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("LocGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(dates, loc), name="Number of Lines")
@@ -494,7 +492,6 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "Contributed Lines of Code"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("LoCDevContributionGraph", x_axis=x_axis, y_axis=y_axis, title=title)
                  
@@ -514,7 +511,6 @@ class SVNPlotJS(SVNPlotBase):
 
         title = "LoC and Churn"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLineWith2Yaxis("LocChurnGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.addDataSeries("Churn", zip(dates, churnlist), axis='y2', color='red')
@@ -530,7 +526,6 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "File Count"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("FileCountGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(dates, fclist), name="Number of files")
@@ -560,7 +555,6 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "Average File LoC"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("AvgFileLocGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(dates, avgloclist), "Average line count")
@@ -616,7 +610,6 @@ class SVNPlotJS(SVNPlotBase):
 
         title = "Directory Size(Lines of Code)"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("DirectorySizeLineGraph", x_axis=x_axis, y_axis=y_axis, title=title)
                 
@@ -647,7 +640,6 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "Daily Commit Count"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLine("DailyCommitCountGraph", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.data(zip(datelist,cmitcountlist), "Commit Count")
@@ -660,7 +652,6 @@ class SVNPlotJS(SVNPlotBase):
         
         title = "Wasted Effort Trend"
         x_axis = GraphTimeAxisData()
-        x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLineWith2Yaxis("WasteEffortTrend", x_axis=x_axis, y_axis=y_axis, title=title)
         graph.addDataSeries("Lines Added", zip(datelist,linesadded))
