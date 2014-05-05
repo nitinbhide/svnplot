@@ -689,8 +689,7 @@ class SVNPlotJS(SVNPlotBase):
         graphs = []
         for graphfuncName in SVNPlotJS.GRAPHS_LIST:
             graphfunc = getattr(self, graphfuncName, None)
-            assert(graphfunc != None)
-            print graphfuncName
+            assert(graphfunc != None)            
             graphs.append(graphfunc())
         return graphs
     
