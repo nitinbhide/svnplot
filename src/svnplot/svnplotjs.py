@@ -327,8 +327,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         drawGraphThumb(LoCDevContributionGraph, "LoCDevContributionGraph");
         drawGraphThumb(WasteEffortTrend, "WasteEffortTrend");
         drawGraphThumb(LocChurnGraph, "LocChurnGraph");
-	/*
-        drawGraphThumb(FileCountGraph, "FileCountGraph");
+	drawGraphThumb(FileCountGraph, "FileCountGraph");
         drawGraphThumb(FileTypesGraph, "FileTypesGraph");
         drawGraphThumb(DirectorySizeLineGraph, "DirectorySizeLineGraph");
         drawGraphThumb(DirectorySizePieGraph, "DirectorySizePieGraph");
@@ -339,7 +338,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         drawGraphThumb(ActivityByWeekdayRecent, "ActivityByWeekdayRecent");
         drawGraphThumb(ActivityByTimeOfDayAll, "ActivityByTimeOfDayAll");
         drawGraphThumb(ActivityByTimeOfDayRecent, "ActivityByTimeOfDayRecent");
-        drawGraphThumb(AuthorsCommitTrend, "AuthorsCommitTrend");*/
+        drawGraphThumb(AuthorsCommitTrend, "AuthorsCommitTrend");
     }
     drawGraphs();
     showTagClouds();
@@ -363,14 +362,14 @@ class SVNPlotJS(SVNPlotBase):
         #LoC graphs
         'AvgFileLocGraph','LocGraph','LoCDevContributionGraph', 'LocChurnGraph', 'WasteEffortTrend',
         # File Count Graphs
-        #'FileCountGraph', 'FileTypesGraph',
+        'FileCountGraph', 'FileTypesGraph',
         #Directory Size Graphs
-        #'DirectorySizeLineGraph','DirectorySizePieGraph', 'DirFileCountPieGraph',
+        'DirectorySizeLineGraph','DirectorySizePieGraph', 'DirFileCountPieGraph',
         #Commit Activity Graphs
-        #'CommitActivityIdxGraph', 'DailyCommitCountGraph', 
-        #'ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
-        #'AuthorsCommitTrend'
-    ] 
+        'CommitActivityIdxGraph', 'DailyCommitCountGraph', 
+        'ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
+        'AuthorsCommitTrend']
+    
     def __init__(self, svnstats, template=None):
         SVNPlotBase.__init__(self, svnstats)
         self.commitGraphHtPerAuthor = 2 #In inches

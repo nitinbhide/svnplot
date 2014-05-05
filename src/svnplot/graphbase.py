@@ -78,6 +78,7 @@ class GraphXYBase(object):
         self.title = title
         self.dataSeries = dict()
         self.dataSeriesProps = dict()
+        self.type = 'line'
     
     @property
     def graphClass(self):
@@ -112,12 +113,11 @@ class GraphXYBase(object):
             x_values= ["x%d" % i]+[x2json(d[0]) for d in data]
             y_values = [name]+[y2json(d[1])  for d in data]
             xs[name] = "x%d" % i
-            axes["x%d" % i] = 'x'
-            print props
+            axes["x%d" % i] = 'x'            
             axes[name] = props.get('axis', 'y')
             columns.append(x_values)
             columns.append(y_values)            
-        jsdata = { 'xs': xs, 'columns' : columns, 'axes':axes, 'x':'x0'}
+        jsdata = { 'xs': xs, 'columns' : columns, 'axes':axes, 'x':'x0', 'type':self.type}
         return json.dumps(jsdata,indent =2)
         
     def get_properties(self):
@@ -126,7 +126,7 @@ class GraphXYBase(object):
         '''
         properties = dict()        
         properties['FUNC_NAME'] = self.getGraphFuncName()
-        properties['TITLE'] = self.title        
+        properties['TITLE'] = self.title
         if self.y_axis:
             properties['Y_TICK_FORMAT']  = self.y_axis.tickFormat
             properties['Y_AXISLABEL'] = self.y_axis.axisLabel;
@@ -186,34 +186,37 @@ class GraphBar(GraphXYBase):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(id) {        
+    function $FUNC_NAME(id) {
         var elem_sel = "#" + id;
-        var graphElem = d3.select(elem_sel);
-        var graphHtml = "<h4>$TITLE</h4>" +
+        var graphElem = d3.select(elem_sel);        
+        var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
-        
-        var chart = nv.models.discreteBarChart()
-            .showValues(true)
-            .valueFormat($VALUE_FORMAT);
-        
-        chart.yAxis
-            .tickFormat($Y_TICK_FORMAT)
-            .axisLabel($Y_AXISLABEL);
-        
-        var graphData = $GRAPH_DATA;        
-        graphElem.select('div.graph').append('svg')
-            .datum(graphData)            
-            .call(chart);
-        
-        nv.addGraph(chart);
+        var graphData = $GRAPH_DATA;
+                
+        var chart = c3.generate({
+            bindto:elem_sel + ' div.graphwrapper .graph',                
+            data: graphData,
+            bar: {
+                width: {
+                    ratio: 0.5 // this makes bar width 50% of length between ticks
+                }
+            },
+             axis: {
+                x: {
+                    type: 'categorized' // this needed to load string x value
+                }
+            }
+        });
+                        
         return chart;
     }        
     '''
     def __init__(self, name, y_axis=None, title=None):
         super(GraphBar, self).__init__(name, y_axis=y_axis,title=title)
         self.setValueFormat('''d3.format(',.0f')''')
-        
+        self.type = 'bar'
+    
     def setValueFormat(self, valueFormat):
         self.valueFormat = valueFormat
     
@@ -247,7 +250,8 @@ class GraphLineWith2Yaxis(GraphXYBase):
                     }
                 },
                 y2: {
-                   show: true
+                   show: true,
+                   inner:true
                 }
             }
         });
@@ -269,27 +273,28 @@ class GraphPie(GraphBar):
     JS_TEMPLATE = '''
     function $FUNC_NAME(id) {
         var elem_sel = "#" + id;
-        var graphElem = d3.select(elem_sel);
-        var graphHtml = "<h4>$TITLE</h4>"+
+        var graphElem = d3.select(elem_sel);        
+        var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
-        
-
-        var chart = nv.models.pieChart()
-            .showLabels(true)
-            .showLegend(true);            
-        
-        var graphData = $GRAPH_DATA[0];        
-        graphElem.select('div.graph').append('svg')
-            .datum(graphData.values)            
-            .call(chart);
-        
-        nv.addGraph(chart);        
+        var graphData = $GRAPH_DATA;
+                
+        var chart = c3.generate({
+            bindto:elem_sel + ' div.graphwrapper .graph',                
+            data: graphData,
+            bar: {
+                width: {
+                    ratio: 0.5 // this makes bar width 50% of length between ticks
+                }
+            }
+        });
+                        
         return chart;
-    }       
+    }        
     '''
     def __init__(self, name, title=None):
         super(GraphPie, self).__init__(name, y_axis=None,title=title)
+        self.type = 'pie'
         
 
 class GraphHorizontalBar(GraphBar):
@@ -297,29 +302,30 @@ class GraphHorizontalBar(GraphBar):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(id) {        
+    function $FUNC_NAME(id) {
         var elem_sel = "#" + id;
-        var graphElem = d3.select(elem_sel);
-        var graphHtml = "<h4>$TITLE</h4>"+
+        var graphElem = d3.select(elem_sel);        
+        var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
-        
-        var chart = nv.models.multiBarHorizontalChart()
-            .showValues(true)
-            .showControls(false)
-            .showLegend(true)
-            .valueFormat($VALUE_FORMAT);
-        
-        chart.yAxis
-            .tickFormat($Y_TICK_FORMAT)
-            .axisLabel($Y_AXISLABEL);
-        
-        var graphData = $GRAPH_DATA;        
-        graphElem.select('div.graph').append('svg')
-            .datum(graphData)            
-            .call(chart);        
-
-        nv.addGraph(chart);        
+        var graphData = $GRAPH_DATA;
+                
+        var chart = c3.generate({
+            bindto:elem_sel + ' div.graphwrapper .graph',                
+            data: graphData,
+            bar: {
+                width: {
+                    ratio: 0.5 // this makes bar width 50% of length between ticks
+                }
+            },
+             axis: {
+                x: {
+                    type: 'categorized' // this needed to load string x value
+                },
+                rotated:true
+            }
+        });
+                        
         return chart;
     }        
     '''
