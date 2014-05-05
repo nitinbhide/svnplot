@@ -152,13 +152,14 @@ class GraphLine(GraphXYBase):
     '''
     
     JS_TEMPLATE = '''
-    function $FUNC_NAME(id) {
+    function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
         var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
+        var showTooltip = !thumbnail ;
                 
         var chart = c3.generate({
             bindto:elem_sel + ' div.graphwrapper .graph',                
@@ -171,6 +172,9 @@ class GraphLine(GraphXYBase):
                         format: $X_TICK_FORMAT
                     }
                 }
+            },
+            tooltip: {
+                show: showTooltip
             }
         });
                         
@@ -186,13 +190,14 @@ class GraphBar(GraphXYBase):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(id) {
+    function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
         var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
+        var showTooltip = !thumbnail ;
                 
         var chart = c3.generate({
             bindto:elem_sel + ' div.graphwrapper .graph',                
@@ -206,6 +211,9 @@ class GraphBar(GraphXYBase):
                 x: {
                     type: 'categorized' // this needed to load string x value
                 }
+            },
+            tooltip: {
+                show: showTooltip
             }
         });
                         
@@ -230,13 +238,14 @@ class GraphLineWith2Yaxis(GraphXYBase):
     combination of line and bar graph
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(id) {
+    function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
         var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
+        var showTooltip = !thumbnail ;
                 
         var chart = c3.generate({
             bindto:elem_sel + ' div.graphwrapper .graph',                
@@ -253,6 +262,9 @@ class GraphLineWith2Yaxis(GraphXYBase):
                    show: true,
                    inner:true
                 }
+            },
+            tooltip: {
+                show: showTooltip
             }
         });
                         
@@ -271,13 +283,14 @@ class GraphPie(GraphBar):
     pie chart with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(id) {
+    function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
         var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
+        var showTooltip = !thumbnail ;
                 
         var chart = c3.generate({
             bindto:elem_sel + ' div.graphwrapper .graph',                
@@ -286,6 +299,9 @@ class GraphPie(GraphBar):
                 width: {
                     ratio: 0.5 // this makes bar width 50% of length between ticks
                 }
+            },
+            tooltip: {
+                show: showTooltip
             }
         });
                         
@@ -302,14 +318,15 @@ class GraphHorizontalBar(GraphBar):
     Bar char with d3js and nvd3.js
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(id) {
+    function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
         var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
-                
+        var showTooltip = !thumbnail ;
+        
         var chart = c3.generate({
             bindto:elem_sel + ' div.graphwrapper .graph',                
             data: graphData,
@@ -323,6 +340,9 @@ class GraphHorizontalBar(GraphBar):
                     type: 'categorized' // this needed to load string x value
                 },
                 rotated:true
+            },
+            tooltip: {
+                show: showTooltip
             }
         });
                         
