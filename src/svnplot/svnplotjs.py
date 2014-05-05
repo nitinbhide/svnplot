@@ -656,9 +656,9 @@ class SVNPlotJS(SVNPlotBase):
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLineWith2Yaxis("WasteEffortTrend", x_axis=x_axis, y_axis=y_axis, title=title)
-        graph.addDataSeries("Lines Added", zip(datelist,linesadded), yAxis=1)
-        graph.addDataSeries("Lines Deleted", zip(datelist,linesdeleted), yAxis=1 )
-        graph.addDataSeries("Waste Ratio", zip(datelist,wasteratio), yAxis=2, color='red')
+        graph.addDataSeries("Lines Added", zip(datelist,linesadded))
+        graph.addDataSeries("Lines Deleted", zip(datelist,linesdeleted))
+        graph.addDataSeries("Waste Ratio", zip(datelist,wasteratio), axis='y2', color='red')
         return graph
     
     def getGraphJS(self, graphs):

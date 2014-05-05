@@ -111,8 +111,9 @@ class GraphXYBase(object):
             props = self.dataSeriesProps[name]
             x_values= ["x%d" % i]+[x2json(d[0]) for d in data]
             y_values = [name]+[y2json(d[1])  for d in data]
-            xs["name"] = "x%d" % i
+            xs[name] = "x%d" % i
             axes["x%d" % i] = 'x'
+            print props
             axes[name] = props.get('axis', 'y')
             columns.append(x_values)
             columns.append(y_values)            
