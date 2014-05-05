@@ -131,10 +131,10 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         /* tag cloud CSS        */
         div#LogMsgCloud, div#AuthorCloud { height:360px; }
 	</style>
-    <link type="text/css" rel="stylesheet" href="nv.d3.css"></link>
+    <link type="text/css" rel="stylesheet" href="c3.css"></link>
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="d3.layout.cloud.js"></script>
-    <script type="text/javascript" src="nv.d3.js"></script>    
+    <script type="text/javascript" src="c3.js"></script>    
     <script type="text/javascript">			 
         function showCloud(wordsAndFreq, idSel, fillScale){
             var fill = fillScale;
@@ -302,19 +302,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
             var graphBoxElem = document.getElementById(graphboxId);
             graphBoxElem.style.display='block';
             var graphCanvasId = 'Graph_big'
-            var plot = graphFunc(graphCanvasId);
-            plot.tooltips(true);
-            if(plot['useInteractiveGuideline']) {
-                plot.useInteractiveGuideline(true);
-            }
-
-            if(plot['interactiveLayer']){
-                var tooltip = plot.interactiveLayer.tooltip;            
-                tooltip.distance(5);
-                tooltip.fixedTop(10);
-            }
-            plot.update();
-            nv.utils.windowResize(plot.update);
+            var plot = graphFunc(graphCanvasId);            
         };
                 
         function hideGraphBox() {
@@ -326,19 +314,20 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 
     function drawGraphThumb(graphFunc, elem_id) {
         var graph = graphFunc(elem_id);
-        graph.tooltips(false);        
+        
         var capture = true; // set to 'true' to ensure that 'click' events on the thumbnails 
                             // are called not the click events on the 'thumbnail graph'
         d3.select('#'+elem_id).on('click', function() {
                 showGraphBox(graphFunc);
-            }, true);
+            }, capture);
     }
     function drawGraphs() {        
-        drawGraphThumb(LocGraph, "LocGraph");
         drawGraphThumb(AvgFileLocGraph, "AvgFileLocGraph");
+        drawGraphThumb(LocGraph, "LocGraph");
         drawGraphThumb(LoCDevContributionGraph, "LoCDevContributionGraph");
         drawGraphThumb(WasteEffortTrend, "WasteEffortTrend");
         drawGraphThumb(LocChurnGraph, "LocChurnGraph");
+	/*
         drawGraphThumb(FileCountGraph, "FileCountGraph");
         drawGraphThumb(FileTypesGraph, "FileTypesGraph");
         drawGraphThumb(DirectorySizeLineGraph, "DirectorySizeLineGraph");
@@ -350,7 +339,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         drawGraphThumb(ActivityByWeekdayRecent, "ActivityByWeekdayRecent");
         drawGraphThumb(ActivityByTimeOfDayAll, "ActivityByTimeOfDayAll");
         drawGraphThumb(ActivityByTimeOfDayRecent, "ActivityByTimeOfDayRecent");
-        drawGraphThumb(AuthorsCommitTrend, "AuthorsCommitTrend");
+        drawGraphThumb(AuthorsCommitTrend, "AuthorsCommitTrend");*/
     }
     drawGraphs();
     showTagClouds();
@@ -372,15 +361,16 @@ class SVNPlotJS(SVNPlotBase):
     #list of graphs (function names)
     GRAPHS_LIST = [
         #LoC graphs
-        'LocGraph', 'AvgFileLocGraph','LoCDevContributionGraph', 'LocChurnGraph', 'WasteEffortTrend',
+        'AvgFileLocGraph','LocGraph','LoCDevContributionGraph', 'LocChurnGraph', 'WasteEffortTrend',
         # File Count Graphs
-        'FileCountGraph', 'FileTypesGraph',
+        #'FileCountGraph', 'FileTypesGraph',
         #Directory Size Graphs
-        'DirectorySizeLineGraph','DirectorySizePieGraph', 'DirFileCountPieGraph',
+        #'DirectorySizeLineGraph','DirectorySizePieGraph', 'DirFileCountPieGraph',
         #Commit Activity Graphs
-        'CommitActivityIdxGraph', 'DailyCommitCountGraph', 
-        'ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
-        'AuthorsCommitTrend'] 
+        #'CommitActivityIdxGraph', 'DailyCommitCountGraph', 
+        #'ActivityByWeekdayAll', 'ActivityByWeekdayRecent', 'ActivityByTimeOfDayAll', 'ActivityByTimeOfDayRecent',
+        #'AuthorsCommitTrend'
+    ] 
     def __init__(self, svnstats, template=None):
         SVNPlotBase.__init__(self, svnstats)
         self.commitGraphHtPerAuthor = 2 #In inches
@@ -520,8 +510,8 @@ class SVNPlotJS(SVNPlotBase):
         x_axis.setTimeFormat('%b %y')
         y_axis = GraphAxisData()
         graph = GraphLineWith2Yaxis("LocChurnGraph", x_axis=x_axis, y_axis=y_axis, title=title)
-        graph.addDataSeries("Churn", zip(dates, churnlist), yAxis=2, color='red')
-        graph.addDataSeries("LoC", zip(dates, loc), yAxis=1)
+        graph.addDataSeries("Churn", zip(dates, churnlist), axis='y2', color='red')
+        graph.addDataSeries("LoC", zip(dates, loc))
          
         return graph
         
@@ -733,7 +723,7 @@ class SVNPlotJS(SVNPlotBase):
         '''
         jsFileList = ['excanvas.compiled.js',
                       'd3.v3/d3.v3.js',
-                      'd3.v3/d3.layout.cloud.js']
+                      'd3.v3/d3.layout.cloud.js', "d3.v3/c3.js","d3.v3/c3.css"]
         
         try:
             srcdir = os.path.dirname(os.path.abspath(__file__))

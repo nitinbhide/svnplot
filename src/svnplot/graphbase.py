@@ -28,6 +28,7 @@ class GraphAxisData(object):
         self.color = color
         self.tickFormat = '''d3.format(',.0f')'''
         self.axisLabel = ''
+        self.type = 'indexed'
 
     def setTickFormat(self, tickformat):
         '''
@@ -50,7 +51,8 @@ class GraphTimeAxisData(GraphAxisData):
         #override the time format function.
         #input time assumed in seconds from EPOCH
         self.setTimeFormat("%%x")
-    
+        self.type = 'timeseries'
+        
     def setTimeFormat(self, timeformat):
         '''
         timeformat: is treated as javascript string and directly passed to javascript code.
@@ -58,12 +60,12 @@ class GraphTimeAxisData(GraphAxisData):
         #python time format is in seconds and javascript is in milliseconds then multiple
         # 'd' value by 1000
         tickformat = '''function(d) {
-            return d3.time.format('%s')(new Date(d*1000))
+            return d3.time.format('%s')(d)
           }'''
         self.setTickFormat(tickformat % timeformat)
     
     def data2json(self, d):
-        return time.mktime(d.timetuple()) 
+        return time.mktime(d.timetuple())*1000 
     
 class GraphXYBase(object):
     '''
@@ -102,13 +104,20 @@ class GraphXYBase(object):
         if self.y_axis:
             y2json = self.y_axis.data2json
             
-        jsdata = []
-        for name, data in self.dataSeries.iteritems():            
-            values = [{ 'x' : x2json(d[0]), 'y': y2json(d[1]) } for d in data]
-            data_series = dict(key=name, values =values)
-            data_series.update(self.dataSeriesProps[name])
-            jsdata.append(data_series)
-        return json.dumps(jsdata)
+        xs = dict()
+        columns = []
+        axes = dict()
+        for i, (name, data) in enumerate(self.dataSeries.iteritems()):
+            props = self.dataSeriesProps[name]
+            x_values= ["x%d" % i]+[x2json(d[0]) for d in data]
+            y_values = [name]+[y2json(d[1])  for d in data]
+            xs["name"] = "x%d" % i
+            axes["x%d" % i] = 'x'
+            axes[name] = props.get('axis', 'y')
+            columns.append(x_values)
+            columns.append(y_values)            
+        jsdata = { 'xs': xs, 'columns' : columns, 'axes':axes, 'x':'x0'}
+        return json.dumps(jsdata,indent =2)
         
     def get_properties(self):
         '''
@@ -123,6 +132,7 @@ class GraphXYBase(object):
         if self.x_axis:
             properties['X_TICK_FORMAT']  = self.x_axis.tickFormat
             properties['X_AXISLABEL'] = self.x_axis.axisLabel;
+            properties['X_TYPE'] = self.x_axis.type
         properties['GRAPH_CLASS'] = self.graphClass
 
         return properties
@@ -147,24 +157,22 @@ class GraphLine(GraphXYBase):
         var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
-        
-        var chart = nv.models.lineChart();            
-        
-        var xtickFormat = $X_TICK_FORMAT;
-        var ytickFormat = $Y_TICK_FORMAT;
-        chart.xAxis
-            .tickFormat(xtickFormat)
-            .axisLabel($X_AXISLABEL);
-        chart.yAxis
-            .tickFormat(ytickFormat)
-            .axisLabel($Y_AXISLABEL);
-        
-        var graphData = $GRAPH_DATA;        
-        graphElem.select('div.graph').append('svg')
-            .datum(graphData)            
-            .call(chart);
-        
-        nv.addGraph(chart);        
+        var graphData = $GRAPH_DATA;
+                
+        var chart = c3.generate({
+            bindto:elem_sel + ' div.graphwrapper .graph',                
+            data: graphData,
+            axis: {
+                x: {
+                    type: "$X_TYPE",
+                    tick: {
+                        count: 8,
+                        format: $X_TICK_FORMAT
+                    }
+                }
+            }
+        });
+                        
         return chart;
     }        
     '''
@@ -218,34 +226,31 @@ class GraphLineWith2Yaxis(GraphXYBase):
     combination of line and bar graph
     '''
     JS_TEMPLATE = '''
-    function $FUNC_NAME(id) {        
+    function $FUNC_NAME(id) {
         var elem_sel = "#" + id;
-        var graphElem = d3.select(elem_sel);
-        var graphHtml = "<h4>$TITLE</h4>" +
+        var graphElem = d3.select(elem_sel);        
+        var graphHtml = "<h4>$TITLE</h4>" + 
                 "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
         graphElem.html(graphHtml);
-        
-       var chart = nv.models.multiChart();
+        var graphData = $GRAPH_DATA;
+                
+        var chart = c3.generate({
+            bindto:elem_sel + ' div.graphwrapper .graph',                
+            data: graphData,
+            axis: {
+                x: {
+                    type: "$X_TYPE",
+                    tick: {
+                        count: 8,
+                        format: $X_TICK_FORMAT
+                    }
+                },
+                y2: {
+                   show: true
+                }
+            }
+        });
                         
-        var xtickFormat = $X_TICK_FORMAT;
-        chart.xAxis
-            .tickFormat(xtickFormat)
-            .axisLabel($X_AXISLABEL);
-
-        chart.yAxis1
-            .tickFormat($Y_TICK_FORMAT)
-            .axisLabel($Y_AXISLABEL);
-                    
-       chart.yAxis2
-            .tickFormat($Y_TICK_FORMAT)
-            .axisLabel($Y_AXISLABEL);
-            
-        var graphData = $GRAPH_DATA;        
-        graphElem.select('div.graph').append('svg')
-            .datum(graphData)            
-            .call(chart);
-        
-        nv.addGraph(chart);
         return chart;
     }        
     '''
@@ -253,7 +258,7 @@ class GraphLineWith2Yaxis(GraphXYBase):
         super(GraphLineWith2Yaxis, self).__init__(name, x_axis=x_axis, y_axis=y_axis,title=title)
     
     def addDataSeries(self, name, dt, **kwargs):
-        kwargs['type'] = kwargs.get('type', 'line')
+        kwargs['axis'] = kwargs.get('axis', 'y')
         super(GraphLineWith2Yaxis, self).addDataSeries(name, dt, **kwargs)
 
 class GraphPie(GraphBar):
