@@ -130,11 +130,17 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 
         /* tag cloud CSS        */
         div#LogMsgCloud, div#AuthorCloud { height:360px; }
+	/* below svg CSS element is important for firefox. Otherwise, word cloud not displayed
+	 properly */
+	svg { 
+	 height: 100%;
+	 width: 100%;
+	}
 	</style>
     <link type="text/css" rel="stylesheet" href="c3.css"></link>
-    <script type="text/javascript" src="d3.v3.js"></script>
-    <script type="text/javascript" src="d3.layout.cloud.js"></script>
-    <script type="text/javascript" src="c3.js"></script>    
+    <script type="text/javascript" src="d3.v3.js" charset="utf-8"></script>
+    <script type="text/javascript" src="d3.layout.cloud.js" charset="utf-8"></script>
+    <script type="text/javascript" src="c3.js" charset="utf-8"></script>    
     <script type="text/javascript">			 
         function showCloud(wordsAndFreq, idSel, fillScale){
             var fill = fillScale;
@@ -340,8 +346,10 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         drawGraphThumb(ActivityByTimeOfDayRecent, "ActivityByTimeOfDayRecent");
         drawGraphThumb(AuthorsCommitTrend, "AuthorsCommitTrend");
     }
-    drawGraphs();
+    
     showTagClouds();
+    drawGraphs();
+    
 </script>
 
 <div id="GraphPopBox">
