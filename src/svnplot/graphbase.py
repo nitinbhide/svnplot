@@ -116,7 +116,8 @@ class GraphXYBase(object):
             axes["x%d" % i] = 'x'            
             axes[name] = props.get('axis', 'y')
             columns.append(x_values)
-            columns.append(y_values)            
+            columns.append(y_values)
+            
         jsdata = { 'xs': xs, 'columns' : columns, 'axes':axes, 'x':'x0', 'type':self.type}
         return json.dumps(jsdata,indent =2)
         
@@ -311,7 +312,19 @@ class GraphPie(GraphBar):
     def __init__(self, name, title=None):
         super(GraphPie, self).__init__(name, y_axis=None,title=title)
         self.type = 'pie'
-        
+    
+    def data_json(self):
+        '''
+        data encoding for pie chart is slight different as there is no 'x' against 'y'
+        kind of mapping it is 'slice' name against value. There is no axes, or xs
+        definition for c3js.generate call
+        '''
+        columns = []
+        for name, data in self.dataSeries.iteritems():                    
+            columns.extend(data)
+            
+        jsdata = { 'columns' : columns, 'type':self.type}
+        return json.dumps(jsdata,indent =2) 
 
 class GraphHorizontalBar(GraphBar):
     '''
