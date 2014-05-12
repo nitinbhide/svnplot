@@ -81,6 +81,7 @@ class GraphXYBase(object):
         self.title = title
         self.dataSeries = dict()
         self.dataSeriesProps = dict()
+        self.datamap = dict() #data series map of y for X kind. For Pie graph map will be empty
         self.type = 'line'
     
     @property
@@ -90,16 +91,35 @@ class GraphXYBase(object):
     def getGraphFuncName(self):
         return self.name;
     
-    def addDataSeries(self, name, dt, **kwargs):
+    def addDataSeries(self, dt, **kwargs):        
+        assert(isinstance(dt, list))
+        name=kwargs.get('name', 'x')
         self.dataSeries[name] = dt
-        self.dataSeriesProps[name] = dict(kwargs)
-
-    def data(self, dt, name=''):
-        self.addDataSeries(name, dt)
+        if 'mapto' in kwargs:
+            mapto = kwargs.pop('mapto')
+            self.addDataSeriesMap(name, mapto)
+        self.dataSeriesProps[name] = dict(kwargs)        
+        
+    def addDataSeriesMap(self, y_name, x_name):
+        self.datamap[y_name] = x_name
+    
+    def data(self, x_data, y_data, name=''):
+        self.addDataSeries(x_data, name='x')
+        self.addDataSeries(y_data, name=name,mapto='x')        
         
     def getJS(self):
         raise NotImplementedError
 
+    def get_axis(self, seriesname):
+        '''
+        get the axis for given data series name.        
+        if seriesname is a key in self.datamap, then its 'y' axis
+        otherwise its an x_axis
+        '''
+        if seriesname in self.datamap:
+            return 'y'
+        return 'x'
+    
     def data_json(self):
         x2json = lambda d: d
         if self.x_axis:
@@ -111,17 +131,21 @@ class GraphXYBase(object):
         xs = dict()
         columns = []
         axes = dict()
-        for i, (name, data) in enumerate(self.dataSeries.iteritems()):
+        
+        for name, data in self.dataSeries.iteritems():
+            axis_name = self.get_axis(name)
+            data_func = y2json
+            if axis_name == 'x':
+                data_func = x2json
+            values = [name]+[data_func(d)  for d in data]
             props = self.dataSeriesProps[name]
-            x_values= ["x%d" % i]+[x2json(d[0]) for d in data]
-            y_values = [name]+[y2json(d[1])  for d in data]
-            xs[name] = "x%d" % i
-            axes["x%d" % i] = 'x'            
-            axes[name] = props.get('axis', 'y')
-            columns.append(x_values)
-            columns.append(y_values)
-            
-        jsdata = { 'xs': xs, 'columns' : columns, 'axes':axes, 'x':'x0', 'type':self.type}
+            #if series properties contains 'axis' property, return that
+            #else call the get_axis' function to get the axis name
+            axes[name] = props.get('axis', axis_name)
+            columns.append(values)
+        
+        x_name = self.datamap.values()[0]
+        jsdata = { 'xs': self.datamap, 'columns' : columns, 'axes':axes, 'x':x_name, 'type':self.type}
         return json.dumps(jsdata,indent =2)
         
     def get_properties(self):
@@ -285,9 +309,9 @@ class GraphLineWith2Yaxis(GraphXYBase):
     def __init__(self, name, x_axis=None, y_axis=None, title=None):
         super(GraphLineWith2Yaxis, self).__init__(name, x_axis=x_axis, y_axis=y_axis,title=title)
     
-    def addDataSeries(self, name, dt, **kwargs):
+    def addDataSeries(self, dt, **kwargs):
         kwargs['axis'] = kwargs.get('axis', 'y')
-        super(GraphLineWith2Yaxis, self).addDataSeries(name, dt, **kwargs)
+        super(GraphLineWith2Yaxis, self).addDataSeries(dt, **kwargs)
 
 class GraphPie(GraphBar):
     '''
@@ -322,14 +346,17 @@ class GraphPie(GraphBar):
         super(GraphPie, self).__init__(name, y_axis=None,title=title)
         self.type = 'pie'
     
+    def data(self, pienames, pievalues, name=''):
+        self.addDataSeries(zip(pienames, pievalues), name=name)
+    
     def data_json(self):
         '''
         data encoding for pie chart is slight different as there is no 'x' against 'y'
         kind of mapping it is 'slice' name against value. There is no axes, or xs
         definition for c3js.generate call
-        '''
+        '''        
         columns = []
-        for name, data in self.dataSeries.iteritems():                    
+        for name, data in self.dataSeries.iteritems():
             columns.extend(data)
             
         jsdata = { 'columns' : columns, 'type':self.type}
