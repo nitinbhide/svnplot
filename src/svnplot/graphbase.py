@@ -71,6 +71,9 @@ class GraphXYBase(object):
     '''
     base class for typical one dimension (pie chart) or two dimension (line chart) graph types
     '''
+    GRAPH_DIV_TMPL = '''<h4>$TITLE</h4> \\
+                <div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>'''
+                
     def __init__(self, name, x_axis=None, y_axis=None, title=''):
         self.name = name #graph name. Used as function name as well
         self.x_axis = x_axis 
@@ -137,8 +140,18 @@ class GraphXYBase(object):
             properties['X_TYPE'] = self.x_axis.type
         properties['GRAPH_CLASS'] = self.graphClass
 
+        properties['GRAPH_DIV_HTML'] = self.getGraphDivHtml(properties)
         return properties
         
+    def getGraphDivHtml(self, props):
+        '''
+        get the HTML for graph div. This will be pushed into the page using
+        graph function javascript
+        '''
+        template_string = type(self).GRAPH_DIV_TMPL        
+        tmpl = string.Template(template_string)                
+        return tmpl.substitute(props)    
+    
     def getJS(self):
         template_string = type(self).JS_TEMPLATE
         tmpl = string.Template(template_string)
@@ -156,8 +169,7 @@ class GraphLine(GraphXYBase):
     function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
-        var graphHtml = "<h4>$TITLE</h4>" + 
-                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
+        var graphHtml = "$GRAPH_DIV_HTML";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
         var showTooltip = !thumbnail ;
@@ -194,8 +206,7 @@ class GraphBar(GraphXYBase):
     function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
-        var graphHtml = "<h4>$TITLE</h4>" + 
-                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
+        var graphHtml = "$GRAPH_DIV_HTML";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
         var showTooltip = !thumbnail ;
@@ -242,8 +253,7 @@ class GraphLineWith2Yaxis(GraphXYBase):
     function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
-        var graphHtml = "<h4>$TITLE</h4>" + 
-                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
+        var graphHtml = "$GRAPH_DIV_HTML";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
         var showTooltip = !thumbnail ;
@@ -287,8 +297,7 @@ class GraphPie(GraphBar):
     function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
-        var graphHtml = "<h4>$TITLE</h4>" + 
-                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
+        var graphHtml = "$GRAPH_DIV_HTML";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
         var showTooltip = !thumbnail ;
@@ -334,8 +343,7 @@ class GraphHorizontalBar(GraphBar):
     function $FUNC_NAME(id, thumbnail) {
         var elem_sel = "#" + id;
         var graphElem = d3.select(elem_sel);        
-        var graphHtml = "<h4>$TITLE</h4>" + 
-                "<div class='graphwrapper $GRAPH_CLASS'><div class='graph'></div></div>";
+        var graphHtml = "$GRAPH_DIV_HTML";
         graphElem.html(graphHtml);
         var graphData = $GRAPH_DATA;
         var showTooltip = !thumbnail ;
