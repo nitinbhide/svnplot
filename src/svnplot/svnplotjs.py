@@ -70,7 +70,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	/*td {background-color: #FFFFF0}*/
 	h3 {background-color: lightgrey;margin:2px;text-align:center;}
 	h4 {font-weight:bold;margin:1px;text-align:center;}
-
+	table.charts { width:100%; }
 	.graph {
         display: block;
         margin-left:auto;margin-right:auto;
@@ -267,7 +267,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 	</script>
 </head>
 <body onLoad="showAllGraphs(false);">
-<table align="center" frame="box">
+<table class="charts" align="center" frame="box">
 <caption><h1 align="center">Subversion Statistics for $RepoName</h1></caption>
 <tr>
 <th colspan=3 align="center"><h3>General Statistics</h3></th>
