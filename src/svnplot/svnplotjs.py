@@ -33,19 +33,16 @@ Graph types to be supported
 To use copy the file in Python 'site-packages' directory Setup is not available
 yet.
 '''
-from __future__ import with_statement
-
-__revision__ = '$Revision:$'
-__date__     = '$Date:$'
-
 from optparse import OptionParser
-import sqlite3
 import os.path
 import sys
 import string
 import StringIO
 import math
 import shutil
+
+import sqlite3
+
 from svnstats import *
 from svnplotbase import *
 
