@@ -25,7 +25,7 @@ Graph types to be supported
 11. directory size pie chart (latest status) -- Done
 12. Directory file count pie char(latest status) -- Done
 13. Loc and Churn graph (loc vs date, churn vs date)- Churn is number of lines touched
-	(i.e. lines added + lines deleted + lines modified) -- Done
+    (i.e. lines added + lines deleted + lines modified) -- Done
 14. Repository Activity Index (using exponential decay) -- Done
 15. Repository heatmap (treemap)
 16. Tag cloud of words in commit log message.
@@ -63,32 +63,32 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <!--[if IE]><script type="text/javascript" src="excanvas.compiled.js"></script><![endif]-->	
+    <!--[if IE]><script type="text/javascript" src="excanvas.min.js"></script><![endif]--> 
     <title>Subversion Stats Plot for $RepoName</title>
     <style type="text/css">
-	th {background-color: #F5F5F5; text-align:center}
-	/*td {background-color: #FFFFF0}*/
-	h3 {background-color: lightgrey;margin:2px;text-align:center;}
-	h4 {font-weight:bold;margin:1px;text-align:center;}
-	table.charts { width:100%; }
-	.graph {
+    th {background-color: #F5F5F5; text-align:center}
+    /*td {background-color: #FFFFF0}*/
+    h3 {background-color: lightgrey;margin:2px;text-align:center;}
+    h4 {font-weight:bold;margin:1px;text-align:center;}
+    table.charts { width:100%; }
+    .graph {
         display: block;
         margin-left:auto;margin-right:auto;
         height:$thumbht;width:$thumbwid;
     }
     #GraphPopBox {
         display: none;
-		position: fixed;
-		top: 15%;
-		left: 15%;
-		right: 15%;
-		bottom: 15%;
-		margin:0px;
-		padding:0px;
+        position: fixed;
+        top: 15%;
+        left: 15%;
+        right: 15%;
+        bottom: 15%;
+        margin:0px;
+        padding:0px;
         background-color:#778899;
-		z-index:1002;		
-		overflow: none;
-		#overflow: auto;		
+        z-index:1002;       
+        overflow: none;
+        #overflow: auto;        
     }
     #Graph_big {
         position:absolute;
@@ -99,172 +99,172 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         border : 2px solid black;
         padding: 10px;
         background-color: white;
-		#border: 16px solid black;		
-		}
-	#closebtn {
+        #border: 16px solid black;      
+        }
+    #closebtn {
         display:block;
         color:white;
         float:right;
         z-index:1005;
         margin:5px;
         padding:5px;
-	}
-	
-	/* graph specific CSS
-	 grid lines for two y axis looks really bad for LoCChurnGraph. Hence hide it */
-	.LocChurnGraph .y1.axis .tick line { display:none; }
-	.LocChurnGraph .y2.axis .tick line { display:none; }
+    }
+    
+    /* graph specific CSS
+     grid lines for two y axis looks really bad for LoCChurnGraph. Hence hide it */
+    .LocChurnGraph .y1.axis .tick line { display:none; }
+    .LocChurnGraph .y2.axis .tick line { display:none; }
 
-	/* tag cloud CSS        */
-	div#LogMsgCloud, div#AuthorCloud { height:360px; }
-	
-	/* below svg CSS element is important for firefox. Otherwise, word cloud not displayed
-	 properly */
-	svg {
-	 height: 100%;
-	 width: 100%;
-	}
-	</style>
-	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
-	<script type="text/javascript" src="jquery.min.js"></script>
-	<script type="text/javascript" src="jquery.jqplot.js"></script>	
-	<script type="text/javascript" src="jqplot.dateAxisRenderer.min.js"></script>	
-	<script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
-	<script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
-	<script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
+    /* tag cloud CSS        */
+    div#LogMsgCloud, div#AuthorCloud { height:360px; }
+    
+    /* below svg CSS element is important for firefox. Otherwise, word cloud not displayed
+     properly */
+    svg {
+     height: 100%;
+     width: 100%;
+    }
+    </style>
+    <link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>       
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.jqplot.js"></script> 
+    <script type="text/javascript" src="jqplot.dateAxisRenderer.min.js"></script>   
+    <script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
+    <script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
+    <script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="d3.layout.cloud.js"></script>
     $LocTable
-	$LoCChurnTable	
-	$ContriLoCTable
-	$AvgLoCTable
-	$FileCountTable
-	$FileTypeCountTable
-	$DirSizePie
-	$DirSizeLine
-	$DirFileCountPie
-	$CommitActIdxTable
-	$AuthorsCommitTrend
-	$ActivityByWeekdayFunc
-	$ActivityByWeekdayAllTable
+    $LoCChurnTable  
+    $ContriLoCTable
+    $AvgLoCTable
+    $FileCountTable
+    $FileTypeCountTable
+    $DirSizePie
+    $DirSizeLine
+    $DirFileCountPie
+    $CommitActIdxTable
+    $AuthorsCommitTrend
+    $ActivityByWeekdayFunc
+    $ActivityByWeekdayAllTable
     $ActivityByWeekdayRecentTable
     $ActivityByTimeOfDayFunc
     $ActivityByTimeOfDayAllTable
-	$ActivityByTimeOfDayRecentTable
-	$AuthorActivityGraph
-	$DailyCommitCountGraph
+    $ActivityByTimeOfDayRecentTable
+    $AuthorActivityGraph
+    $DailyCommitCountGraph
     $WasteEffortTrend
 
     <script type="text/javascript">
-		function showAllGraphs(showLegend) {
-			   locgraph('LoCGraph', showLegend);
-			   /* Not there in this template
-			   locChurnGraph('LoCChurnGraph', showLegend);*/                    
-			   contri_locgraph('ContriLoCGraph', showLegend);
-			   avglocgraph('AvgLoCGraph',showLegend);
-			   fileCountGraph('FileCountGraph',showLegend);
-			   fileTypesGraph('FileTypeCountGraph',showLegend);
-			   ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
-			   ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
-			   ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
-			   ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
-			   CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
-			   directorySizePieGraph('DirSizePie', showLegend);
-			   dirFileCountPieGraph('DirFileCountPie', showLegend);
-			   dirSizeLineGraph('DirSizeLine', showLegend);
-			   authorsCommitTrend('AuthorsCommitTrend',showLegend);
-			   authorActivityGraph('AuthorActivityGraph', showLegend);
-			   dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
-			   wasteEffortTrend('WasteEffortTrend', showLegend);
-			   showTagClouds();
-		   };
-		   
-		   function showGraphBox(graphFunc, showLegend) {
-			   var graphboxId = 'GraphPopBox';
-			   var graphBoxElem = document.getElementById(graphboxId);
-			   graphBoxElem.style.display='block';
-			   var graphCanvasId = 'Graph_big'
-			   var plot = graphFunc(graphCanvasId, showLegend);
-			   plot.redraw(true);                                                    
-		   };
-		   
-		   function hideGraphBox() {
-			   var graphboxId = 'GraphPopBox';
-			   var graphBoxElem = document.getElementById(graphboxId);
-			   graphBoxElem.style.display='none';
-		   };
+        function showAllGraphs(showLegend) {
+               locgraph('LoCGraph', showLegend);
+               /* Not there in this template
+               locChurnGraph('LoCChurnGraph', showLegend);*/                    
+               contri_locgraph('ContriLoCGraph', showLegend);
+               avglocgraph('AvgLoCGraph',showLegend);
+               fileCountGraph('FileCountGraph',showLegend);
+               fileTypesGraph('FileTypeCountGraph',showLegend);
+               ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
+               ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
+               ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
+               ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
+               CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
+               directorySizePieGraph('DirSizePie', showLegend);
+               dirFileCountPieGraph('DirFileCountPie', showLegend);
+               dirSizeLineGraph('DirSizeLine', showLegend);
+               authorsCommitTrend('AuthorsCommitTrend',showLegend);
+               authorActivityGraph('AuthorActivityGraph', showLegend);
+               dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
+               wasteEffortTrend('WasteEffortTrend', showLegend);
+               showTagClouds();
+           };
+           
+           function showGraphBox(graphFunc, showLegend) {
+               var graphboxId = 'GraphPopBox';
+               var graphBoxElem = document.getElementById(graphboxId);
+               graphBoxElem.style.display='block';
+               var graphCanvasId = 'Graph_big'
+               var plot = graphFunc(graphCanvasId, showLegend);
+               plot.redraw(true);                                                    
+           };
+           
+           function hideGraphBox() {
+               var graphboxId = 'GraphPopBox';
+               var graphBoxElem = document.getElementById(graphboxId);
+               graphBoxElem.style.display='none';
+           };
 
             function showCloud(wordsAndFreq, idSel, fillScale){
-				var fill = fillScale;
-	
-				var selElem = d3.select(idSel);
-				var w = parseInt(selElem.style("width"))-10;
-				var h = parseInt(selElem.style("height"))-10;
-	
-				var minFreq = d3.min(wordsAndFreq, function(d) { return d.count});
-				var maxFreq = d3.max(wordsAndFreq, function(d) { return d.count});
-	
-				var fontSize = d3.scale.log();
-				fontSize.domain([minFreq, maxFreq]);
-				fontSize.range([15,100])
-	
-				d3.layout.cloud()
-					.size([w, h])
-					.words(wordsAndFreq)
-					.padding(2)
-					.rotate(function() { return 0;})
-					.font("Impact")
-					.fontSize(function(d) { return fontSize(d.count);})
-					.on("end", draw)
-					.start();
-	
-				function draw(words) {
-						d3.select(idSel).append("svg")
-						.append("g")
-							.attr("transform", "translate(" + [w/2, h/2] + ")")
-						.selectAll("text")
-							.data(words)
-						.enter().append("text")
-							.style("font-size", function(d) { return fontSize(+d.count)+ "px"; })
-							.style("font-family", "Impact")
-							.style("fill", function(d, i) {return fill(d.color);})
-							.on("mouseover", function(){d3.select(this).style("fill", "black");})
-							.on("mouseout", function(d, i){d3.select(this).style("fill", fill(d.color));})
-							.attr("text-anchor", "middle")
-							.attr("transform", function(d) {
-								return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-							})
-							.text(function(d) { return d.text; });
-				}
-		};
+                var fill = fillScale;
+    
+                var selElem = d3.select(idSel);
+                var w = parseInt(selElem.style("width"))-10;
+                var h = parseInt(selElem.style("height"))-10;
+    
+                var minFreq = d3.min(wordsAndFreq, function(d) { return d.count});
+                var maxFreq = d3.max(wordsAndFreq, function(d) { return d.count});
+    
+                var fontSize = d3.scale.log();
+                fontSize.domain([minFreq, maxFreq]);
+                fontSize.range([15,100])
+    
+                d3.layout.cloud()
+                    .size([w, h])
+                    .words(wordsAndFreq)
+                    .padding(2)
+                    .rotate(function() { return 0;})
+                    .font("Impact")
+                    .fontSize(function(d) { return fontSize(d.count);})
+                    .on("end", draw)
+                    .start();
+    
+                function draw(words) {
+                        d3.select(idSel).append("svg")
+                        .append("g")
+                            .attr("transform", "translate(" + [w/2, h/2] + ")")
+                        .selectAll("text")
+                            .data(words)
+                        .enter().append("text")
+                            .style("font-size", function(d) { return fontSize(+d.count)+ "px"; })
+                            .style("font-family", "Impact")
+                            .style("fill", function(d, i) {return fill(d.color);})
+                            .on("mouseover", function(){d3.select(this).style("fill", "black");})
+                            .on("mouseout", function(d, i){d3.select(this).style("fill", fill(d.color));})
+                            .attr("text-anchor", "middle")
+                            .attr("transform", function(d) {
+                                return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                            })
+                            .text(function(d) { return d.text; });
+                }
+        };
 
-		function showTagClouds() {
-			var logMsgCloudData = $TagCloud;
-			var fillScale = function(d) { return d3.rgb(0,0,0); }
-			console.log("LogMsg Cloud display");
-			showCloud(logMsgCloudData, '#LogMsgCloud', fillScale);
+        function showTagClouds() {
+            var logMsgCloudData = $TagCloud;
+            var fillScale = function(d) { return d3.rgb(0,0,0); }
+            console.log("LogMsg Cloud display");
+            showCloud(logMsgCloudData, '#LogMsgCloud', fillScale);
 
-			var authCloudData = $AuthCloud;
+            var authCloudData = $AuthCloud;
 
-			// color is author activity index
-			var minColor = 0, maxColor=0;
-			// color scale is reversed ColorBrewer RdYlBu (heatmap colors)
-			var colors =  ["#a50026", "#d73027","#f46d43","#fdae61","#fee090","#ffffbf",
-							"#e0f3f8","#abd9e9","#74add1","#4575b4","#313695"];
-			colors.reverse();
-			var fill =  d3.scale.linear();
-			fill.range(colors);
+            // color is author activity index
+            var minColor = 0, maxColor=0;
+            // color scale is reversed ColorBrewer RdYlBu (heatmap colors)
+            var colors =  ["#a50026", "#d73027","#f46d43","#fdae61","#fee090","#ffffbf",
+                            "#e0f3f8","#abd9e9","#74add1","#4575b4","#313695"];
+            colors.reverse();
+            var fill =  d3.scale.linear();
+            fill.range(colors);
 
-			minColor = d3.min(authCloudData, function(d) { return d.color});
-			maxColor = d3.max(authCloudData, function(d) { return d.color});
-			var step = (Math.log(maxColor+1)-Math.log(minColor))/colors.length;
-			fill.domain(d3.range(Math.log(minColor), Math.log(maxColor+1), step));
+            minColor = d3.min(authCloudData, function(d) { return d.color});
+            maxColor = d3.max(authCloudData, function(d) { return d.color});
+            var step = (Math.log(maxColor+1)-Math.log(minColor))/colors.length;
+            fill.domain(d3.range(Math.log(minColor), Math.log(maxColor+1), step));
 
-			console.log("Author Cloud display");
-			showCloud(authCloudData, "#AuthorCloud", fill);
-		}
+            console.log("Author Cloud display");
+            showCloud(authCloudData, "#AuthorCloud", fill);
+        }
 
-	</script>
+    </script>
 </head>
 <body onLoad="showAllGraphs(false);">
 <table class="charts" align="center" frame="box">
@@ -376,12 +376,12 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 </table>
 
 <div>
-	<h3>Log Message Tag Cloud</h3>
-	<div id="LogMsgCloud"></div>
-	<h3>Author Cloud</h3>
-	<div id="AuthorCloud"></div>
+    <h3>Log Message Tag Cloud</h3>
+    <div id="LogMsgCloud"></div>
+    <h3>Author Cloud</h3>
+    <div id="AuthorCloud"></div>
 </div>
-	
+    
     <div id="GraphPopBox">
         <h3 id="closebtn" onClick="hideGraphBox();">Close[X]</h3>
         <div id="Graph_big"></div>
