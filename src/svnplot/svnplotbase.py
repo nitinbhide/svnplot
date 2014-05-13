@@ -15,7 +15,7 @@ import math
 import string
 import operator
 import logging
-from StringIO import StringIO
+import StringIO
 
 import svnstats
 import heatmapclr
@@ -104,7 +104,7 @@ class SVNPlotBase(object):
         '''
         self._printProgress("Calculating Active (hot) files list")
         hotfiles = self.svnstats.getHotFiles(10)
-        outstr = StringIO()
+        outstr = StringIO.StringIO()
         outstr.write("<ol>\n")
         for filepath, temperatur, revcount in hotfiles:
             outstr.write("<li>%s (rev count: %d)</li>\n"% (self.svnstats.getSearchPathRelName(filepath),revcount))
@@ -118,7 +118,7 @@ class SVNPlotBase(object):
         '''
         self._printProgress("Calculating Active authors list")
         hotauthors = self.svnstats.getActiveAuthors(10)
-        outstr = StringIO()
+        outstr = StringIO.StringIO()
         outstr.write("<ol>\n")
         for author, temperatur in hotauthors:
             outstr.write("<li>%s</li>\n"%author)
@@ -128,7 +128,7 @@ class SVNPlotBase(object):
     def AuthorCloud(self, maxAuthCount=50):
         self._printProgress("Calculating Author Tag Cloud")
         authCloud = self.svnstats.getAuthorCloud()
-        tagData = []
+        tagDataStr = '[]'
         if( len(authCloud) > 0):
             #sort and extract maximum of the "maxAuthCount" number of author based on the
             #activity index
@@ -139,26 +139,42 @@ class SVNPlotBase(object):
                 #if less than or equal zero remove, otherwise clrNorm fails 
                 if (x[2] <= 0):
                     authTagList.remove(x)
-             
+ 
+            #now calculate the maximum value from the sorted list.
+            minFreq = min(authTagList, key=operator.itemgetter(1))[1]
+            minFreqLog = math.log(minFreq)
+            maxFreq = max(authTagList, key=operator.itemgetter(1))[1]
+            #if there is only one author or minFreq and maxFreq is same, then it will give wrong
+            #results later. So make sure there is some difference between min and max freq.
+            maxFreq = max(minFreq*1.2, maxFreq)
+            maxFreqLog = math.log(maxFreq)
+
             #Now sort the authers by author names
             authTagList = sorted(authTagList, key=operator.itemgetter(0))
             
             #Create a list of list for javascript input
-            tagsData = [{'text':str(auth), 'count':freq, 'color': actIdx} for auth, freq, actIdx in authTagList]
-            
-        return(tagsData)             
+            wordsMap = [[str(auth), getTagFontSize(freq, minFreqLog, maxFreqLog)] for auth, freq, actIdx in authTagList]
+            tagDataStr = str(wordsMap)
+
+        return(tagDataStr)             
 
     def TagCloud(self, numWords=50):
         self._printProgress("Calculating tag cloud for log messages")
         words = self.svnstats.getLogMsgWordFreq(5)
-        tagData = []
+        tagDataStr = '[]'
         if( len(words) > 0):
             #first get sorted wordlist (reverse sorted by frequency)
             tagWordList = sorted(words.items(), key=operator.itemgetter(1),reverse=True)
             #now extract top 'numWords' from the list and then sort it with alphabetical order.
             tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
+            #now calculate the maximum value from the sorted list.
+            minFreq = min(tagWordList, key=operator.itemgetter(1))[1]
+            minFreqLog = math.log(minFreq)
+            maxFreq = max(tagWordList, key=operator.itemgetter(1))[1]
+            maxFreqLog = math.log(maxFreq)
             
             #Create a list of list for javascript input
-            tagData = [{ 'text':str(x), 'count':freq} for x, freq in tagWordList]
+            wordsMap = [[str(x), getTagFontSize(freq, minFreqLog, maxFreqLog)] for x, freq in tagWordList]
+            tagDataStr = str(wordsMap)
              
-        return(tagData)
+        return(tagDataStr)
