@@ -33,10 +33,6 @@ Graph types to be supported
 To use copy the file in Python 'site-packages' directory Setup is not available
 yet.
 '''
-from __future__ import with_statement
-
-__revision__ = '$Revision:$'
-__date__     = '$Date:$'
 
 from optparse import OptionParser
 import sqlite3
@@ -46,6 +42,7 @@ import string
 import StringIO
 import math
 import shutil
+
 from svnstats import *
 from svnplotbase import *
 
@@ -71,8 +68,9 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <style type="text/css">
 	th {background-color: #F5F5F5; text-align:center}
 	/*td {background-color: #FFFFF0}*/
-	h3 {background-color: transparent;margin:2}
-	h4 {background-color: transparent;margin:1}
+	h3 {background-color: lightgrey;margin:2px;text-align:center;}
+	h4 {font-weight:bold;margin:1px;text-align:center;}
+
 	.graph {
         display: block;
         margin-left:auto;margin-right:auto;
@@ -110,7 +108,22 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         z-index:1005;
         margin:5px;
         padding:5px;
-	}	
+	}
+	
+	/* graph specific CSS
+	 grid lines for two y axis looks really bad for LoCChurnGraph. Hence hide it */
+	.LocChurnGraph .y1.axis .tick line { display:none; }
+	.LocChurnGraph .y2.axis .tick line { display:none; }
+
+	/* tag cloud CSS        */
+	div#LogMsgCloud, div#AuthorCloud { height:360px; }
+	
+	/* below svg CSS element is important for firefox. Otherwise, word cloud not displayed
+	 properly */
+	svg {
+	 height: 100%;
+	 width: 100%;
+	}
 	</style>
 	<link type="text/css" rel="stylesheet" href="jquery.jqplot.min.css"/>		
 	<script type="text/javascript" src="jquery.min.js"></script>
@@ -143,78 +156,114 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     $WasteEffortTrend
 
     <script type="text/javascript">
-			 function showAllGraphs(showLegend) {
-                    locgraph('LoCGraph', showLegend);
-                    /* Not there in this template
-					locChurnGraph('LoCChurnGraph', showLegend);*/                    
-                    contri_locgraph('ContriLoCGraph', showLegend);
-                    avglocgraph('AvgLoCGraph',showLegend);
-                    fileCountGraph('FileCountGraph',showLegend);
-                    fileTypesGraph('FileTypeCountGraph',showLegend);
-                    ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
-                    ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
-                    ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
-                    ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
-                    CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
-                    directorySizePieGraph('DirSizePie', showLegend);
-                    dirFileCountPieGraph('DirFileCountPie', showLegend);
-                    dirSizeLineGraph('DirSizeLine', showLegend);
-                    authorsCommitTrend('AuthorsCommitTrend',showLegend);
-                    authorActivityGraph('AuthorActivityGraph', showLegend);
-                    dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
-                    wasteEffortTrend('WasteEffortTrend', showLegend);
-                };
-                
-                function showGraphBox(graphFunc, showLegend) {
-                    var graphboxId = 'GraphPopBox';
-                    var graphBoxElem = document.getElementById(graphboxId);
-                    graphBoxElem.style.display='block';
-                    var graphCanvasId = 'Graph_big'
-                    var plot = graphFunc(graphCanvasId, showLegend);
-                    plot.redraw(true);                                                    
-                };
-                
-                function hideGraphBox() {
-                    var graphboxId = 'GraphPopBox';
-                    var graphBoxElem = document.getElementById(graphboxId);
-                    graphBoxElem.style.display='none';
-                };
+		function showAllGraphs(showLegend) {
+			   locgraph('LoCGraph', showLegend);
+			   /* Not there in this template
+			   locChurnGraph('LoCChurnGraph', showLegend);*/                    
+			   contri_locgraph('ContriLoCGraph', showLegend);
+			   avglocgraph('AvgLoCGraph',showLegend);
+			   fileCountGraph('FileCountGraph',showLegend);
+			   fileTypesGraph('FileTypeCountGraph',showLegend);
+			   ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
+			   ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
+			   ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
+			   ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
+			   CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
+			   directorySizePieGraph('DirSizePie', showLegend);
+			   dirFileCountPieGraph('DirFileCountPie', showLegend);
+			   dirSizeLineGraph('DirSizeLine', showLegend);
+			   authorsCommitTrend('AuthorsCommitTrend',showLegend);
+			   authorActivityGraph('AuthorActivityGraph', showLegend);
+			   dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
+			   wasteEffortTrend('WasteEffortTrend', showLegend);
+			   showTagClouds();
+		   };
+		   
+		   function showGraphBox(graphFunc, showLegend) {
+			   var graphboxId = 'GraphPopBox';
+			   var graphBoxElem = document.getElementById(graphboxId);
+			   graphBoxElem.style.display='block';
+			   var graphCanvasId = 'Graph_big'
+			   var plot = graphFunc(graphCanvasId, showLegend);
+			   plot.redraw(true);                                                    
+		   };
+		   
+		   function hideGraphBox() {
+			   var graphboxId = 'GraphPopBox';
+			   var graphBoxElem = document.getElementById(graphboxId);
+			   graphBoxElem.style.display='none';
+		   };
 
-                function showCloud(cloudData, w, h){
-                    var fill = d3.scale.category20();
+            function showCloud(wordsAndFreq, idSel, fillScale){
+				var fill = fillScale;
+	
+				var selElem = d3.select(idSel);
+				var w = parseInt(selElem.style("width"))-10;
+				var h = parseInt(selElem.style("height"))-10;
+	
+				var minFreq = d3.min(wordsAndFreq, function(d) { return d.count});
+				var maxFreq = d3.max(wordsAndFreq, function(d) { return d.count});
+	
+				var fontSize = d3.scale.log();
+				fontSize.domain([minFreq, maxFreq]);
+				fontSize.range([15,100])
+	
+				d3.layout.cloud()
+					.size([w, h])
+					.words(wordsAndFreq)
+					.padding(2)
+					.rotate(function() { return 0;})
+					.font("Impact")
+					.fontSize(function(d) { return fontSize(d.count);})
+					.on("end", draw)
+					.start();
+	
+				function draw(words) {
+						d3.select(idSel).append("svg")
+						.append("g")
+							.attr("transform", "translate(" + [w/2, h/2] + ")")
+						.selectAll("text")
+							.data(words)
+						.enter().append("text")
+							.style("font-size", function(d) { return fontSize(+d.count)+ "px"; })
+							.style("font-family", "Impact")
+							.style("fill", function(d, i) {return fill(d.color);})
+							.on("mouseover", function(){d3.select(this).style("fill", "black");})
+							.on("mouseout", function(d, i){d3.select(this).style("fill", fill(d.color));})
+							.attr("text-anchor", "middle")
+							.attr("transform", function(d) {
+								return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+							})
+							.text(function(d) { return d.text; });
+				}
+		};
 
-                    d3.layout.cloud().size([w, h])
-                    .words(cloudData.map(function(x) {
-                          return {text: x[0], size: x[1]};
-                          }))
-                    .padding(2)
-                    .rotate(function() { return ~~(Math.random() * 90); })
-                    .font("Impact")
-                    .fontSize(function(d) { return d.size;})
-                    .on("end", draw)
-                    .start();
-                     
-                    function draw(words) {
-                        d3.select("body").append("svg")
-                            .attr("width", w)
-                            .attr("height", h)
-                          .append("g")
-                            .attr("transform", "translate(" + [w/2, h/2] + ")") 
-                          .selectAll("text")
-                            .data(words)
-                          .enter().append("text")
-                            .style("font-size", function(d) { return d.size + "px"; })
-                            .style("font-family", "Impact")
-                            .style("fill", function(d, i) {return fill(i);})
-                            .on("mouseover", function(){d3.select(this).style("fill", "black");})
-                            .on("mouseout", function(d, i){d3.select(this).style("fill", fill(i));})
-                            .attr("text-anchor", "middle")
-                            .attr("transform", function(d) {
-                              return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-                            })
-                            .text(function(d) { return d.text; });
-                      }
-                };
+		function showTagClouds() {
+			var logMsgCloudData = $TagCloud;
+			var fillScale = function(d) { return d3.rgb(0,0,0); }
+			console.log("LogMsg Cloud display");
+			showCloud(logMsgCloudData, '#LogMsgCloud', fillScale);
+
+			var authCloudData = $AuthCloud;
+
+			// color is author activity index
+			var minColor = 0, maxColor=0;
+			// color scale is reversed ColorBrewer RdYlBu (heatmap colors)
+			var colors =  ["#a50026", "#d73027","#f46d43","#fdae61","#fee090","#ffffbf",
+							"#e0f3f8","#abd9e9","#74add1","#4575b4","#313695"];
+			colors.reverse();
+			var fill =  d3.scale.linear();
+			fill.range(colors);
+
+			minColor = d3.min(authCloudData, function(d) { return d.color});
+			maxColor = d3.max(authCloudData, function(d) { return d.color});
+			var step = (Math.log(maxColor+1)-Math.log(minColor))/colors.length;
+			fill.domain(d3.range(Math.log(minColor), Math.log(maxColor+1), step));
+
+			console.log("Author Cloud display");
+			showCloud(authCloudData, "#AuthorCloud", fill);
+		}
+
 	</script>
 </head>
 <body onLoad="showAllGraphs(false);">
@@ -325,15 +374,14 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     </td>    
 </tr>
 </table>
-<table width="100%">
-<th><h3>Log Message Tag Cloud</h3></th>
-<script type="text/javascript"> showCloud($TagCloud, 960, 300);</script>
-</table>
-<table width="100%">
-<th align="center"><h3>Author Cloud</h3></th>
-<td align="center"><script type="text/javascript">onLoad = showCloud($AuthCloud, 960, 300);</script></td>
-</table>
-</tr>
+
+<div>
+	<h3>Log Message Tag Cloud</h3>
+	<div id="LogMsgCloud"></div>
+	<h3>Author Cloud</h3>
+	<div id="AuthorCloud"></div>
+</div>
+	
     <div id="GraphPopBox">
         <h3 id="closebtn" onClick="hideGraphBox();">Close[X]</h3>
         <div id="Graph_big"></div>
@@ -578,7 +626,7 @@ class SVNPlotJS(SVNPlotBase):
         authList = self.svnstats.getAuthorList(self.authorsToDisplay)
         authLabelList = []
         
-        outstr = StringIO.StringIO()
+        outstr = StringIO()
         idx =0        
         for author in authList:
             dates, loc = self.svnstats.getLoCTrendForAuthor(author)
@@ -596,7 +644,7 @@ class SVNPlotJS(SVNPlotBase):
         outstr.write("];\n")
         locdatastr = outstr.getvalue()
 
-        outstr = StringIO.StringIO()
+        outstr = StringIO()
         outstr.write("[")
         datalist = ["{label:'%s', lineWidth:2, markerOptions:{style:'filledCircle',size:2}}" % author for author in authLabelList]
         outstr.write(',\n'.join(datalist))            
@@ -863,7 +911,7 @@ class SVNPlotJS(SVNPlotBase):
         dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
         numDirs = len(dirlist)
 
-        outstr = StringIO.StringIO()
+        outstr = StringIO()
         
         for dirname, idx in zip(dirlist, range(0, numDirs)):
             dates, loclist = self.svnstats.getDirLocTrendStats(dirname)
