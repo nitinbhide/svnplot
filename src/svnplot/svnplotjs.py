@@ -108,6 +108,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         z-index:1005;
         margin:5px;
         padding:5px;
+		background-color: transparent;
     }
     
     /* graph specific CSS
@@ -158,8 +159,8 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <script type="text/javascript">
         function showAllGraphs(showLegend) {
                locgraph('LoCGraph', showLegend);
-               /* Not there in this template
-               locChurnGraph('LoCChurnGraph', showLegend);*/                    
+               /* Not there in this template*/
+               locChurnGraph('LoCChurnGraph', showLegend);
                contri_locgraph('ContriLoCGraph', showLegend);
                avglocgraph('AvgLoCGraph',showLegend);
                fileCountGraph('FileCountGraph',showLegend);
@@ -309,6 +310,15 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     </td>
     <td align="center">
     <div id="AvgLoCGraph" class="graph" onclick ="showGraphBox(avglocgraph, true);"></div>
+    </td>    
+</tr>
+<tr>
+    <td align="center">
+		<div id="LoCChurnGraph" class="graph" onclick ="showGraphBox(locChurnGraph, true);"></div>
+    </td>
+    <td align="center">
+    </td>
+    <td align="center">
     </td>    
 </tr>
 <tr>
@@ -565,7 +575,7 @@ class SVNPlotJS(SVNPlotBase):
             var locdata = [$DATA];
             var plot = $.jqplot(divElemId, [locdata], {
                 title:'Commit Activity Index over time',
-                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer}},
+                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showLegend}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
                 );
                 return(plot);    
@@ -585,11 +595,15 @@ class SVNPlotJS(SVNPlotBase):
         template = '''  
             function locgraph(divElemId,showLegend) {
             var locdata = [$DATA];
+			var loclabel = '';
+			if(showLegend) {
+				loclabel = 'LoC';
+			}
             var plot = $.jqplot(divElemId, [locdata], {
                 title:'Lines of Code',
                 axes:{
-                    xaxis:{renderer:$.jqplot.DateAxisRenderer, label:'LoC'},
-                    yaxis:{min:0}
+                    xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showLegend},
+                    yaxis:{min:0,label:loclabel, showTicks:showLegend}
                 },
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
                 );
@@ -609,13 +623,17 @@ class SVNPlotJS(SVNPlotBase):
         template = '''
             function contri_locgraph(divElemId, showLegend) {
             $LOCDATA
+			var loclabel = '';
+			if(showLegend) {
+				loclabel='LoC';
+			}
              var plot = $.jqplot(divElemId, locdata, {
                 legend:{show:showLegend}, 
                 title:'Contributed Lines of Code',
                 axes:
                 {
-                    xaxis:{renderer:$.jqplot.DateAxisRenderer, label:'LoC'},
-                    yaxis:{min:0}
+                    xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showLegend},
+                    yaxis:{min:0, label:loclabel, showTicks:showLegend}
                 },
                 series:$SERIESDATA
                 });
@@ -658,16 +676,23 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating LoC and Churn graph")
 
         template = '''
-            function locChurnGraph(divElemId, showLegend) {
+            function locChurnGraph(divElemId, showlegend) {
             var locdata = [$LOCDATA];
             var churndata= [$CHURNDATA];
             
+			var loclabel = '';
+			var churnlabel = '';
+			if(showlegend==true) {
+				loclabel = 'LoC'; churnlabel='Churn';
+			}
             var plot = $.jqplot(divElemId, [locdata, churndata], {
                 title:'Lines of Code and Churn Graph',
-                legend:{show:showLegend},
-                axes:{ xaxis:{renderer:$.jqplot.DateAxisRenderer},
-                    yaxis:{label:'LoC', min:0},
-                    y2axis:{label:'Churn', min:0} },
+                legend:{show:showlegend},
+                axes:{
+					xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showlegend},
+                    yaxis:{label:loclabel, min:0, showTicks:showlegend},
+                    y2axis:{label:churnlabel, min:0, showTicks:showlegend}
+				},
                 series:[
                     {label:'LoC', lineWidth:2, markerOptions:{style:'filledCircle',size:2}},
                     {label:'Churn',yaxis:'y2axis',lineWidth:2, markerOptions:{style:'filledCircle',size:2}}
@@ -697,7 +722,7 @@ class SVNPlotJS(SVNPlotBase):
             var data = [$DATA];
             var plot = $.jqplot(divElemId, [data], {
                 title:'File Count',
-                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
+                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer,showTicks:showLegend},yaxis:{min:0}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
                 );
               return(plot);
@@ -750,7 +775,7 @@ class SVNPlotJS(SVNPlotBase):
             var locdata = [$LOCDATA];
             var plot = $.jqplot(divElemId, [locdata], {
                 title:'Average File LoC',
-                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer},yaxis:{min:0}},
+                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showLegend},yaxis:{min:0,showTicks:showLegend}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
                 );
                 return(plot);
