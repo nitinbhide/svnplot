@@ -1067,7 +1067,7 @@ class SVNPlotJS(SVNPlotBase):
         '''
         copy the neccessary javascript files of jquery, excanvas and jqPlot to the output directory        
         '''
-        jsFileList = ['excanvas.compiled.js', 'jquery.min.js',
+        jsFileList = ['excanvas.min.js', 'jquery.min.js',
                       'jqplot/jquery.jqplot.js', 'jqplot/jquery.jqplot.min.css',
                       'jqplot/plugins/jqplot.dateAxisRenderer.min.js',
                       'jqplot/plugins/jqplot.categoryAxisRenderer.min.js',
