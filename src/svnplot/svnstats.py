@@ -1244,9 +1244,6 @@ class SVNStats(object):
         for auth in authList:
             self.cur.execute(query,(auth,))
             avg, stddev = self.cur.fetchone()
-            print auth
-            print avg
-            print stddev
             if( avg != None and stddev != None):
                 finalAuthList.append(auth)
                 avg_list.append(avg)
