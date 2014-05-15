@@ -48,7 +48,7 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
         tempFactor = -(coolingRate*hrsSinceLastTime)
         temperature = AMBIENT_TEMP + (lastTemp-AMBIENT_TEMP)*math.exp(tempFactor)
         assert(temperature>=AMBIENT_TEMP)
-    except Exception, expinst:  
+    except Exception, expinst:
         logging.debug("Error %s" % expinst)
         temperature = 0
         
@@ -1127,7 +1127,7 @@ class SVNStats(object):
             authActivityIdx[author] = (cmdate, revtemp)
             
         #Now update the activity for current date and time.
-        curdate = datetime.datetime.now()
+        curdate = datetime.datetime.combine(self.__endDate, datetime.time(0))
         for author, cmtactv in authActivityIdx.items():
             authtemp = getTemperatureAtTime(curdate, cmtactv[0], cmtactv[1], COOLINGRATE)
             authActivityIdx[author] = (curdate, authtemp)
@@ -1185,7 +1185,7 @@ class SVNStats(object):
         
         #now update the temperature to current temperature and create a list of tuples for
         #sorting.
-        curTime = datetime.datetime.now()
+        curTime = datetime.datetime.combine(self.__endDate, datetime.time(0))
         authlist = []
         for author, cmtactiv in authActivityIdx.items():
             temperature = getTemperatureAtTime(curTime, cmtactiv[0], cmtactiv[1], COOLINGRATE)
@@ -1208,7 +1208,8 @@ class SVNStats(object):
             return((fileparams[0],fileparams[1], count))
             
         self._updateActivityHotness()
-        curTime = datetime.datetime.now()
+        curTime = datetime.datetime.combine(self.__endDate, datetime.time(0))
+        
         self.cur.execute("select ActivityHotness.filepath, \
                 getTemperatureAtTime(?,SVNLog.commitdate,ActivityHotness.temperature,?) as hotness \
                 from ActivityHotness,SVNLog \
