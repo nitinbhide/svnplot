@@ -485,7 +485,7 @@ class SVNPlotJS(SVNPlotBase):
         
         template = '''
             function ActivityByWeekdayAll(divElemId,showLegend) {
-            var data = [$DATA];
+            var data = $DATA;
             var titletext = 'Commits by Day of Week (All time)'
             var plot = doActivityByWeekday(divElemId, data, titletext, showLegend);
             return(plot);
