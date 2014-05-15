@@ -146,8 +146,6 @@ class DeltaStdDev:
             avg = self.m_newMean
             variance = self.m_newS/(self.count - 1)             
             stddev = math.sqrt(variance)
-        print avg
-        print stddev
         return(stddev)
 
 def sqlite_daynames():
