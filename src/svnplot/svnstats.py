@@ -113,27 +113,41 @@ class DeltaStdDev:
     '''
     tries to calculate standard deviation in single pass. It calculates the
     standard deviation value of difference between consecutive rows
+    based on http://www.johndcook.com/standard_deviation.html
     '''
     def __init__(self):
-        self.delta_sum = 0.0
-        self.delta_sq = 0.0
-        self.lastval = None
+        self.m_oldMean = 0.0
+        self.m_newMean= 0.0
+        self.m_oldS = 0.0
+        self.m_newS = 0.0
         self.count = 0
+        self.lastval = None
 
-    def step(self, value):
-        if( self.lastval != None):            
-            delta = (value - self.lastval)
-            self.delta_sum = self.delta_sum + delta
-            self.delta_sq = self.delta_sq + (delta*delta)
+    def step(self, curval):        
+        if self.lastval:
             self.count = self.count+1
-        self.lastval = value                
+            value = curval-self.lastval
+            if (self.count == 1):
+                self.m_oldMean = value
+                self.m_newMean = value
+                self.m_oldS = 0.0;
+            else:
+                self.m_newMean = self.m_oldMean + (value - self.m_oldMean)/self.count;
+                self.m_newS = self.m_oldS + (value - self.m_oldMean)*(value - self.m_newMean);
+        
+                #set up for next iteration
+                self.m_oldMean = self.m_newMean; 
+                self.m_oldS = self.m_newS;            
+        self.lastval=curval
         
     def finalize(self):
         stddev = 0.0
-        if( self.count > 0):
-            avg = (float(self.delta_sum)/self.count)
-            stddev = self.delta_sq/self.count- (avg*avg)
-            stddev = math.sqrt(stddev)                        
+        if( self.count > 1):
+            avg = self.m_newMean
+            variance = self.m_newS/(self.count - 1)             
+            stddev = math.sqrt(variance)
+        print avg
+        print stddev
         return(stddev)
 
 def sqlite_daynames():
@@ -1228,6 +1242,23 @@ class SVNStats(object):
                 
         return(finalAuthList, avg_list, stddev_list)
 
+    def getAuthorsCommitTrend90pc(self):
+        '''
+        get the range of average and 90% confidence interval for author commits.
+        '''
+        
+        avg_list     = []
+        confidence_list  = []
+        authlist = []
+        confidence_factor = 1.28  # 1.28*std_dev gives the 90% confidence interval
+        
+        data = self.getAuthorsCommitTrendMeanStddev()
+        for author, average, stddev in zip(*data):
+            authlist.append(author)
+            avg_list.append(average)
+            confidence_list.append(confidence_factor*stddev)
+        return authlist, avg_list, confidence_list
+        
     def getAuthorsCommitTrendHistorgram(self, binsList):
         '''
         Histogram of time difference between two consecutive commits by same author.
