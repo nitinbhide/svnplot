@@ -671,10 +671,10 @@ class SVNPlotJS(SVNPlotBase):
         for author in authList:
             dates, loc = self.svnstats.getLoCTrendForAuthor(author)
             if( len(dates) > 0):
-                outstr.write("var auth%dLocData = [" % idx)
-                datalist = ['[\'%s\', %d]' % (date,lc) for date, lc in zip(dates, loc)]            
-                outstr.write(',\n'.join(datalist))
-                outstr.write("];\n")
+                outstr.write("var auth%dLocData =" % idx)
+                datalist = [('%s' % date,lc) for date, lc in zip(dates, loc)]
+                json.dump(datalist, outstr)
+                outstr.write(";\n")
                 authLabelList.append(self._getAuthorLabel(author).replace('\n', '\\n'))
                 idx = idx+1
             
@@ -684,13 +684,9 @@ class SVNPlotJS(SVNPlotBase):
         outstr.write("];\n")
         locdatastr = outstr.getvalue()
 
-        outstr = StringIO()
-        outstr.write("[")
-        datalist = ["{label:'%s', lineWidth:2, markerOptions:{style:'filledCircle',size:2}}" % author for author in authLabelList]
-        outstr.write(',\n'.join(datalist))            
-        outstr.write("]")
-            
-        seriesdata = outstr.getvalue()            
+        datalist = [{'label':author, 'lineWidth':2, 'markerOptions':{'style':'filledCircle','size':2}} for author in authLabelList]
+        seriesdata = json.dumps(datalist,outstr)
+        
         return(self.__getGraphScript(template, {"LOCDATA":locdatastr, "SERIESDATA":seriesdata}))
     
             
