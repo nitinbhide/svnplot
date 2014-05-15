@@ -316,8 +316,8 @@ class SVNStats(object):
         '''
         return the sql regex search path (e.g. '/trunk/' will be returned as '/trunk/%'
         '''
-        return(self.__searchpath + '%')
-        
+        return(self.__searchpath + '%')    
+    
     def isDateInRange(self, cmdate):
         valid = True
         if( self.__startDate != None and self.__startDate > cmdate):
@@ -376,8 +376,8 @@ class SVNStats(object):
             
         else:
             query= "select strftime('%%w', SVNLog.commitdate, 'localtime') as dayofweek, count(SVNLog.revno) from SVNLog, search_view \
-                         where search_view.revno=SVNLog.revno and date('now', '-%d month') < SVNLog.commitdate \
-                        group by dayofweek" % (months)
+                         where search_view.revno=SVNLog.revno and date('%s', '-%d month') < SVNLog.commitdate \
+                        group by dayofweek" % (self.__endDate, months)
             
         self.cur.execute(query)
 
@@ -406,8 +406,8 @@ class SVNStats(object):
             
         else:
             query= "select strftime('%%H', SVNLog.commitdate,'localtime') as hourofday, count(SVNLog.revno) from SVNLog, search_view \
-                          where search_view.revno=SVNLog.revno and date('now', '-%d month') < SVNLog.commitdate \
-                          group by hourofday " % (months)
+                          where search_view.revno=SVNLog.revno and date('%s', '-%d month') < SVNLog.commitdate \
+                          group by hourofday " % (self.__endDate, months)
             
         self.cur.execute(query)
         commits = dict()
@@ -1238,8 +1238,8 @@ class SVNStats(object):
         else:
             query = "select deltaavg(julianday(SVNLog.commitdate)), \
                     deltastddev(julianday(SVNLog.commitdate)) from SVNLog where SVNLog.author= ? \
-                    and date('now', '-%d month') < SVNLog.commitdate \
-                    order by SVNLog.commitdate" % months
+                    and date('%s', '-%d month') < SVNLog.commitdate \
+                    order by SVNLog.commitdate" % (self.__endDate, months)
             
         for auth in authList:
             self.cur.execute(query,(auth,))
