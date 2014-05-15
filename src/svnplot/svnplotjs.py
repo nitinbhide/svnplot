@@ -137,6 +137,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <script type="text/javascript" src="jqplot.ohlcRenderer.min.js"></script>
     <script type="text/javascript" src="jqplot.canvasTextRenderer.min.js"></script>
     <script type="text/javascript" src="jqplot.canvasAxisTickRenderer.min.js"></script>
+    <script type="text/javascript" src="jqplot.canvasAxisLabelRenderer.min.js"></script>
     <script type="text/javascript" src="jqplot.highlighter.min.js"></script>
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="d3.layout.cloud.js"></script>
@@ -1033,7 +1034,10 @@ class SVNPlotJS(SVNPlotBase):
                         showLabel: showLegend
                     },
                     yaxis:{
-                        min:0
+                        min:0,
+                        labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+                        label : 'days',
+                        showLabel:showLegend
                     }
                 },
                 series: [{renderer:$.jqplot.OHLCRenderer,
@@ -1178,6 +1182,7 @@ class SVNPlotJS(SVNPlotBase):
                       'jqplot/plugins/jqplot.ohlcRenderer.min.js',
                       'jqplot/plugins/jqplot.canvasTextRenderer.min.js',
                       'jqplot/plugins/jqplot.canvasAxisTickRenderer.min.js',
+                      'jqplot/plugins/jqplot.canvasAxisLabelRenderer.min.js',
                       'jqplot/plugins/jqplot.highlighter.min.js',
                       'd3.v3/d3.layout.cloud.js',
                       'd3.v3/d3.v3.js']
