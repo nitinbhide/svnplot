@@ -28,7 +28,7 @@ Graph types to be supported
     (i.e. lines added + lines deleted + lines modified) -- Done
 14. Repository Activity Index (using exponential decay) -- Done
 15. Repository heatmap (treemap)
-16. Tag cloud of words in commit log message.
+16. Tag cloud of words in commit log message. -- Done
 
 To use copy the file in Python 'site-packages' directory Setup is not available
 yet.
@@ -161,7 +161,9 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     $AuthorActivityGraph
     $DailyCommitCountGraph
     $WasteEffortTrend
+    $doAuthorCommitTrend90pc   
     $AuthorCommitTrend90pc
+    $AuthorCommitTrendRecent90pc
     
     <script type="text/javascript">
         function showAllGraphs(showLegend) {
@@ -185,6 +187,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
                dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
                wasteEffortTrend('WasteEffortTrend', showLegend);
                AuthorCommitTrend90pc('AuthorCommitTrend90pc', showLegend);
+               AuthorCommitTrendRecent90pc('AuthorCommitTrendRecent90pc', showLegend);
                showTagClouds();
            };
            
@@ -395,7 +398,9 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <td align="center" >
         <div id="AuthorCommitTrend90pc" class="graph" onclick ="showGraphBox(AuthorCommitTrend90pc, true);"></div>
     </td>
-    <td align="center">        
+    
+    <td align="center">
+        <div id="AuthorCommitTrendRecent90pc" class="graph" onclick ="showGraphBox(AuthorCommitTrendRecent90pc, true);"></div>
     </td>
     <td align="center">        
     </td>    
@@ -438,7 +443,8 @@ class SVNPlotJS(SVNPlotBase):
     def AllGraphs(self, dirpath, svnsearchpath='/', thumbsize=200, maxdircount = 10, copyjs=True):
         self.svnstats.SetSearchPath(svnsearchpath)
         #LoC and FileCount Graphs
-        graphParamDict = self._getGraphParamDict(thumbsize, maxdircount)
+        recentMonths = 3
+        graphParamDict = self._getGraphParamDict(thumbsize, maxdircount,recentMonths )
         
         htmlidxname = os.path.join(dirpath, "index.htm")
         htmlidxTmpl = string.Template(self.template)
@@ -487,10 +493,10 @@ class SVNPlotJS(SVNPlotBase):
         '''
         assert(len(data) == len(labels))
         
-        datalist = [ "['%s',%d]" % (wkday, actdata) for actdata, wkday in zip(data, labels)]
-        data = ','.join(datalist)
+        datalist = [(wkday, actdata) for actdata, wkday in zip(data, labels)]
+        datajson = json.dumps(datalist)
 
-        return(self.__getGraphScript(template, {"DATA":data}))
+        return(self.__getGraphScript(template, {"DATA":datajson}))
 
     def ActivityByWeekdayRecent(self, months=3):
         self._printProgress("Calculating Activity by day of week graph")
@@ -499,7 +505,7 @@ class SVNPlotJS(SVNPlotBase):
         
         template = '''
             function ActivityByWeekdayRecent(divElemId,showLegend) {
-            var data = [$DATA];
+            var data = $DATA;
             var titletext = 'Commits by Day of Week (%d months)'
             var plot = doActivityByWeekday(divElemId, data, titletext, showLegend);
             return(plot);
@@ -508,8 +514,8 @@ class SVNPlotJS(SVNPlotBase):
         template = template % months
         assert(len(data) == len(labels))
         
-        datalist = [ "['%s',%d]" % (wkday, actdata) for actdata, wkday in zip(data, labels)]
-        data = ','.join(datalist)
+        datalist = [(wkday, actdata) for actdata, wkday in zip(data, labels)]
+        datajson = json.dumps(datalist)
 
         return(self.__getGraphScript(template, {"DATA":data}))
 
@@ -543,7 +549,7 @@ class SVNPlotJS(SVNPlotBase):
         
         template = '''        
             function ActivityByTimeOfDayAll(divElemId,showLegend) {
-            var data = [$DATA];
+            var data = $DATA;
             var titletext = 'Commits By Hour of Day (All time)'
             var plot = doActivityByTimeOfDay(divElemId, data, titletext,showLegend);
             return(plot);
@@ -551,9 +557,8 @@ class SVNPlotJS(SVNPlotBase):
         '''
         assert(len(data) == len(labels))
 
-        datalist = ["['%s',%d]" % (tmofday, actdata)  for actdata, tmofday in zip(data, labels)]
-                    
-        data = ','.join(datalist)
+        datalist = [(tmofday, actdata)  for actdata, tmofday in zip(data, labels)]            
+        datajson = json.dumps(datalist)
 
         return(self.__getGraphScript(template, {"DATA":data}))
 
@@ -1007,22 +1012,15 @@ class SVNPlotJS(SVNPlotBase):
 
         return(self.__getGraphScript(template, {"DATA":data}))
     
-    def AuthorCommitTrend90pc(self):
+    def doAuthorCommitTrend90pc(self):
         '''
-        get the range of average and 90% confidence interval for author commits.
-        And generate a 'candle stick' chart of author against, the min value, avereage and max value
+        define a common javascript function to be used by 'All time author commit trend'
+        and 'recent author commit trend'
         '''
-        self._printProgress("Calculating Author commits trend 90% confidence graph")
-        
-        authlist, avglist, confidencelist = self.svnstats.getAuthorsCommitTrend90pc()
-        assert(len(authlist) == len(avglist))
-        assert(len(authlist) == len(confidencelist))
-        
         template = '''        
-            function AuthorCommitTrend90pc(divElemId,showLegend) {
-            var data = $DATA;
+        function doAuthorCommitTrend90pc(divElemId,data, titleText, showLegend) {
             var plot = $.jqplot(divElemId, [data], {
-                title:'Authors Commit Trend (Average and 90% Confidence Interval)',
+                title:titleText,
                 axes:{
                     xaxis:{
                         renderer:$.jqplot.CategoryAxisRenderer,
@@ -1061,6 +1059,53 @@ class SVNPlotJS(SVNPlotBase):
                   }
             });
             return(plot);
+        };
+        '''
+        return(self.__getGraphScript(template, {}))
+    
+    def AuthorCommitTrend90pc(self):
+        '''
+        get the range of average and 90% confidence interval for author commits.
+        And generate a 'candle stick' chart of author against, the min value, avereage and max value
+        '''
+        self._printProgress("Calculating Author commits trend 90% confidence graph")
+        
+        authlist, avglist, confidencelist = self.svnstats.getAuthorsCommitTrend90pc()
+        assert(len(authlist) == len(avglist))
+        assert(len(authlist) == len(confidencelist))
+        
+        template = '''        
+            function AuthorCommitTrend90pc(divElemId,showLegend) {
+                var data = $DATA;
+                var titleText = 'Authors Commit Trend (Average and 90% Confidence Interval)';
+                var plot = doAuthorCommitTrend90pc(divElemId, data, titleText, showLegend);
+                return(plot);
+            };
+        '''
+        
+        datalist = [(author, avg, avg+confidence, max(0, avg-confidence),avg) for author, avg, confidence in zip(authlist, avglist, confidencelist)]
+        data_json = json.dumps(datalist)
+        
+        return(self.__getGraphScript(template, {"DATA":data_json}))
+    
+    def AuthorCommitTrendRecent90pc(self,months=3):
+        '''
+        get the range of average and 90% confidence interval for author commits.
+        And generate a 'candle stick' chart of author against, the min value, avereage and max value
+        (recent usually last 3 months)
+        '''
+        self._printProgress("Calculating Author commits trend 90% confidence graph for recent")
+        
+        authlist, avglist, confidencelist = self.svnstats.getAuthorsCommitTrend90pc(months)
+        assert(len(authlist) == len(avglist))
+        assert(len(authlist) == len(confidencelist))
+        
+        template = '''        
+            function AuthorCommitTrendRecent90pc(divElemId,showLegend) {
+                var data = $DATA;
+                var titleText = 'Authors Commit Trend (Average and 90% Confidence Interval) Recent';
+                var plot = doAuthorCommitTrend90pc(divElemId, data, titleText, showLegend);
+                return(plot);
         };
         '''
         
@@ -1116,7 +1161,7 @@ class SVNPlotJS(SVNPlotBase):
         
         return(self.__getGraphScript(template, {"DATA":outstr}))
         
-    def _getGraphParamDict(self, thumbsize, maxdircount = 10):
+    def _getGraphParamDict(self, thumbsize, maxdircount = 10, recentmonths=3):
         graphParamDict = dict()
             
         graphParamDict["thumbwid"]= "%dpx" % thumbsize
@@ -1139,10 +1184,10 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["FileTypeCountTable"] = self.FileTypesGraph()
         graphParamDict["ActivityByWeekdayFunc"] = self.ActivityByWeekdayFunc()
         graphParamDict["ActivityByWeekdayAllTable"] = self.ActivityByWeekdayAll()
-        graphParamDict["ActivityByWeekdayRecentTable"] = self.ActivityByWeekdayRecent(3)
+        graphParamDict["ActivityByWeekdayRecentTable"] = self.ActivityByWeekdayRecent(recentmonths)
         graphParamDict["ActivityByTimeOfDayFunc"] = self.ActivityByTimeOfDayFunc()
         graphParamDict["ActivityByTimeOfDayAllTable"] = self.ActivityByTimeOfDayAll()
-        graphParamDict["ActivityByTimeOfDayRecentTable"] = self.ActivityByTimeOfDayRecent(3)
+        graphParamDict["ActivityByTimeOfDayRecentTable"] = self.ActivityByTimeOfDayRecent(recentmonths)
         graphParamDict["CommitActIdxTable"] = self.CommitActivityIdxGraph()
         graphParamDict["LoCChurnTable"] = self.LocChurnGraph()
         graphParamDict["DirSizePie"] = self.DirectorySizePieGraph(self.dirdepth, maxdircount)
@@ -1152,8 +1197,10 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["AuthorActivityGraph"] = self.AuthorActivityGraph()
         graphParamDict["DailyCommitCountGraph"] = self.DailyCommitCountGraph()
         graphParamDict["WasteEffortTrend"] = self.WasteEffortTrend()
-        graphParamDict["AuthorCommitTrend90pc"] = self.AuthorCommitTrend90pc()
         
+        graphParamDict["doAuthorCommitTrend90pc"] = self.doAuthorCommitTrend90pc()
+        graphParamDict["AuthorCommitTrend90pc"] = self.AuthorCommitTrend90pc()
+        graphParamDict["AuthorCommitTrendRecent90pc"] = self.AuthorCommitTrendRecent90pc(recentmonths)
         return(graphParamDict)
                 
     def printAnomalies(self, searchpath='/%'):

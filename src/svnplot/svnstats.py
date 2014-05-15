@@ -1219,20 +1219,34 @@ class SVNStats(object):
                 
         return(hotfileslist)
         
-    def getAuthorsCommitTrendMeanStddev(self):
+    def getAuthorsCommitTrendMeanStddev(self, months=None):
         '''
         Plot of Mean and standard deviation for time between two consecutive commits by authors.
+        months : if none, calculate mean and std deviation for lifetime. If not none, plot mean
+        and standard deviation for last so many months.
         '''
         authList = self.getAuthorList(20)
         avg_list     = []
         stddev_list  = []
         finalAuthList = []
         
+        if months == None:
+            query = "select deltaavg(julianday(SVNLog.commitdate)), \
+                    deltastddev(julianday(SVNLog.commitdate)) from SVNLog \
+                    where SVNLog.author= ? \
+                    order by SVNLog.commitdate"
+        else:
+            query = "select deltaavg(julianday(SVNLog.commitdate)), \
+                    deltastddev(julianday(SVNLog.commitdate)) from SVNLog where SVNLog.author= ? \
+                    and date('now', '-%d month') < SVNLog.commitdate \
+                    order by SVNLog.commitdate" % months
+            
         for auth in authList:
-            self.cur.execute('select deltaavg(julianday(SVNLog.commitdate)), \
-                    deltastddev(julianday(SVNLog.commitdate)) from SVNLog where SVNLog.author= ? order by SVNLog.commitdate'
-                             ,(auth,))
+            self.cur.execute(query,(auth,))
             avg, stddev = self.cur.fetchone()
+            print auth
+            print avg
+            print stddev
             if( avg != None and stddev != None):
                 finalAuthList.append(auth)
                 avg_list.append(avg)
@@ -1240,7 +1254,7 @@ class SVNStats(object):
                 
         return(finalAuthList, avg_list, stddev_list)
 
-    def getAuthorsCommitTrend90pc(self):
+    def getAuthorsCommitTrend90pc(self,  months=None):
         '''
         get the range of average and 90% confidence interval for author commits.
         '''
@@ -1250,7 +1264,7 @@ class SVNStats(object):
         authlist = []
         confidence_factor = 1.28  # 1.28*std_dev gives the 90% confidence interval
         
-        data = self.getAuthorsCommitTrendMeanStddev()
+        data = self.getAuthorsCommitTrendMeanStddev(months)
         for author, average, stddev in zip(*data):
             authlist.append(author)
             avg_list.append(average)
