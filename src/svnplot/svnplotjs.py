@@ -695,8 +695,8 @@ class SVNPlotJS(SVNPlotBase):
 
         template = '''
             function locChurnGraph(divElemId, showlegend) {
-            var locdata = [$LOCDATA];
-            var churndata= [$CHURNDATA];
+            var locdata = $LOCDATA;
+            var churndata= $CHURNDATA;
             
             var loclabel = '';
             var churnlabel = '';
@@ -722,13 +722,13 @@ class SVNPlotJS(SVNPlotBase):
 
         dates, loc = self.svnstats.getLoCStats()
         assert(len(dates) == len(loc))
-        datalist = ['[\'%s\', %d]' % (date,lc) for date, lc in zip(dates, loc)]        
-        locdatastr = ',\n'.join(datalist)
+        datalist = [('%s'%dt,lc) for dt, lc in zip(dates, loc)]        
+        locdatastr = json.dumps(datalist)
         
         dates, churnlist = self.svnstats.getChurnStats()
 
-        datalist = ['[\'%s\', %d]' % (date,churn) for date, churn in zip(dates, churnlist)]        
-        churndatastr = ',\n'.join(datalist)
+        datalist = [('%s' % dt,churn) for dt, churn in zip(dates, churnlist)]        
+        churndatastr = json.dumps(datalist)
          
         return(self.__getGraphScript(template, {"LOCDATA":locdatastr, "CHURNDATA":churndatastr}))                
         
