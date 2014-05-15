@@ -42,6 +42,7 @@ import string
 import StringIO
 import math
 import shutil
+import json
 
 from svnstats import *
 from svnplotbase import *
@@ -108,7 +109,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
         z-index:1005;
         margin:5px;
         padding:5px;
-		background-color: transparent;
+        background-color: transparent;
     }
     
     /* graph specific CSS
@@ -133,6 +134,10 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     <script type="text/javascript" src="jqplot.categoryAxisRenderer.min.js"></script>
     <script type="text/javascript" src="jqplot.barRenderer.min.js"></script>
     <script type="text/javascript" src="jqplot.pieRenderer.min.js"></script>
+    <script type="text/javascript" src="jqplot.ohlcRenderer.min.js"></script>
+    <script type="text/javascript" src="jqplot.canvasTextRenderer.min.js"></script>
+    <script type="text/javascript" src="jqplot.canvasAxisTickRenderer.min.js"></script>
+    <script type="text/javascript" src="jqplot.highlighter.min.js"></script>
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="d3.layout.cloud.js"></script>
     $LocTable
@@ -155,7 +160,8 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     $AuthorActivityGraph
     $DailyCommitCountGraph
     $WasteEffortTrend
-
+    $AuthorCommitTrend90pc
+    
     <script type="text/javascript">
         function showAllGraphs(showLegend) {
                locgraph('LoCGraph', showLegend);
@@ -177,6 +183,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
                authorActivityGraph('AuthorActivityGraph', showLegend);
                dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
                wasteEffortTrend('WasteEffortTrend', showLegend);
+               AuthorCommitTrend90pc('AuthorCommitTrend90pc', showLegend);
                showTagClouds();
            };
            
@@ -314,7 +321,7 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
 </tr>
 <tr>
     <td align="center">
-		<div id="LoCChurnGraph" class="graph" onclick ="showGraphBox(locChurnGraph, true);"></div>
+        <div id="LoCChurnGraph" class="graph" onclick ="showGraphBox(locChurnGraph, true);"></div>
     </td>
     <td align="center">
     </td>
@@ -381,6 +388,15 @@ HTMLIndexTemplate ='''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional/
     </td>
     <td align="center">
         <div id="WasteEffortTrend" class="graph" onclick ="showGraphBox(wasteEffortTrend, true);"></div>
+    </td>    
+</tr>
+<tr>
+    <td align="center" >
+        <div id="AuthorCommitTrend90pc" class="graph" onclick ="showGraphBox(AuthorCommitTrend90pc, true);"></div>
+    </td>
+    <td align="center">        
+    </td>
+    <td align="center">        
     </td>    
 </tr>
 </table>
@@ -595,10 +611,10 @@ class SVNPlotJS(SVNPlotBase):
         template = '''  
             function locgraph(divElemId,showLegend) {
             var locdata = [$DATA];
-			var loclabel = '';
-			if(showLegend) {
-				loclabel = 'LoC';
-			}
+            var loclabel = '';
+            if(showLegend) {
+                loclabel = 'LoC';
+            }
             var plot = $.jqplot(divElemId, [locdata], {
                 title:'Lines of Code',
                 axes:{
@@ -623,10 +639,10 @@ class SVNPlotJS(SVNPlotBase):
         template = '''
             function contri_locgraph(divElemId, showLegend) {
             $LOCDATA
-			var loclabel = '';
-			if(showLegend) {
-				loclabel='LoC';
-			}
+            var loclabel = '';
+            if(showLegend) {
+                loclabel='LoC';
+            }
              var plot = $.jqplot(divElemId, locdata, {
                 legend:{show:showLegend}, 
                 title:'Contributed Lines of Code',
@@ -680,19 +696,19 @@ class SVNPlotJS(SVNPlotBase):
             var locdata = [$LOCDATA];
             var churndata= [$CHURNDATA];
             
-			var loclabel = '';
-			var churnlabel = '';
-			if(showlegend==true) {
-				loclabel = 'LoC'; churnlabel='Churn';
-			}
+            var loclabel = '';
+            var churnlabel = '';
+            if(showlegend==true) {
+                loclabel = 'LoC'; churnlabel='Churn';
+            }
             var plot = $.jqplot(divElemId, [locdata, churndata], {
                 title:'Lines of Code and Churn Graph',
                 legend:{show:showlegend},
                 axes:{
-					xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showlegend},
+                    xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showlegend},
                     yaxis:{label:loclabel, min:0, showTicks:showlegend},
                     y2axis:{label:churnlabel, min:0, showTicks:showlegend}
-				},
+                },
                 series:[
                     {label:'LoC', lineWidth:2, markerOptions:{style:'filledCircle',size:2}},
                     {label:'Churn',yaxis:'y2axis',lineWidth:2, markerOptions:{style:'filledCircle',size:2}}
@@ -990,6 +1006,65 @@ class SVNPlotJS(SVNPlotBase):
 
         return(self.__getGraphScript(template, {"DATA":data}))
     
+    def AuthorCommitTrend90pc(self):
+        '''
+        get the range of average and 90% confidence interval for author commits.
+        And generate a 'candle stick' chart of author against, the min value, avereage and max value
+        '''
+        self._printProgress("Calculating Author commits trend 90% confidence graph")
+        
+        authlist, avglist, confidencelist = self.svnstats.getAuthorsCommitTrend90pc()
+        assert(len(authlist) == len(avglist))
+        assert(len(authlist) == len(confidencelist))
+        
+        template = '''        
+            function AuthorCommitTrend90pc(divElemId,showLegend) {
+            var data = $DATA;
+            var plot = $.jqplot(divElemId, [data], {
+                title:'Authors Commit Trend (Average and 90% Confidence Interval)',
+                axes:{
+                    xaxis:{
+                        renderer:$.jqplot.CategoryAxisRenderer,
+                        tickRenderer: $.jqplot.CanvasAxisTickRenderer ,
+                        tickOptions: {
+                            angle: -30,                        
+                        },
+                        showTicks : showLegend,
+                        showLabel: showLegend
+                    },
+                    yaxis:{
+                        min:0
+                    }
+                },
+                series: [{renderer:$.jqplot.OHLCRenderer,
+                        rendererOptions:{
+                            candleStick:false
+                        }
+                    }],
+                highlighter: {
+                    show: showLegend,
+                    showMarker:false,
+                    tooltipAxes: 'y',
+                    yvalues: 4,
+                    // You can customize the tooltip format string of the highlighter
+                    // to include any arbitrary text or html and use format string
+                    // placeholders (%s here) to represent x and y values.
+                    formatString:'<table class="jqplot-highlighter"> \
+                    <tr><td>Average</td><td>%s</td></tr> \
+                    <tr><td>Upper limit</td><td>%s</td></tr> \
+                    <tr><td>Lower Limit</td><td>%s</td></tr> \
+                    </table>'
+                  }
+            });
+            return(plot);
+        };
+        '''
+        
+        datalist = [(author, avg, avg+confidence, max(0, avg-confidence),avg) for author, avg, confidence in zip(authlist, avglist, confidencelist)]
+        data_json = json.dumps(datalist)
+        
+        return(self.__getGraphScript(template, {"DATA":data_json}))
+    
     def DailyCommitCountGraph(self):
         self._printProgress("Calculating Daily commit count graph")
         
@@ -1073,6 +1148,7 @@ class SVNPlotJS(SVNPlotBase):
         graphParamDict["AuthorActivityGraph"] = self.AuthorActivityGraph()
         graphParamDict["DailyCommitCountGraph"] = self.DailyCommitCountGraph()
         graphParamDict["WasteEffortTrend"] = self.WasteEffortTrend()
+        graphParamDict["AuthorCommitTrend90pc"] = self.AuthorCommitTrend90pc()
         
         return(graphParamDict)
                 
@@ -1099,6 +1175,10 @@ class SVNPlotJS(SVNPlotBase):
                       'jqplot/plugins/jqplot.barRenderer.min.js',
                       'jqplot/plugins/jqplot.dateAxisRenderer.min.js',
                       'jqplot/plugins/jqplot.pieRenderer.min.js',
+                      'jqplot/plugins/jqplot.ohlcRenderer.min.js',
+                      'jqplot/plugins/jqplot.canvasTextRenderer.min.js',
+                      'jqplot/plugins/jqplot.canvasAxisTickRenderer.min.js',
+                      'jqplot/plugins/jqplot.highlighter.min.js',
                       'd3.v3/d3.layout.cloud.js',
                       'd3.v3/d3.v3.js']
         
