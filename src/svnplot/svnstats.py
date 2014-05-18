@@ -181,16 +181,16 @@ class SVNStats(object):
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
         
-        self.create_db_functions()
+        self.__create_db_functions()
                                     
         self.cur = self.dbcon.cursor()
         #set the LIKE operator to case sensitive behavior
         self.cur.execute("pragma case_sensitive_like(TRUE)")
         
-        self.init_start_end_revisions(firstrev,lastrev)
+        self.__init_start_end_revisions(firstrev,lastrev)
         
                 
-    def create_db_functions(self):
+    def __create_db_functions(self):
         '''
         create various database and aggregation functions required
         '''
@@ -210,7 +210,7 @@ class SVNStats(object):
         except:
             pass
         
-    def init_start_end_revisions(self, firstrev, lastrev):
+    def __init_start_end_revisions(self, firstrev, lastrev):
         '''
         initialize the start and end revision numbers and start/end dates for queries 
         '''
