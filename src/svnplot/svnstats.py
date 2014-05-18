@@ -180,6 +180,20 @@ class SVNStats(object):
         #InitSqlite
         self.dbcon = sqlite3.connect(self.svndbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         #self.dbcon.row_factory = sqlite3.Row
+        
+        self.create_db_functions()
+                                    
+        self.cur = self.dbcon.cursor()
+        #set the LIKE operator to case sensitive behavior
+        self.cur.execute("pragma case_sensitive_like(TRUE)")
+        
+        self.init_start_end_revisions(firstrev,lastrev)
+        
+                
+    def create_db_functions(self):
+        '''
+        create various database and aggregation functions required
+        '''
         # Create the function "regexp" for the REGEXP operator of SQLite
         self.dbcon.create_function("dirname", 3, dirname)
         self.dbcon.create_function("filetype", 1, filetype)
@@ -187,10 +201,19 @@ class SVNStats(object):
         self.dbcon.create_function("sqrt", 1, _sqrt)
         self.dbcon.create_aggregate("deltaavg", 1, DeltaAvg)
         self.dbcon.create_aggregate("deltastddev", 1, DeltaStdDev)
-                                    
-        self.cur = self.dbcon.cursor()
-        #set the LIKE operator to case sensitive behavior
-        self.cur.execute("pragma case_sensitive_like(TRUE)")
+        
+        #it is possible, index is already there. in such cases ignore the exception
+        try:
+            #create an index based on author names as we need various author based
+            #statistics
+            self.cur.execute("CREATE TEMP INDEX SVNLogAuthIdx ON SVNLog (author ASC)")
+        except:
+            pass
+        
+    def init_start_end_revisions(self, firstrev, lastrev):
+        '''
+        initialize the start and end revision numbers and start/end dates for queries 
+        '''
         self.cur.execute("select max(commitdate),min(commitdate) from SVNLog")
         onedaydiff = datetime.timedelta(1)
         row = self.cur.fetchone()
