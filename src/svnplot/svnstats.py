@@ -87,27 +87,6 @@ def histogram_data(binlist, indata):
             
     return(binvalues)
         
-class DeltaAvg:
-    '''
-    DeltaAvg class implements a 'delta' average aggregate function. It calculates the
-    average value of difference between consecutive rows.
-    '''
-    def __init__(self):
-        self.delta_sum = 0
-        self.lastval = None
-        self.count = 0
-        
-    def step(self, value):
-        if( self.lastval != None):                
-            self.delta_sum = self.delta_sum+ (value - self.lastval)
-            self.count = self.count+1
-        self.lastval = value
-                
-    def finalize(self):
-        avg = 0.0
-        if( self.count > 0):
-            avg = (float(self.delta_sum)/self.count)
-        return(avg)
 
 class DeltaStdDev:
     '''
@@ -199,7 +178,6 @@ class SVNStats(object):
         self.dbcon.create_function("filetype", 1, filetype)
         self.dbcon.create_function("getTemperatureAtTime", 4, getTemperatureAtTime)
         self.dbcon.create_function("sqrt", 1, _sqrt)
-        self.dbcon.create_aggregate("deltaavg", 1, DeltaAvg)
         self.dbcon.create_aggregate("deltastddev", 1, DeltaStdDev)
         
         #it is possible, index is already there. in such cases ignore the exception
