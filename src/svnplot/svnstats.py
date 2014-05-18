@@ -1254,20 +1254,47 @@ class SVNStats(object):
         stddev_list  = []
         finalAuthList = []
         
-        if months == None:
-            query = "select deltaavg(julianday(SVNLog.commitdate)), \
-                    deltastddev(julianday(SVNLog.commitdate)) from SVNLog \
-                    where SVNLog.author= ? \
+        #create a query which filters revision log on author and create 'rowid' for each
+        #row. These row ids will be used by subsquent queries to calculate the difference between
+        #two rows.
+    
+        author_filter_view = '''CREATE TEMP VIEW IF NOT EXISTS %(author)s_view AS
+                select (select COUNT(0)
+                from SVNLog log_a
+                where log_a.revno >= log_b.revno and log_a.author = '%(author)s'
+                ) as rownum,  log_b.* from SVNLog log_b where log_b.author='%(author)s'
+                ORDER by log_b.commitdate ASC'''
+        
+        stddev_query = "select deltastddev(julianday(SVNLog.commitdate)) from SVNLog where SVNLog.author= ? \
                     order by SVNLog.commitdate"
-        else:
-            query = "select deltaavg(julianday(SVNLog.commitdate)), \
-                    deltastddev(julianday(SVNLog.commitdate)) from SVNLog where SVNLog.author= ? \
+        
+        author_filter_query = '''SELECT * FROM %(author)s_view ORDER by commitdate ASC'''
+        
+        if months != None:
+            author_filter_query = '''SELECT * FROM %(author)s_view
+                WHERE date('%(endDate)s', '-%(months)s month') < commitdate
+                ORDER by commitdate ASC'''
+            
+            stddev_query = "select deltastddev(julianday(SVNLog.commitdate)) from SVNLog where SVNLog.author= ? \
                     and date('%s', '-%d month') < SVNLog.commitdate \
                     order by SVNLog.commitdate" % (self.__endDate, months)
             
+        avg_query_sql = '''SELECT AVG(IFNULL(julianday(SVNLog_B.commitdate) - julianday(SVNLog_A.commitdate), 0)) 
+                    FROM (%(auth_query)s) as SVNLog_A 
+                    LEFT OUTER JOIN (%(auth_query)s) as SVNLog_B ON SVNLog_A.rownum= (SVNLog_B.rownum+1)
+                    order by SVNLog_A.rownum'''
+
         for auth in authList:
-            self.cur.execute(query,(auth,))
-            avg, stddev = self.cur.fetchone()
+            auth_query = author_filter_view % { 'author':auth, 'endDate' : self.__endDate, 'months' :months}
+            self.cur.execute(auth_query)
+            
+            auth_query = author_filter_query %  { 'author' : auth,'endDate' : self.__endDate, 'months' : months}
+            avg_query = avg_query_sql % { 'auth_query' : auth_query}
+            self.cur.execute(avg_query)
+            
+            avg, = self.cur.fetchone()
+            self.cur.execute(stddev_query, (auth,))
+            stddev, = self.cur.fetchone()
             if( avg != None and stddev != None):
                 finalAuthList.append(auth)
                 avg_list.append(avg)
