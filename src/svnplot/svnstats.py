@@ -1258,7 +1258,7 @@ class SVNStats(object):
         #row. These row ids will be used by subsquent queries to calculate the difference between
         #two rows.
     
-        author_filter_view = '''CREATE TEMP VIEW IF NOT EXISTS %(author)s_view AS
+        author_filter_view = '''CREATE TEMP VIEW IF NOT EXISTS '%(author)s_view' AS
                 select (select COUNT(0)
                 from SVNLog log_a
                 where log_a.revno >= log_b.revno and log_a.author = '%(author)s'
@@ -1268,10 +1268,10 @@ class SVNStats(object):
         stddev_query = "select deltastddev(julianday(SVNLog.commitdate)) from SVNLog where SVNLog.author= ? \
                     order by SVNLog.commitdate"
         
-        author_filter_query = '''SELECT * FROM %(author)s_view ORDER by commitdate ASC'''
+        author_filter_query = '''SELECT * FROM '%(author)s_view' ORDER by commitdate ASC'''
         
         if months != None:
-            author_filter_query = '''SELECT * FROM %(author)s_view
+            author_filter_query = '''SELECT * FROM '%(author)s_view'
                 WHERE date('%(endDate)s', '-%(months)s month') < commitdate
                 ORDER by commitdate ASC'''
             
