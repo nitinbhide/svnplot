@@ -18,10 +18,11 @@ import sqlite3
 import sys,os
 import logging
 import traceback
-from optparse import OptionParser
+#from optparse import OptionParser
 
 import svnlogiter
 from svnlogclient import makeunicode
+from configoptparse import ConfigOptionParser
 
 BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'ods', 'odm', 'odt', 'ott', 'pdf',
                  'o', 'a', 'obj', 'lib', 'dll', 'so', 'exe',
@@ -564,7 +565,7 @@ def getquotedurl(url):
     
 def RunMain():
     usage = "usage: %prog [options] <svnrepo root url> <sqlitedbpath>"
-    parser = OptionParser(usage)
+    parser = ConfigOptionParser(usage)
     parser.set_defaults(updlinecount=False)
 
     parser.add_option("-l", "--linecount", action="store_true", dest="updlinecount", default=False,
