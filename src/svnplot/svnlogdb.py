@@ -123,6 +123,9 @@ class SVNLogDB(object):
                     print "fixed paths"
             
     def getLastStoredRev(self):
+        '''
+        get last revision which stored in the database.
+        '''
         with closing(self.dbcon.cursor()) as cur:
             cur.execute("select max(revno) from svnlog")
             lastStoreRev = 0
@@ -135,6 +138,9 @@ class SVNLogDB(object):
 
     def getFilePathId(self, filepath):
         '''
+        File paths are stored in a seperate filepath table for reducing storage size and improve
+        query efficiency. Query the file path, get the 'id' for given path.
+        Add the filepath to filepath table, if entry is not there.
         update the filepath id if required.
         '''
         id = None
