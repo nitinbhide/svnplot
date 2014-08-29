@@ -81,6 +81,15 @@ Quick Start
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
 
 ==============================================
+Changes from 0.7.x to 0.8.0
+==============================================
+1. Major refactoring of database code. Target is to support multiple database and not just sqlite.
+2. Added 'config file' option to pick up the parameters to from the configuration file.
+3. For activity computation and other stats, 'last commit' date is used instead of 'todays date'
+4. jqPlot version is updated to latest version.
+5. Tag cloud is now generated using d3js library. 
+
+==============================================
 Changes from 0.6.1 to 0.7.0
 ==============================================
 1. Fixed XHTML template for svnplot-js.
