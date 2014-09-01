@@ -170,7 +170,7 @@ class SVNLog2Sqlite:
             if len(deleted_dirlist) > 0:
                 logging.debug("Adding dummy file deletion entries")
                 for deleted_dir in deleted_dirlist:
-                    deletedfiles = deletedfiles+ self.addDummyDeletionDetails(revlog.revno, deleted_dir.filepath())
+                    deletedfiles = deletedfiles+ self.db.addDummyDeletionDetails(revlog.revno, deleted_dir.filepath())
                 
         return(addedfiles, deletedfiles)
             

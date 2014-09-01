@@ -230,7 +230,7 @@ class SVNLogDB(object):
             
             #in rare case there is a possibility of duplicate values in the TempRevFileList
             #hence try to create a temporary view to get the unique values
-            updcur.execute('CREATE TEMP VIEW TempRevDirFileListVw AS SELECT DISTINCT \
+            self._updcur.execute('CREATE TEMP VIEW TempRevDirFileListVw AS SELECT DISTINCT \
                 path, pathid, addrevno FROM TempRevDirFileList')
             self.dbcon.commit()
     
@@ -388,7 +388,7 @@ class SVNLogDB(object):
                     logging.error("Found negative linecount for %s(rev %d)" % (changedpath,revno))
                     lc_deleted = 0
             
-                changedpathid = self.getFilePathId(changedpath, updcur)
+                changedpathid = self.getFilePathId(changedpath)
                 self._updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype,  \
                                         linesadded, linesdeleted, entrytype, pathtype, lc_updated) \
                                 values(?, ?,?,?, ?,?,?,?)", (revno, changedpathid, changetype,  \
