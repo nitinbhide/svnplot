@@ -22,7 +22,7 @@ import traceback
 import svnlogiter
 from svnlogclient import makeunicode
 from configoptparse import ConfigOptionParser
-from svnlogdb import SVNLogDB
+from svnlogdb import SVNLogSqliteDB
 
 BINARYFILEXT = [ 'doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'ods', 'odm', 'odt', 'ott', 'pdf',
                  'o', 'a', 'obj', 'lib', 'dll', 'so', 'exe',
@@ -38,7 +38,7 @@ class SVNLog2Sqlite:
         password=kwargs.pop('password',None)        
         logging.info("Repo url : " + svnrepopath)
         self.svnclient = svnlogiter.SVNLogClient(svnrepopath,BINARYFILEXT,username=username, password=password)
-        self.db = SVNLogDB(dbpath = sqlitedbpath)
+        self.db = SVNLogSqliteDB(dbpath = sqlitedbpath)
         self.verbose = verbose
         self.commit_after_numrev = kwargs.pop('commit_after_numrev', 10)
         self.filediff = kwargs.pop('filediff', False)

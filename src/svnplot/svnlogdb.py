@@ -13,48 +13,60 @@ import logging
 from contextlib import closing
 import sqlite3
 
-class SVNLogDB(object):
+class SVNLogDBBase(object):
     '''
     Database interface abstraction for svnplot. This class manages the tables, inserts, deletes and query
     i.e. basically all database operations. Reimplementing this class will make the code work for different
     database interface (e.g. sqlalachemy or using Django ORM etc)
-    First implementation is for sqlite only using the default python DB API interface for sqlite.
+    
+    Derived class should override functions starting with _
     '''
     def __init__(self, **connections_params):
-        '''
-        connections_params : can be different for different databases. Hence keywoard args
-        '''
-        self.__dbpath = connections_params['dbpath']
-        #initialize all cursor variables to None
-        self._updcur = None
+        self.connection_params = dict(**connections_params)
+        self._query_cur = None
+        self._upd_cur = None
         
     def connect(self):
         '''
         connect to database and create the initial tables
         '''
-        self.dbcon = sqlite3.connect(self.__dbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        #create a seperate update cursor. If same cursor is used for updates and select(query),
-        #then it closes current query and hence gives wrong results
-        self._updcur = self.dbcon.cursor()
+        self._connect()
         self.CreateTables()
-    
+        
     def commit(self):
         '''
         commit the running transaction at this point
         '''
-        assert(self.dbcon != None)
-        self.dbcon.commit()
-    
-    def rollback(self):
-        assert(self.dbcon != None)
-        self.dbcon.rollback()
+        self._commit()
     
     def close(self):
+        '''
+        commit transaction and close the database connection
+        '''
         self.commit()
-        self.dbcon.close()
+        self._close()
 
+    def rollback(self):
+        self._rollback()
+    
+    @property
+    def query_cur(self):
+        if self._query_cur == None:
+            self._query_cur = self._new_cursor()
+        return self._query_cur
+    
+    @property
+    def updcur(self):
+        if self._upd_cur == None:
+            self._upd_cur = self._new_cursor()
+        return self._upd_cur
+    
+                
     def CreateTables(self):
-        with closing(self.dbcon.cursor()) as cur:
+        '''
+        create required tables, views and indices
+        '''
+        with closing(self._new_cursor()) as cur:
             cur.execute("create table if not exists SVNLog(revno integer, commitdate timestamp, author text, msg text, \
                                 addedfiles integer, changedfiles integer, deletedfiles integer)")
             cur.execute("create table if not exists SVNLogDetail(revno integer, changedpathid integer, changetype text, copyfrompathid integer, copyfromrev integer, \
@@ -76,8 +88,7 @@ class SVNLogDB(object):
             cur.execute("CREATE INDEX if not exists svnlogdtlchangepathidx ON SVNLogDetail (changedpathid ASC)")
             cur.execute("CREATE INDEX if not exists svnlogdtlcopypathidx ON SVNLogDetail (copyfrompathid ASC)")
             cur.execute("CREATE INDEX IF NOT EXISTS svnpathidx ON SVNPaths (path ASC)")
-            self.dbcon.commit()
-            
+            self.commit()
         #Table structure is changed slightly. I have added a new column in SVNLogDetail table.
         #Use the following sql to alter the old tables
         #ALTER TABLE SVNLogDetail ADD COLUMN lc_updated char
@@ -85,48 +96,12 @@ class SVNLogDB(object):
 
         #because of some bug in old code sometimes path contains '//' or '.'. Uncomment the line to Fix such paths
         #self.__fixPaths()
-        
-    def __fixPaths(self):
-        '''
-        because of some bug in old code sometimes the path contains '//' or '.' etc. Fix such paths
-        '''
-        with closing(self.dbcon.cursor()) as cur:
-            cur.execute("select * from svnpaths")
-            pathstofix = []
-            for id, path in cur:
-                nrmpath = svnlogiter.normurlpath(path)
-                if( nrmpath != path):
-                    logging.debug("fixing path for %s to %s"%(path, nrmpath))
-                    pathstofix.append((id,nrmpath))
-            for id, path in pathstofix:
-                cur.execute('update svnpaths set path=? where id=?',(path, id))
-            self.dbcon.commit()
-        #Now fix the duplicate entries created after normalization
-        with closing(self.dbcon.cursor()) as cur:
-            with closing(self.dbcon.cursor()) as updcur:
-                cur.execute("SELECT count(path) as pathcnt, path FROM svnpaths group by path having pathcnt > 1")
-                duppathlist = [path for cnt, path in cur]
-                for duppath in duppathlist:
-                    #query the ids for this path
-                    cur.execute("SELECT * FROM svnpaths WHERE path = ? order by id", (duppath,))
-                    correctid, duppath1 = cur.fetchone()
-                    print "updating path %s" % duppath
-                    for pathid, duppath1 in cur:
-                        updcur.execute("UPDATE SVNLogDetail SET changedpathid=? where changedpathid=?", (correctid,pathid))
-                        updcur.execute("UPDATE SVNLogDetail SET copyfrompathid=? where copyfrompathid=?", (correctid,pathid))
-                        updcur.execute("DELETE FROM svnpaths where id=?", (pathid,))
-                    self.dbcon.commit()
-                #if paths are fixed. Then drop the activity hotness table so that it gets rebuilt next time.
-                if( len(duppathlist) > 0):            
-                    updcur.execute("DROP TABLE IF EXISTS ActivityHotness")        
-                    self.dbcon.commit()        
-                    print "fixed paths"
-            
+    
     def getLastStoredRev(self):
         '''
         get last revision which stored in the database.
         '''
-        with closing(self.dbcon.cursor()) as cur:
+        with closing(self._new_cursor()) as cur:
             cur.execute("select max(revno) from svnlog")
             lastStoreRev = 0
             
@@ -145,8 +120,8 @@ class SVNLogDB(object):
         '''
         id = None
         if( filepath ):
-            with closing(self.dbcon.cursor()) as updcur:
-                with closing(self.dbcon.cursor()) as querycur:
+            with closing(self._new_cursor()) as updcur:
+                with closing(self._new_cursor()) as querycur:
                     querycur.execute('select id from SVNPaths where path = ?', (filepath,))
                     resultrow = querycur.fetchone()
                     if( resultrow == None):
@@ -161,7 +136,7 @@ class SVNLogDB(object):
         '''
         add entry for a new revision in the SVNLog table
         '''
-        self._updcur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
+        self.updcur.execute("INSERT into SVNLog(revno, commitdate, author, msg, addedfiles, changedfiles, deletedfiles) \
                                 values(?, ?, ?, ?,?, ?, ?)",
                                 (revlog.revno, revlog.date, revlog.author, revlog.message, addedfiles, changedfiles, deletedfiles))
                     
@@ -183,7 +158,7 @@ class SVNLogDB(object):
         copyfromid = self.getFilePathId(copyfrompath)
         if (changetype == 'R'):
             logging.debug("Replace linecount (revno : %d): %s %d" % (revno, filename,linesadded))
-        self._updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
+        self.updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                             linesadded, linesdeleted, lc_updated, pathtype, entrytype) \
                     values(?, ?, ?, ?,?,?, ?,?,?,?)", (revno, changepathid, changetype, copyfromid, copyfromrev, \
                             linesadded, linesdeleted, lc_updated, pathtype, entry_type))
@@ -193,7 +168,7 @@ class SVNLogDB(object):
         '''
         update the added/deleted files count for a given revision
         '''
-        self._updcur.execute("UPDATE SVNLog SET addedfiles=?, deletedfiles=? where revno=?",
+        self.updcur.execute("UPDATE SVNLog SET addedfiles=?, deletedfiles=? where revno=?",
                              (addedfiles,deletedfiles,revno))
                         
     def createRevFileListForDir(self, revno, dirname):
@@ -201,22 +176,22 @@ class SVNLogDB(object):
         create the file list for a revision in a temporary table.
         '''
         assert(dirname.endswith('/'))
-        self._updcur.execute('DROP TABLE IF EXISTS TempRevDirFileList')
-        self._updcur.execute('DROP VIEW IF EXISTS TempRevDirFileListVw')
-        self._updcur.execute('CREATE TEMP TABLE TempRevDirFileList(path text, pathid integer, addrevno integer)')
-        self._updcur.execute('CREATE INDEX revdirfilelistidx ON TempRevDirFileList (addrevno ASC, path ASC)')
+        self.updcur.execute('DROP TABLE IF EXISTS TempRevDirFileList')
+        self.updcur.execute('DROP VIEW IF EXISTS TempRevDirFileListVw')
+        self.updcur.execute('CREATE TEMP TABLE TempRevDirFileList(path text, pathid integer, addrevno integer)')
+        self.updcur.execute('CREATE INDEX revdirfilelistidx ON TempRevDirFileList (addrevno ASC, path ASC)')
         sqlquery = 'SELECT DISTINCT SVNPaths.path, changedpathid, SVNLogDetail.revno FROM SVNLogDetail,SVNPaths WHERE \
                     pathtype="F" and SVNLogDetail.revno <=%d and (changetype== "A" or changetype== "R") \
                     and SVNLogDetail.changedpathid = SVNPaths.id and \
                     (SVNPaths.path like "%s%%" and SVNPaths.path != "%s")' \
                     % (revno,dirname,dirname)
         
-        with closing(self.dbcon.cursor()) as querycur:
+        with closing(self._new_cursor()) as querycur:
             querycur.execute(sqlquery)
             for sourcepath, sourcepathid, addrevno in querycur:
-                self._updcur.execute('INSERT INTO TempRevDirFileList(path, pathid, addrevno) \
+                self.updcur.execute('INSERT INTO TempRevDirFileList(path, pathid, addrevno) \
                             VALUES(?,?,?)',(sourcepath, sourcepathid, addrevno))
-            self.dbcon.commit()
+            self.commit()
             
             #Now delete the already deleted files from the file list.
             sqlquery = 'SELECT DISTINCT SVNPaths.path, SVNLogDetail.changedpathid, SVNLogDetail.revno FROM SVNLogDetail,SVNPaths \
@@ -226,13 +201,13 @@ class SVNLogDB(object):
                         % (revno,dirname,dirname)
             querycur.execute(sqlquery)
             for sourcepath, sourcepathid, delrevno in querycur:            
-                self._updcur.execute('DELETE FROM TempRevDirFileList WHERE path=? and addrevno < ?',(sourcepath, delrevno))
+                self.updcur.execute('DELETE FROM TempRevDirFileList WHERE path=? and addrevno < ?',(sourcepath, delrevno))
             
             #in rare case there is a possibility of duplicate values in the TempRevFileList
             #hence try to create a temporary view to get the unique values
-            self._updcur.execute('CREATE TEMP VIEW TempRevDirFileListVw AS SELECT DISTINCT \
+            self.updcur.execute('CREATE TEMP VIEW TempRevDirFileListVw AS SELECT DISTINCT \
                 path, pathid, addrevno FROM TempRevDirFileList')
-            self.dbcon.commit()
+            self.commit()
     
     def createRevFileList(self, revlog, copied_dirlist, deleted_dirlist):
         '''
@@ -240,13 +215,13 @@ class SVNLogDB(object):
         '''
         try:
             upd_del_dirlist = deleted_dirlist            
-            self._updcur.execute('DROP TABLE IF EXISTS TempRevFileList')
-            self._updcur.execute('DROP VIEW IF EXISTS TempRevFileListVw')
-            self._updcur.execute('CREATE TEMP TABLE TempRevFileList(path text, addrevno integer, \
+            self.updcur.execute('DROP TABLE IF EXISTS TempRevFileList')
+            self.updcur.execute('DROP VIEW IF EXISTS TempRevFileListVw')
+            self.updcur.execute('CREATE TEMP TABLE TempRevFileList(path text, addrevno integer, \
                         copyfrom_path text, copyfrom_pathid integer, copyfrom_rev integer)')
-            self._updcur.execute('CREATE INDEX revfilelistidx ON TempRevFileList (addrevno ASC, path ASC)')
+            self.updcur.execute('CREATE INDEX revfilelistidx ON TempRevFileList (addrevno ASC, path ASC)')
             
-            with closing(self.dbcon.cursor()) as querycur:
+            with closing(self._new_cursor()) as querycur:
                 for change in copied_dirlist:
                     copiedfrom_path,copiedfrom_rev = change.copyfrom()
                     #collect all files added to this directory.
@@ -260,9 +235,9 @@ class SVNLogDB(object):
                     querycur.execute(sqlquery)
                     for sourcepath, sourcepathid, addrevno in querycur:
                         path = sourcepath.replace(copiedfrom_path, change.filepath_unicode())                    
-                        self._updcur.execute('INSERT INTO TempRevFileList(path, addrevno, copyfrom_path, copyfrom_pathid,copyfrom_rev) \
+                        self.updcur.execute('INSERT INTO TempRevFileList(path, addrevno, copyfrom_path, copyfrom_pathid,copyfrom_rev) \
                             VALUES(?,?,?,?,?)',(path, addrevno, sourcepath,sourcepathid, copiedfrom_rev))
-                self.dbcon.commit()
+                self.commit()
                 
                 #Now delete the already deleted files from the file list.                
                 for change in copied_dirlist:
@@ -274,15 +249,15 @@ class SVNLogDB(object):
                     querycur.execute(sqlquery)
                     for sourcepath, sourcepathid, delrevno in querycur:
                         path = sourcepath.replace(copiedfrom_path, change.filepath_unicode())                    
-                        self._updcur.execute('DELETE FROM TempRevFileList WHERE path=? and addrevno < ?',(path, delrevno))
+                        self.updcur.execute('DELETE FROM TempRevFileList WHERE path=? and addrevno < ?',(path, delrevno))
                         
-                self.dbcon.commit()
+                self.commit()
                 
                 #Now delete the entries for which 'real' entry is already created in
                 #this 'revision' update.
                 for change_entry in revlog.getFileChangeEntries():
                     filepath = change_entry.filepath()
-                    self._updcur.execute('DELETE FROM TempRevFileList WHERE path=?',(filepath,))
+                    self.updcur.execute('DELETE FROM TempRevFileList WHERE path=?',(filepath,))
                     
                 upd_del_dirlist = []        
                 for change in deleted_dirlist:
@@ -291,7 +266,7 @@ class SVNLogDB(object):
                     querycur.execute('SELECT count(*) FROM TempRevFileList WHERE path like "%s%%"' %change.filepath())
                     count = int(querycur.fetchone()[0])
                     if( count > 0):
-                        self._updcur.execute('DELETE FROM TempRevFileList WHERE path like "%s%%"'%change.filepath())
+                        self.updcur.execute('DELETE FROM TempRevFileList WHERE path like "%s%%"'%change.filepath())
                     else:
                         #if deletion path is not there in the addition path, it has to be
                         #handled seperately. Hence add it into different list
@@ -299,11 +274,11 @@ class SVNLogDB(object):
             
             #in rare case there is a possibility of duplicate values in the TempRevFileList
             #hence try to create a temporary view to get the unique values
-            self._updcur.execute('CREATE TEMP VIEW TempRevFileListVw AS SELECT DISTINCT \
+            self.updcur.execute('CREATE TEMP VIEW TempRevFileListVw AS SELECT DISTINCT \
                 path, addrevno, copyfrom_path, copyfrom_pathid,copyfrom_rev FROM TempRevFileList \
                 group by path having addrevno=max(addrevno)')
                     
-            self.dbcon.commit()
+            self.commit()
             
         except:
             logging.exception("Found error while getting file list for revision")
@@ -318,7 +293,7 @@ class SVNLogDB(object):
         lc_updated = 'Y'
         total_lc_added = 0
 
-        with closing(self.dbcon.cursor()) as querycur:
+        with closing(self._new_cursor()) as querycur:
             querycur.execute("SELECT count(*) from TempRevFileListVw")
             logging.debug("Revision file count = %d" % querycur.fetchone()[0])
             
@@ -345,13 +320,13 @@ class SVNLogDB(object):
                 changedpathid = self.getFilePathId(changedpath)
                 copyfrompathid = self.getFilePathId(copyfrompath)
                 assert(path_type != 'U')
-                self._updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
+                self.updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                         linesadded, linesdeleted, entrytype, pathtype, lc_updated) \
                                 values(?, ?, ?, ?,?,?, ?,?,?,?)", (revno, changedpathid, changetype, copyfrompathid, copyfromrev, \
                                         lc_added, lc_deleted, entry_type,path_type,lc_updated))
                 addedfiles = addedfiles+1                    
             #Now commit the changes
-            self.dbcon.commit()
+            self.commit()
         logging.debug("\t Total dummy line count : %d" % total_lc_added)
         return addedfiles
     
@@ -371,7 +346,7 @@ class SVNLogDB(object):
         logging.debug("Updating dummy file deletion entries for path %s" % deleted_dir)
         self.createRevFileListForDir(revno, deleted_dir)
         
-        with closing(self.dbcon.cursor()) as querycur:        
+        with closing(self._new_cursor()) as querycur:        
             querycur.execute('SELECT path FROM TempRevDirFileListVw')
             for changedpath, in querycur.fetchall():
                 #logging.debug("\tDummy file deletion entries for path %s" % changedpath)      
@@ -389,22 +364,22 @@ class SVNLogDB(object):
                     lc_deleted = 0
             
                 changedpathid = self.getFilePathId(changedpath)
-                self._updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype,  \
+                self.updcur.execute("INSERT into SVNLogDetail(revno, changedpathid, changetype,  \
                                         linesadded, linesdeleted, entrytype, pathtype, lc_updated) \
                                 values(?, ?,?,?, ?,?,?,?)", (revno, changedpathid, changetype,  \
                                         lc_added, lc_deleted, entry_type,path_type,lc_updated))
                 deletedfiles = deletedfiles+1
-            self.dbcon.commit()
+            self.commit()
         return deletedfiles
 
     def getRevsLineCountNotUpdated(self):
         '''
         return list of revision numbers where line count is not updated yet.
         '''
-        with closing(self.dbcon.cursor()) as cur:
+        with closing(self._new_cursor()) as cur:
             cur.execute("CREATE TEMP TABLE IF NOT EXISTS LCUpdateStatus \
                         as select revno, changedpath, changetype from SVNLogDetail where lc_updated='N'")
-            self.dbcon.commit()
+            self.commit()
             cur.execute("select revno, changedpath, changetype from LCUpdateStatus")
             
             yield cur.fetchone()
@@ -412,6 +387,105 @@ class SVNLogDB(object):
     def updateLineCount(self, revno, changedpath, linesadded,linesdeleted):
         sqlquery = "Update SVNLogDetail Set linesadded=%d, linesdeleted=%d, lc_updated='Y' \
                     where revno=%d and changedpath='%s'" %(linesadded,linesdeleted, revno,changedpath)
-        self._updcur.execute(sqlquery)            
+        self.updcur.execute(sqlquery)            
+        
+    def _connect(self):
+        raise NotImplementedError 
+    
+    def _commit(self):
+        raise NotImplementedError 
+    
+    def _rollback(self):
+        raise NotImplementedError 
+    
+    def _close(self):
+        raise NotImplementedError 
+
+    def _new_cursor(self):
+        '''
+        create and return a new cursor
+        '''
+        raise NotImplementedError 
+    
+        
+class SVNLogSqliteDB(SVNLogDBBase):
+    '''
+    First implementation is for sqlite only using the default python DB API interface for sqlite.
+    '''
+    def __init__(self, **connections_params):
+        '''
+        connections_params : can be different for different databases. Hence keywoard args
+        '''
+        super(SVNLogSqliteDB, self).__init__(**connections_params)
+        
+    def _connect(self):
+        '''
+        connect to database and initialize variables and cursors
+        '''
+        self.__dbpath = self.connection_params['dbpath']
+        #initialize all cursor variables to None
+        self._updcur = None
+        self.dbcon = sqlite3.connect(self.__dbpath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        #create a seperate update cursor. If same cursor is used for updates and select(query),
+        #then it closes current query and hence gives wrong results
+        self._updcur = self.dbcon.cursor()
+        self.CreateTables()
+    
+    def _new_cursor(self):
+        '''
+        create and return a new cursor
+        '''
+        return self.dbcon.cursor()
+    
+    def _commit(self):
+        '''
+        commit the running transaction at this point
+        '''
+        assert(self.dbcon != None)
+        self.dbcon.commit()
+    
+    def _rollback(self):
+        assert(self.dbcon != None)
+        self.dbcon.rollback()
+    
+    def _close(self):
+        self.dbcon.close()
+    
+    def __fixPaths(self):
+        '''
+        because of some bug in old code sometimes the path contains '//' or '.' etc. Fix such paths
+        '''
+        with closing(self._new_cursor()) as cur:
+            cur.execute("select * from svnpaths")
+            pathstofix = []
+            for id, path in cur:
+                nrmpath = svnlogiter.normurlpath(path)
+                if( nrmpath != path):
+                    logging.debug("fixing path for %s to %s"%(path, nrmpath))
+                    pathstofix.append((id,nrmpath))
+            for id, path in pathstofix:
+                cur.execute('update svnpaths set path=? where id=?',(path, id))
+            self.commit()
+        #Now fix the duplicate entries created after normalization
+        with closing(self._new_cursor()) as cur:
+            with closing(self._new_cursor()) as updcur:
+                cur.execute("SELECT count(path) as pathcnt, path FROM svnpaths group by path having pathcnt > 1")
+                duppathlist = [path for cnt, path in cur]
+                for duppath in duppathlist:
+                    #query the ids for this path
+                    cur.execute("SELECT * FROM svnpaths WHERE path = ? order by id", (duppath,))
+                    correctid, duppath1 = cur.fetchone()
+                    print "updating path %s" % duppath
+                    for pathid, duppath1 in cur:
+                        updcur.execute("UPDATE SVNLogDetail SET changedpathid=? where changedpathid=?", (correctid,pathid))
+                        updcur.execute("UPDATE SVNLogDetail SET copyfrompathid=? where copyfrompathid=?", (correctid,pathid))
+                        updcur.execute("DELETE FROM svnpaths where id=?", (pathid,))
+                    self.commit()
+                #if paths are fixed. Then drop the activity hotness table so that it gets rebuilt next time.
+                if( len(duppathlist) > 0):            
+                    updcur.execute("DROP TABLE IF EXISTS ActivityHotness")        
+                    self.commit()        
+                    print "fixed paths"
+            
         
     
