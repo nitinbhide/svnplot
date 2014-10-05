@@ -13,7 +13,7 @@ import logging
 from contextlib import closing
 import sqlite3
 
-class SVNLogDBBase(object):
+class SVNLogDB(object):
     '''
     Database interface abstraction for svnplot. This class manages the tables, inserts, deletes and query
     i.e. basically all database operations. Reimplementing this class will make the code work for different
@@ -389,35 +389,7 @@ class SVNLogDBBase(object):
                     where revno=%d and changedpath='%s'" %(linesadded,linesdeleted, revno,changedpath)
         self.updcur.execute(sqlquery)            
         
-    def _connect(self):
-        raise NotImplementedError 
-    
-    def _commit(self):
-        raise NotImplementedError 
-    
-    def _rollback(self):
-        raise NotImplementedError 
-    
-    def _close(self):
-        raise NotImplementedError 
-
-    def _new_cursor(self):
-        '''
-        create and return a new cursor
-        '''
-        raise NotImplementedError 
-    
-        
-class SVNLogSqliteDB(SVNLogDBBase):
-    '''
-    First implementation is for sqlite only using the default python DB API interface for sqlite.
-    '''
-    def __init__(self, **connections_params):
-        '''
-        connections_params : can be different for different databases. Hence keywoard args
-        '''
-        super(SVNLogSqliteDB, self).__init__(**connections_params)
-        
+            
     def _connect(self):
         '''
         connect to database and initialize variables and cursors
