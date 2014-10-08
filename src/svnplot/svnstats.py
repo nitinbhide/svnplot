@@ -672,7 +672,7 @@ class SVNStats(object):
             Return only <maxdircount> largest directories
             '''
             #filter dirinfolist such that all directories with greather 'mindirsize_percent' are retained
-            mindirsize = mindirsize_percent*(5.0/100.0)
+            mindirsize = (mindirsize_percent/100.0)*totalloc
             dirinfolist = filter(lambda dinfo: dinfo[1]>mindirsize ,dirinfolist)
             dirinfolist.sort(key=lambda dinfo:dinfo[1], reverse=True)
             
