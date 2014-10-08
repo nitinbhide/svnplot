@@ -646,7 +646,7 @@ class SVNStats(object):
         
         return(dirlist, dirfilecountlist)
 
-    def getDirLoCStats(self, dirdepth=2, maxdircount=10):
+    def getDirLoCStats(self, dirdepth=2, maxdircount=10, mindirsize_percent =5 ):
         '''
         dirdepth - depth of directory search relative to search path. Default value is 2
         returns two lists (directory names upto dirdepth and total line count of files in that directory (including
@@ -660,19 +660,25 @@ class SVNStats(object):
             
             
         dirinfolist = []
+        totalloc = 0
         for dirname, linesadded, linesdeleted in self.cur:
             dsize = linesadded-linesdeleted
             if( dsize > 0):
                 dirinfolist.append((dirname, dsize))
-                
+            totalloc = totalloc+dsize
+            
         if maxdircount > 0 and len(dirinfolist) > maxdircount: 
             '''
             Return only <maxdircount> largest directories
             '''
+            #filter dirinfolist such that all directories with greather 'mindirsize_percent' are retained
+            mindirsize = mindirsize_percent*(5.0/100.0)
+            dirinfolist = filter(lambda dinfo: dinfo[1]>mindirsize ,dirinfolist)
             dirinfolist.sort(key=lambda dinfo:dinfo[1], reverse=True)
             
-            remainingcount = sum(map(lambda dinfo:dinfo[1], dirinfolist[maxdircount:]), 0)
             dirinfolist = dirinfolist[0:maxdircount]
+            dsizecount = sum(map(lambda dinfo:dinfo[1], dirinfolist), 0)
+            remainingcount = totalloc- dsizecount
             dirinfolist.append(('others', remainingcount))
         
         #sort the directories in such a way that similar paths are together
