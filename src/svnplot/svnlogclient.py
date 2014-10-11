@@ -542,7 +542,8 @@ class SVNLogClient:
         #if( matches != None):
         #    linecount1 = len(matches)
         #export the file to a tempfolder url
-        outpath = os.tempnam(self.tmppath, 'svnplot')
+        outpath = tempfile.mktemp('svnplot', dir=self.tmppath)
+        
         self.svnclient.export(url,dest_path=outpath,revision=rev,ignore_externals=True,recurse=False)
         if( not os.path.islink(outpath)):
             with open(outpath,'r') as f:
