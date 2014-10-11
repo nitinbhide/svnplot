@@ -20,7 +20,7 @@ import math
 import operator
 from collections import Counter
 
-from .util import *
+from util import *
 
 COOLINGRATE = 0.06/24.0 #degree per hour
 TEMPINCREMENT = 10.0 # degrees per commit
