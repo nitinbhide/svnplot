@@ -210,8 +210,21 @@ class SVNLogClient:
                     '''
                     helpmsg ="HINT : You should never get this error. Please report this to svnplot issue base"
                     exitadvised=True
+                elif code == 135003:
+                    #Msg : "unable make name is c:"
+                    #usually you get this error when for some reason pysvn is not able to determine the
+                    #temp directory in windows and hence tried to create it 'c:\'. With new version of windows
+                    #general user doesnot have permissions to write in 'c:\'.
+                    #Please run svnlog2sqlite as 'administrator'.
+                    helpmsg = "HINT : Usually you get this error when for some reason pysvn is not able to determine the "
+                    helpmsg = helpmsg + "temp directory in windows and hence tried to create it 'c:\\'. With new version of windows"
+                    helpmsg = helpmsg + ''' user doesnot have permissions to write in 'c:\'. \n'''
+                    helpmsg = helpmsg + '''Please run svnlog2sqlite as 'administrator'.\n'''
+                    helpmsg = helpmsg + '''Start svnlog2sqlite.py from command prompt with administrator privileges'''
+                    
+                    exitadvised = True
                 if( helpmsg):
-                    print helpmsg
+                    print "\n%s\n" % helpmsg
                     logging.error(helpmsg)
                     
         return(exitadvised)
