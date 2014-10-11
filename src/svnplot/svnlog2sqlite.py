@@ -55,11 +55,12 @@ class SVNLog2Sqlite:
                 rootUrl = self.svnclient.getRootUrl()
                 self.printVerbose("Root url found : %s" % rootUrl)
                 (startrevno, endrevno) = self.svnclient.findStartEndRev(svnrevstartdate, svnrevenddate)
-                self.printVerbose("Repository Start-End Rev no : %d-%d" % (startrevno, endrevno))
                 startrevno = max(startrevno,laststoredrev+1)
-                self.ConvertRevs(startrevno, endrevno, bUpdLineCount)
-                #every thing is ok. Commit the changes.
-                self.db.commit()
+                if startrevno <= endrevno:
+                    self.printVerbose("Repository Start-End Rev no : %d-%d" % (startrevno, endrevno))
+                    self.ConvertRevs(startrevno, endrevno, bUpdLineCount)
+                    #every thing is ok. Commit the changes.
+                    self.db.commit()
             except Exception, expinst:
                 logging.exception("Found Error")
                 self.svnexception_handler(expinst)
