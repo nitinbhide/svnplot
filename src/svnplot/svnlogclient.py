@@ -546,6 +546,7 @@ class SVNLogClient:
         
         self.svnclient.export(url,dest_path=outpath,revision=rev,ignore_externals=True,recurse=False)
         if( not os.path.islink(outpath)):
+            #now read the file and count the lines
             with open(outpath,'r') as f:
                 contents = f.readlines()            
             linecount = len(contents)
