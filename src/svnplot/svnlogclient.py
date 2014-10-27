@@ -11,7 +11,7 @@ A convinience wrapper over the subversion client to query the log information
 
 import logging
 import datetime, time
-import os, re, string
+import os, string
 import urllib, urlparse
 import getpass
 import traceback
@@ -21,6 +21,8 @@ from os.path import normpath
 from operator import itemgetter
 from StringIO import StringIO
 
+from util import *
+
 try:
     import pysvn
 except:
@@ -28,38 +30,7 @@ except:
     print "Please download and install it from http://pysvn.tigris.org/project_downloads.html"    
 
 SVN_HEADER_ENCODING = 'utf-8'
-URL_NORM_RE = re.compile('[/]+')
-
-def convert2datetime(seconds):
-    gmt = time.gmtime(seconds)
-    return(datetime.datetime(gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec))
-
-def makeunicode(s):
-    uns = s
     
-    if(s):
-        encoding = 'utf-8'
-        errors='strict'
-        if not isinstance(s, unicode):
-            try:
-                #try utf-8 first.If that doesnot work, then try 'latin_1'
-                uns=unicode(s, encoding, errors)
-            except UnicodeDecodeError:
-                uns=unicode(s, 'latin_1', errors)
-        assert(isinstance(uns, unicode))
-    return(uns)
-    
-def normurlpath(pathstr):
-    '''
-    normalize url path. I cannot use 'normpath' directory as it changes path seperator to 'os' default path seperator.
-    '''
-    nrmpath = pathstr
-    if( nrmpath):
-        nrmpath = re.sub(URL_NORM_RE, '/',nrmpath)
-        nrmpath = makeunicode(nrmpath)
-        assert(nrmpath.endswith('/') == pathstr.endswith('/'))
-        
-    return(nrmpath)
     
 def getDiffLineCountDict(diff_log):
     diff_log = makeunicode(diff_log)

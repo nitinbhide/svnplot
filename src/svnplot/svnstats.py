@@ -195,6 +195,9 @@ class SVNStats(object):
         self.cur.execute("select max(commitdate),min(commitdate) from SVNLog")
         onedaydiff = datetime.timedelta(1)
         row = self.cur.fetchone()
+        assert(row[0] != None)
+        assert(row[1] != None)
+        
         self.__endDate = (datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")+onedaydiff).date()
         self.__startDate = (datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")-onedaydiff).date()
         self.cur.execute("select min(revno), max(revno) from SVNLog")
