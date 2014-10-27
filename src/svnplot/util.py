@@ -11,6 +11,12 @@ various utility functions used by other stats classes
 import logging
 import itertools
 import os.path
+import re
+import time
+import datetime
+
+URL_NORM_RE = re.compile('[/]+')
+
 
 def filetype(path):
     '''
@@ -34,6 +40,18 @@ def dirname(searchpath, path, depth):
     #Now add the dirpath to searchpath to get the final directory path
     dirpath = searchpath+dirpath
     return(dirpath)
+
+def normurlpath(pathstr):
+    '''
+    normalize url path. I cannot use 'normpath' directory as it changes path seperator to 'os' default path seperator.
+    '''
+    nrmpath = pathstr
+    if( nrmpath):
+        nrmpath = re.sub(URL_NORM_RE, '/',nrmpath)
+        nrmpath = makeunicode(nrmpath)
+        assert(nrmpath.endswith('/') == pathstr.endswith('/'))
+        
+    return(nrmpath)
 
 def parent_dirname(path):
     '''
@@ -68,3 +86,22 @@ def strip_zeros(dates, data):
 
 def timedelta2days(tmdelta):
     return(tmdelta.days + tmdelta.seconds/(3600.0*24.0))
+
+def seconds2datetime(seconds):
+    gmt = time.gmtime(seconds)
+    return(datetime.datetime(gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec))
+
+def makeunicode(s):
+    uns = s
+    
+    if(s):
+        encoding = 'utf-8'
+        errors='strict'
+        if not isinstance(s, unicode):
+            try:
+                #try utf-8 first.If that doesnot work, then try 'latin_1'
+                uns=unicode(s, encoding, errors)
+            except UnicodeDecodeError:
+                uns=unicode(s, 'latin_1', errors)
+        assert(isinstance(uns, unicode))
+    return(uns)

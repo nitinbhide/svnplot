@@ -22,6 +22,7 @@ import tempfile
 from operator import itemgetter
 from StringIO import StringIO
 from svnlogclient import *
+from util import *
 
 class SVNRevLogIter(object):
     def __init__(self, logclient, startRevNo, endRevNo, cachesize=50, bUseFileDiff=False):
@@ -452,12 +453,14 @@ class SVNRevLog(object):
             try:
                 msg = makeunicode(self.revlog.message)
             except:
+                logging.exception("error in revision message")
                 msg = u''
             return(msg)
         elif(name == 'date'):
             try:
-                dt = convert2datetime(self.revlog.date)
+                dt = seconds2datetime(self.revlog.date)
             except:
+                logging.exception("error in revision date")
                 dt = None
             return(dt)
         elif(name == 'revno'):
