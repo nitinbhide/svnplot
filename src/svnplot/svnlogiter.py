@@ -380,17 +380,17 @@ class SVNRevLog(object):
         logging.debug("Changed path count : %d" % len(self.revlog.changed_paths))
         
         for change in self.getChangeEntries():
-                isdir = change.isDirectory()
-                if( isdir == False):
-                    action = change.change_type()                
-                    if(action == 'A'):
-                        filesadded = filesadded+1
-                    elif(action == 'D'):
-                        filesdeleted = filesdeleted+1
-                    else:
-                        #action can be 'M' or 'R'
-                        assert(action == 'M' or action=='R')
-                        fileschanged = fileschanged +1
+            isdir = change.isDirectory()
+            if( isdir == False):
+                action = change.change_type()                
+                if(action == 'A'):
+                    filesadded = filesadded+1
+                elif(action == 'D'):
+                    filesdeleted = filesdeleted+1
+                else:
+                    #action can be 'M' or 'R'
+                    assert(action == 'M' or action=='R')
+                    fileschanged = fileschanged +1
                     
         return(filesadded, fileschanged, filesdeleted)
                     
