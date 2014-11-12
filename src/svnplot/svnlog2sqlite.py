@@ -117,6 +117,7 @@ class SVNLog2Sqlite:
                 
                 addedfiles, changedfiles, deletedfiles = revlog.changedFileCount()                
                 if( revlog.isvalid() == True):
+                    logging.debug("Adding revision %s files (%d, %d, %d)" % (revlog.revno, addedfiles, changedfiles, deletedfiles))
                     self.db.addRevision(revlog, addedfiles, changedfiles, deletedfiles)
                     
                     for change in revlog.getDiffLineCount(bUpdLineCount):
