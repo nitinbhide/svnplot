@@ -621,16 +621,18 @@ class SVNPlotJS(SVNPlotBase):
             if(showLegend) {
                 loclabel = 'LoC';
             }
-            var plot = $.jqplot(divElemId, [locdata], {
-                title:'Lines of Code',
-                axes:{
-                    xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showLegend},
-                    yaxis:{min:0,label:loclabel, showTicks:showLegend}
-                },
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
-                );
-                return(plot);                   
-             };
+            if(locdata.length > 0){
+                var plot = $.jqplot(divElemId, [locdata], {
+                    title:'Lines of Code',
+                    axes:{
+                        xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showLegend},
+                        yaxis:{min:0,label:loclabel, showTicks:showLegend}
+                    },
+                    series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
+                    );
+                    return(plot);                   
+                 };
+            }
         '''
         
         dates, loc = self.svnstats.getLoCStats()
@@ -649,6 +651,7 @@ class SVNPlotJS(SVNPlotBase):
             if(showLegend) {
                 loclabel='LoC';
             }
+            if(locdata.length > 0){
              var plot = $.jqplot(divElemId, locdata, {
                 legend:{show:showLegend}, 
                 title:'Contributed Lines of Code',
@@ -661,6 +664,7 @@ class SVNPlotJS(SVNPlotBase):
                 });
               return(plot);
             };
+            }
         '''
         
         authList = self.svnstats.getAuthorList(self.authorsToDisplay)
@@ -703,6 +707,8 @@ class SVNPlotJS(SVNPlotBase):
             if(showlegend==true) {
                 loclabel = 'LoC'; churnlabel='Churn';
             }
+            
+            if(locdata.length > 0 && churndata.legnth){
             var plot = $.jqplot(divElemId, [locdata, churndata], {
                 title:'Lines of Code and Churn Graph',
                 legend:{show:showlegend},
@@ -717,6 +723,7 @@ class SVNPlotJS(SVNPlotBase):
                 ]
             });
             return(plot);
+            }
         };
         '''
 
@@ -738,13 +745,15 @@ class SVNPlotJS(SVNPlotBase):
         template = '''        
             function fileCountGraph(divElemId,showLegend) {
             var data = [$DATA];
-            var plot = $.jqplot(divElemId, [data], {
+            if( data.length > 0) {
+                var plot = $.jqplot(divElemId, [data], {
                 title:'File Count',
                 axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer,showTicks:showLegend},yaxis:{min:0}},
                 series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
                 );
               return(plot);
-            };
+                };    
+            }
         '''
         
         dates, fclist = self.svnstats.getFileCountStats()        
@@ -760,18 +769,20 @@ class SVNPlotJS(SVNPlotBase):
         template = '''        
             function fileTypesGraph(divElemId,showLegend) {
             var data = [$DATA];
-            var plot = $.jqplot(divElemId, [data], {
-                title:'File Types',
-                seriesDefaults:{
-                    renderer:$.jqplot.BarRenderer, 
-                    rendererOptions:{barDirection:'horizontal', barPadding: 6, barMargin:15}, 
-                shadowAngle:135},
-            axes:{
-                xaxis:{min:0}, 
-                yaxis:{renderer:$.jqplot.CategoryAxisRenderer}
-                }
-            });
-            return(plot);
+            if( data.length > 0) {
+                var plot = $.jqplot(divElemId, [data], {
+                    title:'File Types',
+                    seriesDefaults:{
+                        renderer:$.jqplot.BarRenderer, 
+                        rendererOptions:{barDirection:'horizontal', barPadding: 6, barMargin:15}, 
+                    shadowAngle:135},
+                axes:{
+                    xaxis:{min:0}, 
+                    yaxis:{renderer:$.jqplot.CategoryAxisRenderer}
+                    }
+                });
+                return(plot);    
+            }
         };
         '''
         
@@ -791,13 +802,15 @@ class SVNPlotJS(SVNPlotBase):
         template = '''        
             function avglocgraph(divElemId,showLegend) {
             var locdata = [$LOCDATA];
-            var plot = $.jqplot(divElemId, [locdata], {
-                title:'Average File LoC',
-                axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showLegend},yaxis:{min:0,showTicks:showLegend}},
-                series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
-                );
-                return(plot);
-            };
+            if(locdata.length > 0) {
+                var plot = $.jqplot(divElemId, [locdata], {
+                    title:'Average File LoC',
+                    axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer, showTicks:showLegend},yaxis:{min:0,showTicks:showLegend}},
+                    series:[{lineWidth:2, markerOptions:{style:'filledCircle',size:2}}]}
+                    );
+                    return(plot);
+                };    
+            }
         '''
         
         dates, avgloclist = self.svnstats.getAvgLoC()                
