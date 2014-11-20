@@ -128,7 +128,8 @@ class SVNPlotBase(object):
     def AuthorCloud(self, maxAuthCount=50):
         self._printProgress("Calculating Author Tag Cloud")
         authCloud = self.svnstats.getAuthorCloud()
-        tagData = []
+        tagsData = []
+        
         if( len(authCloud) > 0):
             #sort and extract maximum of the "maxAuthCount" number of author based on the
             #activity index
