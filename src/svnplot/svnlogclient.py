@@ -581,6 +581,9 @@ class SVNLogClient:
                 #not possible to encode path as unicode. Probably an latin-1 character with value > 127
                 #keep path as it is.
                 pass
+            #there are some characters which are valid pathname characters in unix but not in windows
+            #or vice-versa. Hence 'quote' the path and then convert it to url
+            path = urllib.quote(path)
             url = self.getRootUrl() + urllib.pathname2url(path)
         return(url)
 
