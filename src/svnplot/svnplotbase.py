@@ -16,6 +16,7 @@ import string
 import operator
 import logging
 from StringIO import StringIO
+from .util import makeunicode
 
 import svnstats
 import heatmapclr
@@ -160,6 +161,6 @@ class SVNPlotBase(object):
             tagWordList = sorted(tagWordList[0:numWords], key=operator.itemgetter(0))        
             
             #Create a list of list for javascript input
-            tagData = [{ 'text':str(x), 'count':freq} for x, freq in tagWordList]
+            tagData = [{ 'text':makeunicode(x), 'count':freq} for x, freq in tagWordList]
              
         return(tagData)
