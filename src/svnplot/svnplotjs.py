@@ -43,6 +43,7 @@ import StringIO
 import math
 import shutil
 import json
+import codecs
 
 from svnstats import *
 from svnplotbase import *
@@ -449,9 +450,8 @@ class SVNPlotJS(SVNPlotBase):
         htmlidxname = os.path.join(dirpath, "index.htm")
         htmlidxTmpl = string.Template(self.template)
         outstr = htmlidxTmpl.safe_substitute(graphParamDict)
-        htmlfile = file(htmlidxname, "w")
-        htmlfile.write(outstr.encode('utf-8'))
-        htmlfile.close()
+        with codes.open(htmlidxname, "w") as htmlfile:
+            htmlfile.write(outstr.encode('utf-8'))
         if( copyjs == True):
             self.__copyJSFiles(dirpath)
 
