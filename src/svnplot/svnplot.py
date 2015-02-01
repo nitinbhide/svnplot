@@ -249,9 +249,9 @@ class SVNPlot(SVNPlotMatplotLib):
         htmlidxTmpl = string.Template(self.template)
         htmlidxname = os.path.join(dirpath, "index.htm")
         outstr = htmlidxTmpl.safe_substitute(graphParamDict)
-        htmlfile = file(htmlidxname, "w")
-        htmlfile.write(outstr.encode('utf-8'))
-        htmlfile.close()
+        
+        with codecs.open(htmlidxname, "w") as htmlfile:
+            htmlfile.write(outstr.encode('utf-8'))
                                
     def ActivityByWeekday(self, filename, months=3):
         self._printProgress("Calculating Activity by day of week graph")
