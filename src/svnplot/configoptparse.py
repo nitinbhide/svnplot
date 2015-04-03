@@ -14,7 +14,9 @@ modules
 from optparse import OptionParser
 from ConfigParser import ConfigParser
 
+
 class ConfigOptionParser(OptionParser):
+
     '''
     ConfigOptionParser combines the functionality of ConfigParser and OptParser modules.
     It allows to read the options from configuation file and then combine or override those
@@ -22,29 +24,28 @@ class ConfigOptionParser(OptionParser):
     config file name is specified by --config parameter
     It assumes that the parameters are to be read from the section    
     '''
+
     def __init__(self, *args, **kwargs):
         OptionParser.__init__(self, *args, **kwargs)
-        #add the
+        # add the
         self.section = 'config'
         self.add_option("", "--config", dest="configfile", default=None, action="store", type="string",
-                      help="full path of the configuration file to read the parameters from.")
-                      
+                        help="full path of the configuration file to read the parameters from.")
+
     def parse_args(self, args=None, values=None):
         '''
         parse the command line arguments and config file arguments
         '''
-        #first parse the command line arguments to read the 'configfile name' (if specified)
+        # first parse the command line arguments to read the 'configfile name'
+        # (if specified)
         options, args = OptionParser.parse_args(self, args, values)
         if options.configfile:
-            #config file is specified now. Read the config file and set the parameters
-            #as defaults
+            # config file is specified now. Read the config file and set the parameters
+            # as defaults
             config = ConfigParser()
             config.read(options.configfile)
             options = config.items(self.section)
             self.set_defaults(**options)
             options, args = OptionParser.parse_args(self, args, values)
-            
-        return options, args
-            
-    
 
+        return options, args
