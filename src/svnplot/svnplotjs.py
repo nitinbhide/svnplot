@@ -173,7 +173,8 @@ HTMLIndexTemplate = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional
                 plot = graphfunc(canvas_id, showLegend);    
             }
             catch(e) {
-                /* log the exception */                
+                /* log the exception */
+                var m=0;
             }
             return plot;
         }
@@ -906,13 +907,39 @@ class SVNPlotJS(SVNPlotBase):
 
         return(self.__getGraphScript(template, {"TICKDATA": ticksDataStr, "ADDDATA": addDataStr, "CHANGEDATA": changeDataStr, "DELDATA": delDataStr}))
 
+    def sanitizePieData(self, sections, sizes, angleTol=5.0):
+        '''
+        it seems jqPlot chokes if the size converted to angle is less than <angleTol> deg. So
+        we have to sanitize the sizes so that very low sizes get merged into a 'misc' size
+        '''
+        #first calculate pie size for each section and its size
+        total = float(sum(sizes))
+        misc_size = 0.0
+        san_sections = []
+        san_sizes = []
+        for secname, size in itertools.izip(sections, sizes):
+            angle = 360.0*(size/total)
+            if angle >= angleTol:
+                san_sections.append(secname)
+                san_sizes.append(size)
+            else:
+                misc_size = misc_size+size
+        
+        if misc_size > 0.0:
+            san_sections.append('Misc')
+            san_sizes.append(misc_size)
+        
+        assert(len(san_sections) == len(san_sizes))
+        return san_sections, san_sizes
+    
     def DirectorySizePieGraph(self, depth=2, maxdircount=10):
         '''
         depth - depth of directory search relative to search path. Default value is 2
         '''
         self._printProgress("Calculating Directory size pie graph")
         dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
-
+        dirlist, dirsizelist = self.sanitizePieData(dirlist, dirsizelist)
+        
         template = '''        
             function directorySizePieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
@@ -948,7 +975,7 @@ class SVNPlotJS(SVNPlotBase):
 
         dirlist, dirsizelist = self.svnstats.getDirFileCountStats(
             depth, maxdircount)
-
+        dirlist, dirsizelist = self.sanitizePieData(dirlist, dirsizelist)
         template = '''        
             function dirFileCountPieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
