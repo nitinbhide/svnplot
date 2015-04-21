@@ -167,28 +167,37 @@ HTMLIndexTemplate = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional
     $AuthorCommitTrendRecent90pc
     
     <script type="text/javascript">
-        function showAllGraphs(showLegend) {
-               locgraph('LoCGraph', showLegend);
-               /* Not there in this template*/
-               locChurnGraph('LoCChurnGraph', showLegend);
-               contri_locgraph('ContriLoCGraph', showLegend);
-               avglocgraph('AvgLoCGraph',showLegend);
-               fileCountGraph('FileCountGraph',showLegend);
-               fileTypesGraph('FileTypeCountGraph',showLegend);
-               ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
-               ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
-               ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
-               ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
-               CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
-               directorySizePieGraph('DirSizePie', showLegend);
-               dirFileCountPieGraph('DirFileCountPie', showLegend);
-               dirSizeLineGraph('DirSizeLine', showLegend);
-               authorsCommitTrend('AuthorsCommitTrend',showLegend);
-               authorActivityGraph('AuthorActivityGraph', showLegend);
-               dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
-               wasteEffortTrend('WasteEffortTrend', showLegend);
-               AuthorCommitTrend90pc('AuthorCommitTrend90pc', showLegend);
-               AuthorCommitTrendRecent90pc('AuthorCommitTrendRecent90pc', showLegend);
+        function _showGraph(graphfunc, canvas_id, showLegend) {
+            var plot = null;
+            try{
+                plot = graphfunc(canvas_id, showLegend);    
+            }
+            catch(e) {
+                /* log the exception */                
+            }
+            return plot;
+        }
+        function showAllGraphs(showLegend) {        
+               _showGraph(locgraph, 'LoCGraph', showLegend);
+               _showGraph(locChurnGraph,'LoCChurnGraph', showLegend);
+               _showGraph(contri_locgraph,'ContriLoCGraph', showLegend);
+               _showGraph(avglocgraph,'AvgLoCGraph',showLegend);
+               _showGraph(fileCountGraph,'FileCountGraph',showLegend);
+               _showGraph(fileTypesGraph,'FileTypeCountGraph',showLegend);
+               _showGraph(ActivityByWeekdayAll,'ActivityByWeekdayAllGraph',showLegend);
+               _showGraph(ActivityByWeekdayRecent, 'ActivityByWeekdayRecentGraph',showLegend);
+               _showGraph(ActivityByTimeOfDayAll,'ActivityByTimeOfDayAllGraph',showLegend);
+               _showGraph(ActivityByTimeOfDayRecent,'ActivityByTimeOfDayRecentGraph',showLegend);
+               _showGraph(CommitActivityIndexGraph,'CommitActIdxGraph',showLegend);
+               _showGraph(directorySizePieGraph,'DirSizePie', showLegend);
+               _showGraph(dirFileCountPieGraph,'DirFileCountPie', showLegend);
+               _showGraph(dirSizeLineGraph,'DirSizeLine', showLegend);
+               _showGraph(authorsCommitTrend,'AuthorsCommitTrend',showLegend);
+               _showGraph(authorActivityGraph,'AuthorActivityGraph', showLegend);
+               _showGraph(dailyCommitCountGraph,'DailyCommitCountGraph', showLegend);
+               _showGraph(wasteEffortTrend,'WasteEffortTrend', showLegend);
+               _showGraph(AuthorCommitTrend90pc,'AuthorCommitTrend90pc', showLegend);
+               _showGraph(AuthorCommitTrendRecent90pc,'AuthorCommitTrendRecent90pc', showLegend);
                showTagClouds();
            };
            
@@ -197,7 +206,12 @@ HTMLIndexTemplate = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional
                var graphBoxElem = document.getElementById(graphboxId);
                graphBoxElem.style.display='block';
                var graphCanvasId = 'Graph_big'
-               var plot = graphFunc(graphCanvasId, showLegend);
+               try{
+                var plot = graphFunc(graphCanvasId, showLegend);
+               }
+               catch(e) {
+                /* log the exception */               
+               }
                plot.redraw(true);                                                    
            };
            
@@ -452,7 +466,7 @@ class SVNPlotJS(SVNPlotBase):
         htmlidxname = os.path.join(dirpath, "index.htm")
         htmlidxTmpl = string.Template(self.template)
         outstr = htmlidxTmpl.safe_substitute(graphParamDict)
-        with codes.open(htmlidxname, "w") as htmlfile:
+        with codecs.open(htmlidxname, "w") as htmlfile:
             htmlfile.write(outstr.encode('utf-8'))
         if(copyjs == True):
             self.__copyJSFiles(dirpath)
@@ -1208,7 +1222,7 @@ class SVNPlotJS(SVNPlotBase):
         if(self.svnstats.searchpath != None and self.svnstats.searchpath != '/'):
             graphParamDict["SEARCHPATH"] = "(%s)" % self.svnstats.searchpath
 
-        graphParamDict["TagCloud"] = self.TagCloud()
+        graphParamDict["TagCloud"] = json.dumps(self.TagCloud())
         graphParamDict["AuthCloud"] = self.AuthorCloud()
         graphParamDict["BasicStats"] = self.BasicStats(HTMLBasicStatsTmpl)
         graphParamDict["ActiveFiles"] = self.ActiveFiles()
