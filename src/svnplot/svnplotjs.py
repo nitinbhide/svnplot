@@ -533,8 +533,8 @@ class SVNPlotJS(SVNPlotBase):
 
         datalist = [(wkday, actdata) for actdata, wkday in zip(data, labels)]
         datajson = json.dumps(datalist)
-
-        return(self.__getGraphScript(template, {"DATA": data}))
+        
+        return(self.__getGraphScript(template, {"DATA": datajson}))
 
     def ActivityByTimeOfDayFunc(self):
         template = '''        
