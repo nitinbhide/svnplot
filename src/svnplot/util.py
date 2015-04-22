@@ -97,10 +97,14 @@ def makeunicode(s):
     if(s):
         encoding = 'utf-8'
         errors='strict'
-        if not isinstance(s, unicode):
+        if not isinstance(s, unicode) and isinstance(s, str):
+            #encode the 'str' as 'unicode', whatever may original encoding
+            #Then convert the resultant 'str' object
+            #to unicode object.
             try:
+                uns = s.encode('utf-8', 'strict')
                 #try utf-8 first.If that doesnot work, then try 'latin_1'
-                uns=unicode(s, encoding, errors)
+                uns=unicode(uns, encoding, errors)
             except UnicodeDecodeError:
                 uns=unicode(s, 'latin_1', errors)
         assert(isinstance(uns, unicode))
