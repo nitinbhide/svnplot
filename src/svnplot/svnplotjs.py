@@ -450,7 +450,7 @@ class SVNPlotJS(SVNPlotBase):
         htmlidxname = os.path.join(dirpath, "index.htm")
         htmlidxTmpl = string.Template(self.template)
         outstr = htmlidxTmpl.safe_substitute(graphParamDict)
-        with codes.open(htmlidxname, "w") as htmlfile:
+        with codecs.open(htmlidxname, "w") as htmlfile:
             htmlfile.write(outstr.encode('utf-8'))
         if( copyjs == True):
             self.__copyJSFiles(dirpath)
