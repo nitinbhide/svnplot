@@ -395,7 +395,7 @@ class SVNLogClient:
     def getInfo(self, path, revno=None):
         '''Gets the information about the given path ONLY from the repository.
         Hence recurse flag is set to False.
-        '''
+        '''        
         if(revno == None):
             rev = pysvn.Revision(pysvn.opt_revision_kind.head)
         else:
@@ -596,19 +596,19 @@ class SVNLogClient:
         self.svnrooturl = urllib.unquote(self.svnrooturl)
         return(self.svnrooturl)
 
-    def getUrl(self, path):
+    def getUrl(self, path):        
         url = self.svnrepourl
         if(path.strip() != ""):
             # remember 'path' can be a unicode string
             try:
-                path = path.encode('utf8')
+                path = makeunicode(path)
             except:
                 # not possible to encode path as unicode. Probably an latin-1 character with value > 127
                 # keep path as it is.
                 pass
             # there are some characters which are valid pathname characters in unix but not in windows
             # or vice-versa. Hence 'quote' the path and then convert it to url
-            path = urllib.quote(path)
+            # pathname2url internally calls 'quote'.
             url = self.getRootUrl() + urllib.pathname2url(path)
         return(url)
 
