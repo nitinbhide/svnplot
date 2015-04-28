@@ -9,6 +9,5 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 '''
 from svnplot.svnplotjs import *
 
-if( __name__ == "__main__"):
+if(__name__ == "__main__"):
     RunMain()
-    

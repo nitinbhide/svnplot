@@ -47,25 +47,35 @@
 	$WasteRatioTrend
 	
     <script type="text/javascript">
-			 function showAllGraphs(showLegend) {
-				locgraph('LoCGraph',showLegend);
-				locChurnGraph('LoCChurnGraph', showLegend);
-				contri_locgraph('ContriLoCGraph', showLegend);
-				avglocgraph('AvgLoCGraph',showLegend);
-				fileCountGraph('FileCountGraph',showLegend);
-				fileTypesGraph('FileTypeCountGraph',showLegend);
-				ActivityByWeekdayAll('ActivityByWeekdayAllGraph',showLegend);
-                ActivityByWeekdayRecent('ActivityByWeekdayRecentGraph',showLegend);
-                ActivityByTimeOfDayAll('ActivityByTimeOfDayAllGraph',showLegend);
-                ActivityByTimeOfDayRecent('ActivityByTimeOfDayRecentGraph',showLegend);
-				CommitActivityIndexGraph('CommitActIdxGraph',showLegend);
-                directorySizePieGraph('DirSizePie', showLegend);
-                dirFileCountPieGraph('DirFileCountPie', showLegend);
-				dirSizeLineGraph('DirSizeLine', showLegend);
-				authorsCommitTrend('AuthorsCommitTrend',showLegend);
-				authorActivityGraph('AuthorActivityGraph', showLegend);
-				dailyCommitCountGraph('DailyCommitCountGraph', showLegend);
-				wasteRatioTrend('WasteRatioTrend', showLegend);
+	    function _showGraph(graphfunc, canvas_id, showLegend) {
+			var plot = null;
+			try{
+			    plot = graphfunc(canvas_id, showLegend);    
+			}
+			catch(e) {
+			    /* log the exception */                
+			}
+			return plot
+        }
+		function showAllGraphs(showLegend) {
+			_showGraph(locgraph,'LoCGraph',showLegend);
+			_showGraph(locChurnGraph,'LoCChurnGraph', showLegend);
+			_showGraph(contri_locgraph,'ContriLoCGraph', showLegend);
+			_showGraph(avglocgraph,'AvgLoCGraph',showLegend);
+			_showGraph(fileCountGraph,'FileCountGraph',showLegend);
+			_showGraph(fileTypesGraph,'FileTypeCountGraph',showLegend);
+			_showGraph(ActivityByWeekdayAll,'ActivityByWeekdayAllGraph',showLegend);
+            _showGraph(ActivityByWeekdayRecent,'ActivityByWeekdayRecentGraph',showLegend);
+            _showGraph(ActivityByTimeOfDayAll,'ActivityByTimeOfDayAllGraph',showLegend);
+            _showGraph(ActivityByTimeOfDayRecent,'ActivityByTimeOfDayRecentGraph',showLegend);
+			_showGraph(CommitActivityIndexGraph,'CommitActIdxGraph',showLegend);
+            _showGraph(directorySizePieGraph,'DirSizePie', showLegend);
+            _showGraph(dirFileCountPieGraph,'DirFileCountPie', showLegend);
+			_showGraph(dirSizeLineGraph,'DirSizeLine', showLegend);
+			_showGraph(authorsCommitTrend,'AuthorsCommitTrend',showLegend);
+			_showGraph(authorActivityGraph,'AuthorActivityGraph', showLegend);
+			_showGraph(dailyCommitCountGraph,'DailyCommitCountGraph', showLegend);
+			_showGraph(wasteRatioTrend,'WasteRatioTrend', showLegend);
             };                			  
 	</script>	
 </head>
