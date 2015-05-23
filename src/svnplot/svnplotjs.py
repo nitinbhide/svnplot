@@ -533,7 +533,7 @@ class SVNPlotJS(SVNPlotBase):
 
         datalist = [(wkday, actdata) for actdata, wkday in zip(data, labels)]
         datajson = json.dumps(datalist)
-        
+
         return(self.__getGraphScript(template, {"DATA": datajson}))
 
     def ActivityByTimeOfDayFunc(self):
@@ -730,7 +730,7 @@ class SVNPlotJS(SVNPlotBase):
                 loclabel = 'LoC'; churnlabel='Churn';
             }
             
-            if(locdata.length > 0 && churndata.legnth){
+            if(locdata.length > 0 && churndata.length > 0){
             var plot = $.jqplot(divElemId, [locdata, churndata], {
                 title:'Lines of Code and Churn Graph',
                 legend:{show:showlegend},
@@ -912,26 +912,26 @@ class SVNPlotJS(SVNPlotBase):
         it seems jqPlot chokes if the size converted to angle is less than <angleTol> deg. So
         we have to sanitize the sizes so that very low sizes get merged into a 'misc' size
         '''
-        #first calculate pie size for each section and its size
+        # first calculate pie size for each section and its size
         total = float(sum(sizes))
         misc_size = 0.0
         san_sections = []
         san_sizes = []
         for secname, size in itertools.izip(sections, sizes):
-            angle = 360.0*(size/total)
+            angle = 360.0 * (size / total)
             if angle >= angleTol:
                 san_sections.append(secname)
                 san_sizes.append(size)
             else:
-                misc_size = misc_size+size
-        
+                misc_size = misc_size + size
+
         if misc_size > 0.0:
             san_sections.append('Misc')
             san_sizes.append(misc_size)
-        
+
         assert(len(san_sections) == len(san_sizes))
         return san_sections, san_sizes
-    
+
     def DirectorySizePieGraph(self, depth=2, maxdircount=10):
         '''
         depth - depth of directory search relative to search path. Default value is 2
@@ -939,7 +939,7 @@ class SVNPlotJS(SVNPlotBase):
         self._printProgress("Calculating Directory size pie graph")
         dirlist, dirsizelist = self.svnstats.getDirLoCStats(depth, maxdircount)
         dirlist, dirsizelist = self.sanitizePieData(dirlist, dirsizelist)
-        
+
         template = '''        
             function directorySizePieGraph(divElemId, showLegend) {
             var data = [$DIRSIZEDATA];
