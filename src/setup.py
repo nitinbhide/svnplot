@@ -8,14 +8,15 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 Setup file for installing svnplot
 '''
 
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup
 
-setup(name='SVNPlot', version='0.8.6',
+setup(name='SVNPlot', version='0.8.7',
       description='python module to generate graphs and statistics from Subversion repository data',
       author='Nitin Bhide',
       author_email='nitinbhide@gmail.com',
       license='http://www.opensource.org/licenses/bsd-license.php',
-      url='http://code.google.com/p/svnplot',
+      url='https://bitbucket.org/nitinbhide/svnplot',
       requires=['matplotlib', 'numpy', 'pysvn'],
       packages=['svnplot'],
       package_dir={'svnplot': 'svnplot'},

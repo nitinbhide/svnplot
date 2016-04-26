@@ -49,6 +49,7 @@ import sys
 import string
 import StringIO
 import math
+import codecs
 
 from svnplotmatplotlib import *
 from svnstats import *
