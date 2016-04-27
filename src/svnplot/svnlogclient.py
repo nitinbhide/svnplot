@@ -134,7 +134,7 @@ class SVNLogClient:
 
     def ssl_server_trust_prompt(self, trust_dict):
         retcode = True
-        accepted_failures = 1
+        accepted_failures = trust_dict['failures']
         save = 1
         print "trusting: "
         print trust_dict
