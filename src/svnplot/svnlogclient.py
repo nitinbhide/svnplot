@@ -609,7 +609,9 @@ class SVNLogClient:
             # there are some characters which are valid pathname characters in unix but not in windows
             # or vice-versa. Hence 'quote' the path and then convert it to url
             # pathname2url internally calls 'quote'.
-            url = self.getRootUrl() + urllib.pathname2url(path)
+            # 'quote' function cannot handle 'unicode' in python 2. It requies 'bytestring'.
+            # so we have to 'encode' the path
+            url = self.getRootUrl() + urllib.pathname2url(path.encode('utf-8'))
         return(url)
 
     def isRepoUrlSameAsRoot(self):
