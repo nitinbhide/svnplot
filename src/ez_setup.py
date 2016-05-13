@@ -3,7 +3,7 @@
 setup.py
 Copyright (C) 2009 Nitin Bhide (nitinbhide@gmail.com)
 
-This module is part of SVNPlot (http://code.google.com/p/svnplot) and is released under
+This module is part of SVNPlot (https://bitbucket.org/nitinbhide/svnplot) and is released under
 the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 --------------------------------------------------------------------------------------
 Setup file for installing svnplot
@@ -20,7 +20,7 @@ setup(name='SVNPlot', version='0.7.9',
       author='Nitin Bhide',
       author_email='nitinbhide@gmail.com',
       license='http://www.opensource.org/licenses/bsd-license.php',
-      url='http://code.google.com/p/svnplot',
+      url='https://bitbucket.org/nitinbhide/svnplot',
       install_requires=['numpy', 'matplotlib'],
       dependency_links=[
           "http://pysvn.tigris.org/servlets/ProjectDocumentList?folderID=1768"
