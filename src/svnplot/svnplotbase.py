@@ -17,10 +17,8 @@ import string
 import operator
 import logging
 from StringIO import StringIO
-from .util import makeunicode
+from util import makeunicode
 
-import svnstats
-import heatmapclr
 
 MINFONTSIZE = 10
 MAXFONTSIZE = 30
