@@ -2,7 +2,7 @@
 svnsqlite2gexf.py
 Copyright (C) 2010 Oscar Castaneda (oscar.castaneda@gmail.com)
 
-This module is part of SVNPlot (http://code.google.com/p/svnplot) and is released under
+This module is part of SVNPlot (https://bitbucket.org/nitinbhide/svnplot) and is released under
 the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 --------------------------------------------------------------------------------------
 
