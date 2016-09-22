@@ -7,7 +7,7 @@ This module is part of SVNPlot (https://bitbucket.org/nitinbhide/svnplot) and is
 the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 --------------------------------------------------------------------------------------
 '''
-from svnplotjs import *
+from .svnplotjs import *
 
 if(__name__ == "__main__"):
     RunMain()

@@ -10,18 +10,18 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 Export the Subversion repository data in csv format.
 Check issue <> for details.
 '''
-from __future__ import with_statement
+
 
 from optparse import OptionParser
 import sqlite3
 import os.path
 import sys
 import string
-import StringIO
+import io
 import math
 import csv
 
-from svnstats import *
+from .svnstats import *
 
 
 def addcsvcomment(cvswriter, comment):
@@ -55,7 +55,7 @@ class SVNStatsCSV:
 
     def _printProgress(self, msg):
         if(self.verbose == True):
-            print msg
+            print(msg)
 
     def basicStats(self, csvwriter):
         '''
@@ -153,7 +153,7 @@ def RunMain():
     (options, args) = parser.parse_args()
 
     if(len(args) < 2):
-        print "Invalid number of arguments. Use svnstatscsv.py --help to see the details."
+        print("Invalid number of arguments. Use svnstatscsv.py --help to see the details.")
     else:
         svndbpath = args[0]
         csvfilename = args[1]
@@ -162,12 +162,12 @@ def RunMain():
             options.searchpath += '%'
 
         if(options.verbose == True):
-            print "Exporting subversion repository data in CSV format"
-            print "Subversion log database : %s" % svndbpath
-            print "CSV file name : %s" % csvfilename
-            print "Repository Name : %s" % options.reponame
-            print "Search path inside repository : %s" % options.searchpath
-            print "Maximum dir count: %d" % options.maxdircount
+            print("Exporting subversion repository data in CSV format")
+            print("Subversion log database : %s" % svndbpath)
+            print("CSV file name : %s" % csvfilename)
+            print("Repository Name : %s" % options.reponame)
+            print("Search path inside repository : %s" % options.searchpath)
+            print("Maximum dir count: %d" % options.maxdircount)
 
         svnstats = SVNStats(svndbpath)
 

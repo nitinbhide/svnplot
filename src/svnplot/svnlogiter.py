@@ -12,21 +12,23 @@ This is just a convinience interface over the pysvn module.
 It is intended to be used in  python script to convert the Subversion log into
 an sqlite database.
 '''
-
+import six
 import logging
 import datetime
 import time
 import os
 import re
 import string
-import urllib
-import urlparse
+
+from six.moves import urllib
+   
 import getpass
 import tempfile
 from operator import itemgetter
-from StringIO import StringIO
-from svnlogclient import *
-from util import *
+from io import StringIO
+
+from .svnlogclient import *
+from .util import *
 
 
 class SVNRevLogIter(object):
@@ -109,7 +111,7 @@ class SVNChangeEntry(object):
             if(pathtype == 'D' and not filepath.endswith('/')):
                 # if it is directory then add trailing '/' to the path to
                 # denote the directory.
-                self.changedpath['path'] = filepath + u'/'
+                self.changedpath['path'] = filepath + '/'
 
     def isValidChange(self):
         '''
@@ -297,7 +299,7 @@ class SVNChangeEntry(object):
         if(len(diffDict) == 1):
             # for single files the 'diff_log' contains only the 'name of file' and not full path.
             # Hence to need to 'extract' the filename from full filepath
-            filename = u'/' + filepath.rsplit(u'/', 2)[-1]
+            filename = '/' + filepath.rsplit('/', 2)[-1]
             fname, (added, deleted) = diffDict.popitem()
         return added, deleted
 
@@ -484,7 +486,7 @@ class SVNRevLog(object):
                 msg = makeunicode(self.revlog.message)
             except:
                 logging.exception("error in revision message")
-                msg = u''
+                msg = ''
             return(msg)
         elif(name == 'date'):
             try:
@@ -554,7 +556,7 @@ class SVNRevLog(object):
                 revdiff_log = self.logclient.getRevDiff(revno)
                 diffcountdict = getDiffLineCountDict(revdiff_log)
 
-        except Exception, expinst:
+        except Exception as expinst:
             logging.exception("Error in diffline count")
             raise
 

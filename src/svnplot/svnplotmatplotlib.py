@@ -16,8 +16,8 @@ try:
     from matplotlib.ticker import FixedLocator, FormatStrFormatter
     from matplotlib.font_manager import FontProperties
 except:
-    print 'matplotlib package not found'
-    print 'Please download and install matplotlib from http://matplotlib.org/'
+    print('matplotlib package not found')
+    print('Please download and install matplotlib from http://matplotlib.org/')
 
 import os.path
 import sys
@@ -25,8 +25,8 @@ import math
 import string
 import operator
 import logging
-import svnstats
-from svnplotbase import *
+from . import svnstats
+from .svnplotbase import *
 
 
 class SVNPlotMatplotLib(SVNPlotBase):

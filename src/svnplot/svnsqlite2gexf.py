@@ -21,7 +21,7 @@ links are created to all co-authors who are active in the sqlite db contents.
 
 This version of svnsqlite2gexf.py has been tested with SVNPlot version 0.6.1 .
 '''
-from __future__ import with_statement
+
 import string
 import sqlite3
 import math
@@ -105,7 +105,7 @@ class SVNSqlite2Gephi:
         cur.execute('SELECT * FROM SVNPaths')
 
         for row in cur:
-            print 'processing %s' % row[1].encode('utf-8')
+            print('processing %s' % row[1].encode('utf-8'))
             changedpathid = row[0]
 
             # ignore the line count for tagged version of directories. This
@@ -144,8 +144,8 @@ class SVNSqlite2Gephi:
         output.write("\t\t<edges>\n")
         # We iterate over the resulting matrix to write it out to the XML file.
         edge_id = 0
-        for auth1, auth1_id in self.committers.iteritems():
-            for auth2, auth2_id in self.committers.iteritems():
+        for auth1, auth1_id in self.committers.items():
+            for auth2, auth2_id in self.committers.items():
                 wt = mat[auth1_id][auth2_id]
                 if(wt > 1 and auth1_id != auth2_id):
                     output.write('\t\t\t<edge id="%d" source="%d" target="%d" weight="%.4f"/>\n'
@@ -160,7 +160,7 @@ class SVNSqlite2Gephi:
         '''
         outfilename = self.outputfile + '_authorgraph.gexf'
         with open(outfilename, 'w') as output:
-            print "Processing..."
+            print("Processing...")
 
             # Write XML prelude to CMU node specification
             #output.write("<?xml version=\"1.0\" standalone=\"yes\"?>\n")
@@ -207,7 +207,7 @@ def RunMain():
     (options, args) = parser.parse_args()
 
     if(len(args) < 2):
-        print "Invalid number of arguments. Use svnsqlite2gexf.py --help to see the details."
+        print("Invalid number of arguments. Use svnsqlite2gexf.py --help to see the details.")
     else:
         sqlitedbpath = args[0]
         outputfilepath = args[1]
@@ -219,7 +219,7 @@ def RunMain():
                             filename=logfilename,
                             filemode='w')
 
-        print "Processing the sqlite subversion log"
+        print("Processing the sqlite subversion log")
         sqlite2gephi = SVNSqlite2Gephi(sqlitedbpath, outputfilepath)
         sqlite2gephi.Process()
 
