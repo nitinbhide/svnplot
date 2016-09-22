@@ -34,12 +34,12 @@ try:
     from numpy import matrix
     from numpy import linalg
 except:
-    print "numpy not found. Please install numpy"
+    print("numpy not found. Please install numpy")
 
 try:
     import scipy
 except:
-    print "scipy not found. Please install scipy"
+    print("scipy not found. Please install scipy")
 
 
 class SVNSqlite2Ora:
@@ -61,7 +61,7 @@ class SVNSqlite2Ora:
     def Process(self):
         output = open(self.outputfile, 'w')
         self.initdb()
-        print "Processing..."
+        print("Processing...")
 
         revisions = []
         revisions_count = 0
@@ -202,13 +202,13 @@ def RunMain():
     (options, args) = parser.parse_args()
 
     if(len(args) < 2):
-        print "Invalid number of arguments. Use svnsqlite2ora_filecoauthorship.py --help to see the details."
+        print("Invalid number of arguments. Use svnsqlite2ora_filecoauthorship.py --help to see the details.")
     else:
         sqlitedbpath = args[0]
         outputfilepath = args[1]
 
         try:
-            print "Processing the sqlite subversion log"
+            print("Processing the sqlite subversion log")
 
             SVNSqlite2Ora(sqlitedbpath, outputfilepath)
         except:

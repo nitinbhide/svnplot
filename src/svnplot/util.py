@@ -15,6 +15,8 @@ import re
 import time
 import datetime
 
+import six
+
 URL_NORM_RE = re.compile('[/]+')
 
 
@@ -67,8 +69,8 @@ def pairwise(iterable):
     "s -> (0, s0,s1), (1, s1,s2), (2, s2, s3), ..."
     a, b = itertools.tee(iterable)
     # goto next item in the iterable b.
-    b.next()
-    return itertools.izip(itertools.count(0), a, b)
+    next(b)
+    return zip(itertools.count(0), a, b)
 
 
 def strip_zeros(dates, data):
@@ -105,15 +107,15 @@ def makeunicode(s):
     if(s):
         encoding = 'utf-8'
         errors = 'strict'
-        if not isinstance(s, unicode) and isinstance(s, str):
+        if not isinstance(s, six.text_type) and isinstance(s, six.binary_type):
             # encode the 'str' as 'unicode', whatever may original encoding
             # Then convert the resultant 'str' object
             # to unicode object.
             try:
                 uns = s.encode('utf-8', 'strict')
                 # try utf-8 first.If that doesnot work, then try 'latin_1'
-                uns = unicode(uns, encoding, errors)
+                uns = six.text_type(uns, encoding, errors)
             except UnicodeDecodeError:
-                uns = unicode(s, 'latin_1', errors)
-        assert(isinstance(uns, unicode))
+                uns = six.text_type(s, 'latin_1', errors)
+        assert(isinstance(uns, six.text_type))
     return(uns)

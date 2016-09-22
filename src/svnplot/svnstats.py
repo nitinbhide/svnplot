@@ -22,7 +22,7 @@ import math
 import operator
 from collections import Counter
 
-from util import *
+from .util import *
 
 COOLINGRATE = 0.06 / 24.0  # degree per hour
 TEMPINCREMENT = 10.0  # degrees per commit
@@ -36,10 +36,10 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
     coolingRate - rate of cool per hour
     '''
     try:
-        if(isinstance(curTime, unicode) == True):
+        if(isinstance(curTime, str) == True):
             curTime = datetime.datetime.strptime(
                 curTime[:16], "%Y-%m-%d %H:%M")
-        if(isinstance(lastTime, unicode) == True):
+        if(isinstance(lastTime, str) == True):
             lastTime = datetime.datetime.strptime(
                 lastTime[:16], "%Y-%m-%d %H:%M")
 
@@ -53,7 +53,7 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
         temperature = AMBIENT_TEMP + \
             (lastTemp - AMBIENT_TEMP) * math.exp(tempFactor)
         assert(temperature >= AMBIENT_TEMP)
-    except Exception, expinst:
+    except Exception as expinst:
         logging.debug("Error %s" % expinst)
         temperature = 0
 
@@ -357,7 +357,7 @@ class SVNStats(object):
 
     def _printProgress(self, msg):
         if(self.verbose == True):
-            print msg
+            print(msg)
 
     def __sqlForbugFixKeywordsInMsg(self):
         sqlstr = "( "
@@ -661,7 +661,7 @@ class SVNStats(object):
             dirinfolist.sort(key=lambda dinfo: dinfo[1], reverse=True)
 
             remainingcount = sum(
-                map(lambda dinfo: dinfo[1], dirinfolist[maxdircount:]), 0)
+                [dinfo[1] for dinfo in dirinfolist[maxdircount:]], 0)
             dirinfolist = dirinfolist[0:maxdircount]
             dirinfolist.append(('others', remainingcount))
 
@@ -704,12 +704,11 @@ class SVNStats(object):
             # filter dirinfolist such that all directories with greather
             # 'mindirsize_percent' are retained
             mindirsize = (mindirsize_percent / 100.0) * totalloc
-            dirinfolist = filter(
-                lambda dinfo: dinfo[1] > mindirsize, dirinfolist)
+            dirinfolist = [dinfo for dinfo in dirinfolist if dinfo[1] > mindirsize]
             dirinfolist.sort(key=lambda dinfo: dinfo[1], reverse=True)
 
             dirinfolist = dirinfolist[0:maxdircount]
-            dsizecount = sum(map(lambda dinfo: dinfo[1], dirinfolist), 0)
+            dsizecount = sum([dinfo[1] for dinfo in dirinfolist], 0)
             remainingcount = totalloc - dsizecount
             dirinfolist.append(('others', remainingcount))
 
@@ -944,7 +943,7 @@ class SVNStats(object):
         '''
         detect common stemming patterns and merge those word counts (e.g. close and closed are  merged)
         '''
-        wordList = wordFreq.keys()
+        wordList = list(wordFreq.keys())
 
         for word in wordList:
             wordFreq = self.__mergeStemmingSuffix(wordFreq, word, 'ed')
@@ -955,10 +954,10 @@ class SVNStats(object):
         return(wordFreq)
 
     def __mergeStemmingSuffix(self, wordFreq, word, suffix):
-        if(wordFreq.has_key(word) == True and word.endswith(suffix) == True):
+        if((word in wordFreq) == True and word.endswith(suffix) == True):
             # strip suffix
             stemmedword = word[0:-len(suffix)]
-            if(wordFreq.has_key(stemmedword) == True):
+            if((stemmedword in wordFreq) == True):
                 wordFreq[stemmedword] = wordFreq[stemmedword] + wordFreq[word]
                 del wordFreq[word]
         return(wordFreq)
@@ -983,7 +982,7 @@ class SVNStats(object):
 
         # Filter words with frequency less than minWordFreq
         invalidWords = [
-            word for word, freq in wordFreq.items() if (freq < minWordFreq)]
+            word for word, freq in list(wordFreq.items()) if (freq < minWordFreq)]
         for word in invalidWords:
             del wordFreq[word]
 
@@ -1184,7 +1183,7 @@ class SVNStats(object):
 
         # Now update the activity for current date and time.
         curdate = datetime.datetime.combine(self.__endDate, datetime.time(0))
-        for author, cmtactv in authActivityIdx.items():
+        for author, cmtactv in list(authActivityIdx.items()):
             authtemp = getTemperatureAtTime(
                 curdate, cmtactv[0], cmtactv[1], COOLINGRATE)
             authActivityIdx[author] = (curdate, authtemp)
@@ -1247,7 +1246,7 @@ class SVNStats(object):
         # sorting.
         curTime = datetime.datetime.combine(self.__endDate, datetime.time(0))
         authlist = []
-        for author, cmtactiv in authActivityIdx.items():
+        for author, cmtactiv in list(authActivityIdx.items()):
             temperature = getTemperatureAtTime(
                 curTime, cmtactiv[0], cmtactiv[1], COOLINGRATE)
             # if author has modified files in the search path add his name.
@@ -1277,7 +1276,7 @@ class SVNStats(object):
                 where ActivityHotness.filepath like ? and ActivityHotness.lastrevno=SVNLog.revno \
                 order by hotness DESC LIMIT ?", (curTime, COOLINGRATE, self.sqlsearchpath, numFiles))
         hotfileslist = [(filepath, hotness) for filepath, hotness in self.cur]
-        hotfileslist = map(_getfilecount, hotfileslist)
+        hotfileslist = list(map(_getfilecount, hotfileslist))
 
         return(hotfileslist)
 
