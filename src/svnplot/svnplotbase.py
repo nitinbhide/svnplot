@@ -16,9 +16,8 @@ import math
 import string
 import operator
 import logging
-from io import StringIO
+from six.moves import StringIO
 from .util import makeunicode
-
 
 MINFONTSIZE = 10
 MAXFONTSIZE = 30
