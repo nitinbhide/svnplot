@@ -426,7 +426,8 @@ class SVNPlot(SVNPlotMatplotLib):
         ax.set_title('Author Activity')
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+        plt.close(fig)
+        
     def CommitActivityGraph(self, filename):
         self._printProgress("Calculating Commit activity graph")
 
@@ -478,6 +479,8 @@ class SVNPlot(SVNPlotMatplotLib):
             axs.set_title('Directory Sizes')
             fig = axs.figure
             fig.savefig(filename, dpi=self.dpi, format=self.format)
+            plt.close(fig)
+            
 
     def DirFileCountPieGraph(self, filename, depth=2, maxdircount=10):
         '''
@@ -494,7 +497,8 @@ class SVNPlot(SVNPlotMatplotLib):
             axs.set_title('Directory Size(File Count)')
             fig = axs.figure
             fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+            plt.close(fig)
+            
     def DirectorySizeLineGraph(self, filename, depth=2, maxdircount=10):
         '''
         depth - depth of directory search relative to search path. Default value is 2
@@ -541,7 +545,8 @@ class SVNPlot(SVNPlotMatplotLib):
 
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+        plt.close(fig)
+            
     def DailyCommitCountGraph(self, filename):
         self._printProgress("Calculating Daily commit count graph")
         datelist, cmitcountlist = self.svnstats.getDailyCommitCount()

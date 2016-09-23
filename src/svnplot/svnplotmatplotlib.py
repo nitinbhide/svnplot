@@ -174,7 +174,8 @@ class SVNPlotMatplotLib(SVNPlotBase):
 
         fig.suptitle(title)
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+        plt.close(fig)
+        
     def _drawPieGraph(self, slicesizes, slicelabels):
         fig = plt.figure()
         axs = fig.add_subplot(111, aspect='equal')
@@ -222,7 +223,8 @@ class SVNPlotMatplotLib(SVNPlotBase):
         fig = ax.figure
         fig.autofmt_xdate()
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+        plt.close(fig)
+        
     def _drawDateLineGraph(self, dates, values, axs=None):
         if(axs == None):
             fig = plt.figure()
