@@ -613,7 +613,9 @@ class SVNLogClient:
             # pathname2url internally calls 'quote'.
             # 'quote' function cannot handle 'unicode' in python 2. It requies 'bytestring'.
             # so we have to 'encode' the path
-            url = self.getRootUrl() + urllib.request.pathname2url(path.encode('utf-8'))
+            if six.PY2:
+                path = path.encode('utf-8')
+            url = self.getRootUrl() + urllib.request.pathname2url(path)
         return(url)
 
     def isRepoUrlSameAsRoot(self):
