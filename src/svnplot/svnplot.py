@@ -39,8 +39,8 @@ import matplotlib
 # Default use Agg backend we don't need any interactive display
 matplotlib.use('Agg')
 
-import matplotlib.pyplot as plt
-import matplotlib.mpl as mpl
+#import matplotlib.pyplot as plt
+#import matplotlib.mpl as mpl
 
 from optparse import OptionParser
 import sqlite3
