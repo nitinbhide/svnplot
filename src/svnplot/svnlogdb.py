@@ -479,7 +479,7 @@ class SVNLogDB(object):
                     cur.execute(
                         "SELECT * FROM svnpaths WHERE path = ? order by id", (duppath,))
                     correctid, duppath1 = cur.fetchone()
-                    print "updating path %s" % duppath
+                    print("updating path %s" % duppath)
                     for pathid, duppath1 in cur:
                         updcur.execute(
                             "UPDATE SVNLogDetail SET changedpathid=? where changedpathid=?", (correctid, pathid))
@@ -493,4 +493,4 @@ class SVNLogDB(object):
                 if(len(duppathlist) > 0):
                     updcur.execute("DROP TABLE IF EXISTS ActivityHotness")
                     self.commit()
-                    print "fixed paths"
+                    print("fixed paths")

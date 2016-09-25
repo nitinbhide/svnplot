@@ -10,23 +10,26 @@ SVNPlotMatplotLib implementation. Matplotlib based graph implementation.
 __revision__ = '$Revision:$'
 __date__ = '$Date:$'
 
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
-    from matplotlib.ticker import FixedLocator, FormatStrFormatter
-    from matplotlib.font_manager import FontProperties
-except:
-    print 'matplotlib package not found'
-    print 'Please download and install matplotlib from http://matplotlib.org/'
-
 import os.path
 import sys
 import math
 import string
 import operator
 import logging
-import svnstats
-from svnplotbase import *
+from cycler import cycler
+
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
+    from matplotlib.ticker import FixedLocator, FormatStrFormatter
+    from matplotlib.font_manager import FontProperties
+    
+except:
+    print('matplotlib package not found')
+    print('Please download and install matplotlib from http://matplotlib.org/')
+
+from . import svnstats
+from .svnplotbase import *
 
 
 class SVNPlotMatplotLib(SVNPlotBase):
@@ -80,7 +83,8 @@ class SVNPlotMatplotLib(SVNPlotBase):
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.set_color_cycle(self.clrlist)
+        self.set_axes_color_cycle(ax)
+               
         ax.set_yticks(ytickloc)
         ax.set_yticklabels(labels)
 
@@ -104,7 +108,7 @@ class SVNPlotMatplotLib(SVNPlotBase):
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.set_color_cycle(self.clrlist)
+        self.set_axes_color_cycle(ax)
         ax.set_yticks(ytickloc)
         ax.set_yticklabels(labels)
 
@@ -170,7 +174,8 @@ class SVNPlotMatplotLib(SVNPlotBase):
 
         fig.suptitle(title)
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+        plt.close(fig)
+        
     def _drawPieGraph(self, slicesizes, slicelabels):
         fig = plt.figure()
         axs = fig.add_subplot(111, aspect='equal')
@@ -218,13 +223,23 @@ class SVNPlotMatplotLib(SVNPlotBase):
         fig = ax.figure
         fig.autofmt_xdate()
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+        plt.close(fig)
+        
     def _drawDateLineGraph(self, dates, values, axs=None):
         if(axs == None):
             fig = plt.figure()
             axs = fig.add_subplot(111)
-            axs.set_color_cycle(self.clrlist)
-
+            self.set_axes_color_cycle(axs)
+            
         axs.plot_date(dates, values, '-', xdate=True, ydate=False)
 
         return(axs)
+
+    def set_axes_color_cycle(self, ax):
+        '''
+        set the color cycle on the axes ('ax'). Axes.set_color_cycle() function
+        is deprecated. Now we have to use Axes.set_prop_cycle. This is utility
+        function to help with that change
+        '''
+        ax.set_prop_cycle(cycler('color', self.clrlist))
+        

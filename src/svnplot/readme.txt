@@ -81,6 +81,13 @@ Quick Start
    TIP - Use 70 pixesl per inch resolution for better results with svnplot-long.tmpl template.
 
 ==============================================
+Changes from 0.8.x to 0.9.0
+==============================================
+1. Various unicode error fixes.
+2. Fixed warnings for matplotlib imports
+3. Supports Python 3.5 and Python 2.7 now.
+
+==============================================
 Changes from 0.7.x to 0.8.0
 ==============================================
 1. Major refactoring of database code. Target is to support multiple database and not just sqlite.
