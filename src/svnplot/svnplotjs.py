@@ -39,14 +39,14 @@ import sqlite3
 import os.path
 import sys
 import string
-import StringIO
+import io
 import math
 import shutil
 import json
 import codecs
 
-from svnstats import *
-from svnplotbase import *
+from .svnstats import *
+from .svnplotbase import *
 
 HTMLBasicStatsTmpl = '''
 <table align="center">
@@ -917,7 +917,7 @@ class SVNPlotJS(SVNPlotBase):
         misc_size = 0.0
         san_sections = []
         san_sizes = []
-        for secname, size in itertools.izip(sections, sizes):
+        for secname, size in zip(sections, sizes):
             angle = 360.0 * (size / total)
             if angle >= angleTol:
                 san_sections.append(secname)
@@ -1026,7 +1026,7 @@ class SVNPlotJS(SVNPlotBase):
 
         outstr = StringIO()
 
-        for dirname, idx in zip(dirlist, range(0, numDirs)):
+        for dirname, idx in zip(dirlist, list(range(0, numDirs))):
             dates, loclist = self.svnstats.getDirLocTrendStats(dirname)
             outstr.write("var dir%dLocData=[" % idx)
             datalist = ['[\'%s\', %d]' % (date, lc)
@@ -1329,10 +1329,10 @@ class SVNPlotJS(SVNPlotBase):
                 jsfile = os.path.normpath(jsfile)
                 srcfile = os.path.join(srcdir, jsfile)
                 shutil.copy(srcfile, outdir)
-        except Exception, expinst:
-            print "Need jquery, excanvas and jqPlot files couldnot be copied."
-            print "Please copy these files manually at correct location"
-            print expinst
+        except Exception as expinst:
+            print("Need jquery, excanvas and jqPlot files couldnot be copied.")
+            print("Please copy these files manually at correct location")
+            print(expinst)
 
 
 def RunMain():
@@ -1362,7 +1362,7 @@ def RunMain():
     (options, args) = parser.parse_args()
 
     if(len(args) < 2):
-        print "Invalid number of arguments. Use svnplot.py --help to see the details."
+        print("Invalid number of arguments. Use svnplot.py --help to see the details.")
     else:
         svndbpath = args[0]
         graphdir = args[1]
@@ -1371,26 +1371,26 @@ def RunMain():
             options.searchpath += '%'
 
         if(options.verbose == True):
-            print "Calculating subversion stat graphs"
-            print "Subversion log database : %s" % svndbpath
-            print "Graphs will generated in : %s" % graphdir
-            print "Repository Name : %s" % options.reponame
-            print "Search path inside repository : %s" % options.searchpath
-            print "Graph thumbnail size : %s" % options.thumbsize
-            print "Maximum dir count: %d" % options.maxdircount
+            print("Calculating subversion stat graphs")
+            print("Subversion log database : %s" % svndbpath)
+            print("Graphs will generated in : %s" % graphdir)
+            print("Repository Name : %s" % options.reponame)
+            print("Search path inside repository : %s" % options.searchpath)
+            print("Graph thumbnail size : %s" % options.thumbsize)
+            print("Maximum dir count: %d" % options.maxdircount)
             if(options.template == None):
-                print "using default html template"
+                print("using default html template")
             else:
-                print "using template : %s" % options.template
+                print("using template : %s" % options.template)
 
             if (options.lastrev == None):
-                print "end in last revision the database has"
+                print("end in last revision the database has")
             else:
-                print "end in %s revision" % options.lastrev
+                print("end in %s revision" % options.lastrev)
             if (options.firstrev == None):
-                print "start from first revision the database has"
+                print("start from first revision the database has")
             else:
-                print "start from %s revision" % options.firstrev
+                print("start from %s revision" % options.firstrev)
 
         svnstats = SVNStats(svndbpath, options.firstrev, options.lastrev)
         svnplot = SVNPlotJS(svnstats, template=options.template)

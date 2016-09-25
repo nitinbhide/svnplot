@@ -16,9 +16,8 @@ import math
 import string
 import operator
 import logging
-from StringIO import StringIO
-from util import makeunicode
-
+from six.moves import StringIO
+from .util import makeunicode
 
 MINFONTSIZE = 10
 MAXFONTSIZE = 30
@@ -81,7 +80,7 @@ class SVNPlotBase(object):
 
     def _printProgress(self, msg):
         if(self.verbose == True):
-            print msg
+            print(msg)
 
     def _getAuthorLabel(self, author):
         '''
@@ -169,7 +168,7 @@ class SVNPlotBase(object):
         if(len(words) > 0):
             # first get sorted wordlist (reverse sorted by frequency)
             tagWordList = sorted(
-                words.items(), key=operator.itemgetter(1), reverse=True)
+                list(words.items()), key=operator.itemgetter(1), reverse=True)
             # now extract top 'numWords' from the list and then sort it with
             # alphabetical order.
             tagWordList = sorted(

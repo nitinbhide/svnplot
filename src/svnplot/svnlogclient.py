@@ -8,29 +8,31 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 
 A convinience wrapper over the subversion client to query the log information
 '''
+import six
 
 import logging
 import datetime
 import time
 import os
 import string
-import urllib
-import urlparse
+
+from six.moves import urllib
+   
 import getpass
 import traceback
 import types
 import tempfile
 from os.path import normpath
 from operator import itemgetter
-from StringIO import StringIO
+from io import StringIO
 
-from util import *
+from .util import *
 
 try:
     import pysvn
 except:
-    print "pysvn package not found."
-    print "Please download and install it from http://pysvn.tigris.org/project_downloads.html"
+    print("pysvn package not found.")
+    print("Please download and install it from http://pysvn.tigris.org/project_downloads.html")
 
 SVN_HEADER_ENCODING = 'utf-8'
 
@@ -58,12 +60,12 @@ def getDiffLineCountDict(diff_log):
             # so that path entries in revision log list match with the names in
             # the 'diff count' dictionary
             logging.debug(diffline)
-            curfile = u'/' + diffline[len(newfilediffstart):]
+            curfile = '/' + diffline[len(newfilediffstart):]
         elif(diffline.find(newfilepropdiffstart) == 0):
             # property modification diff has started. Ignore it.
             if(curfile != None):
                 diffCountDict[curfile] = (addlnCount, dellnCount)
-            curfile = u'/' + diffline[len(newfilepropdiffstart):]
+            curfile = '/' + diffline[len(newfilepropdiffstart):]
             # only properties are modified. there is no content change. hence
             # set the line count to 0,0
             if(curfile not in diffCountDict):
@@ -89,7 +91,7 @@ class SVNLogClient:
         self.username = None
         self.password = None
         self._updateTempPath()
-        self.svnrepourl = urllib.unquote(svnrepourl)
+        self.svnrepourl = urllib.parse.unquote(svnrepourl)
         self.svnclient = pysvn.Client()
         self.svnclient.exception_style = 1
         self.svnclient.callback_get_login = self.get_login
@@ -105,14 +107,14 @@ class SVNLogClient:
         binaryextlist = []
         for binext in binextlist:
             binext = binext.strip()
-            binext = u'.' + binext
+            binext = '.' + binext
             binaryextlist.append(binext)
             binext = binext.upper()
             binaryextlist.append(binext)
         self.binaryextlist = tuple(binaryextlist)
 
     def set_user_password(self, username, password):
-        if(username != None and username != u''):
+        if(username != None and username != ''):
             self.username = username
             self.svnclient.set_default_username(self.username)
         if(password != None):
@@ -122,7 +124,7 @@ class SVNLogClient:
     def get_login(self, realm, username, may_save):
         logging.debug("This is a svnclient.callback_get_login event. ")
         if(self.username == None):
-            self.username = raw_input("username for %s:" % realm)
+            self.username = input("username for %s:" % realm)
         #save = True
         if(self.password == None):
             self.password = getpass.getpass()
@@ -136,8 +138,8 @@ class SVNLogClient:
         retcode = True
         accepted_failures = trust_dict['failures']
         save = 1
-        print "trusting: "
-        print trust_dict
+        print("trusting: ")
+        print(trust_dict)
         return retcode, accepted_failures, save
 
     def ssl_client_cert_password_prompt(self, realm, may_save):
@@ -170,7 +172,7 @@ class SVNLogClient:
                 errmsg, code = svnerr
                 logging.error("SVN Error Code %d" % code)
                 logging.error(errmsg)
-                print "SVN Error : " + errmsg
+                print("SVN Error : " + errmsg)
                 helpmsg = None
                 if(code == 22):
                     '''
@@ -210,7 +212,7 @@ class SVNLogClient:
 
                     exitadvised = True
                 if(helpmsg):
-                    print "\n%s\n" % helpmsg
+                    print("\n%s\n" % helpmsg)
                     logging.error(helpmsg)
 
         return(exitadvised)
@@ -222,8 +224,8 @@ class SVNLogClient:
         if(headrev != None):
             revno = headrev.revision.number
         else:
-            print "Unable to find head revision for the repository"
-            print "Check the firewall settings, network connection and repository path"
+            print("Unable to find head revision for the repository")
+            print("Check the firewall settings, network connection and repository path")
 
         return(revno)
 
@@ -382,7 +384,7 @@ class SVNLogClient:
                                            url_or_path2=cur_url, revision2=cur_rev,
                                            recurse=True, ignore_ancestry=False, ignore_content_type=False,
                                            header_encoding=SVN_HEADER_ENCODING, diff_deleted=True)
-        except pysvn.ClientError, exp:
+        except pysvn.ClientError as exp:
             logging.exception("Error in getting file level revision diff")
             logging.debug("url : %s" % cur_url)
             logging.debug("previous url : %s" % prev_url)
@@ -514,7 +516,7 @@ class SVNLogClient:
             if(info_dict.kind == pysvn.node_kind.dir):
                 isDir = True
                 logging.debug("path %s is Directory" % changepath)
-        except pysvn.ClientError, expinst:
+        except pysvn.ClientError as expinst:
             # it is possible that changedpath is deleted (even if changetype is not 'D') and
             # doesnot exist in the revno. In this case, we will get a ClientError exception.
             # this case just return isDir as 'False' and let the processing
@@ -591,9 +593,9 @@ class SVNLogClient:
 
         # if the svnrooturl is None at this point, then raise an exception
         if(self.svnrooturl == None):
-            raise RuntimeError, "Repository Root not found"
+            raise RuntimeError("Repository Root not found")
 
-        self.svnrooturl = urllib.unquote(self.svnrooturl)
+        self.svnrooturl = urllib.parse.unquote(self.svnrooturl)
         return(self.svnrooturl)
 
     def getUrl(self, path):        
@@ -611,7 +613,9 @@ class SVNLogClient:
             # pathname2url internally calls 'quote'.
             # 'quote' function cannot handle 'unicode' in python 2. It requies 'bytestring'.
             # so we have to 'encode' the path
-            url = self.getRootUrl() + urllib.pathname2url(path.encode('utf-8'))
+            if six.PY2:
+                path = path.encode('utf-8')
+            url = self.getRootUrl() + urllib.request.pathname2url(path)
         return(url)
 
     def isRepoUrlSameAsRoot(self):
@@ -621,5 +625,5 @@ class SVNLogClient:
         return(repourl == rooturl)
 
     def __iter__(self):
-        from svnlogiter import SVNRevLogIter
+        from .svnlogiter import SVNRevLogIter
         return(SVNRevLogIter(self, 1, self.getHeadRevNo()))

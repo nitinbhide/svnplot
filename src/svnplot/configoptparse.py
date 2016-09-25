@@ -10,10 +10,10 @@ the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 ConfigOptParse is class which combines the functionality of ConfigParser and OptParse
 modules
 '''
+import six
 
 from optparse import OptionParser
-from ConfigParser import ConfigParser
-
+from six.moves.configparser import ConfigParser
 
 class ConfigOptionParser(OptionParser):
 

@@ -30,7 +30,7 @@ Graph types to be supported
 15. Repository heatmap (treemap)
 16. Tag cloud of words in commit log message.
 '''
-from __future__ import with_statement
+
 
 __revision__ = '$Revision:$'
 __date__ = '$Date:$'
@@ -39,20 +39,20 @@ import matplotlib
 # Default use Agg backend we don't need any interactive display
 matplotlib.use('Agg')
 
-import matplotlib.pyplot as plt
-import matplotlib.mpl as mpl
+#import matplotlib.pyplot as plt
+#import matplotlib.mpl as mpl
 
 from optparse import OptionParser
 import sqlite3
 import os.path
 import sys
 import string
-import StringIO
+import io
 import math
 import codecs
 
-from svnplotmatplotlib import *
-from svnstats import *
+from .svnplotmatplotlib import *
+from .svnstats import *
 
 HTMLIndexTemplate = '''
 <html>
@@ -426,7 +426,8 @@ class SVNPlot(SVNPlotMatplotLib):
         ax.set_title('Author Activity')
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+        plt.close(fig)
+        
     def CommitActivityGraph(self, filename):
         self._printProgress("Calculating Commit activity graph")
 
@@ -478,6 +479,8 @@ class SVNPlot(SVNPlotMatplotLib):
             axs.set_title('Directory Sizes')
             fig = axs.figure
             fig.savefig(filename, dpi=self.dpi, format=self.format)
+            plt.close(fig)
+            
 
     def DirFileCountPieGraph(self, filename, depth=2, maxdircount=10):
         '''
@@ -494,7 +497,8 @@ class SVNPlot(SVNPlotMatplotLib):
             axs.set_title('Directory Size(File Count)')
             fig = axs.figure
             fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+            plt.close(fig)
+            
     def DirectorySizeLineGraph(self, filename, depth=2, maxdircount=10):
         '''
         depth - depth of directory search relative to search path. Default value is 2
@@ -541,7 +545,8 @@ class SVNPlot(SVNPlotMatplotLib):
 
         fig = ax.figure
         fig.savefig(filename, dpi=self.dpi, format=self.format)
-
+        plt.close(fig)
+            
     def DailyCommitCountGraph(self, filename):
         self._printProgress("Calculating Daily commit count graph")
         datelist, cmitcountlist = self.svnstats.getDailyCommitCount()
@@ -586,7 +591,7 @@ class SVNPlot(SVNPlotMatplotLib):
 
     def _getGraphParamDict(self, thumbsize):
         graphParamDict = dict()
-        for graphname in GraphNameDict.keys():
+        for graphname in list(GraphNameDict.keys()):
             graphParamDict[graphname] = self._getGraphFileName(".", graphname)
 
         graphParamDict["thumbwid"] = str(thumbsize)
@@ -615,7 +620,7 @@ class SVNPlot(SVNPlotMatplotLib):
         ax = fig.add_subplot(111)
 
         assert(len(binvals) == len(bins[:-1]))
-        barloc = range(1, len(binvals) + 1)
+        barloc = list(range(1, len(binvals) + 1))
         assert(len(barloc) == len(binvals))
         ax.bar(barloc, binvals, width=0.8, align='center')
         xticklabels = binlabels
@@ -664,7 +669,7 @@ def RunMain():
     (options, args) = parser.parse_args()
 
     if(len(args) < 2):
-        print "Invalid number of arguments. Use svnplot.py --help to see the details."
+        print("Invalid number of arguments. Use svnplot.py --help to see the details.")
     else:
         svndbpath = args[0]
         graphdir = args[1]
@@ -673,25 +678,25 @@ def RunMain():
             options.searchpath += '%'
 
         if(options.verbose == True):
-            print "Calculating subversion stat graphs"
-            print "Subversion log database : %s" % svndbpath
-            print "Graphs will generated in : %s" % graphdir
-            print "Repository Name : %s" % options.reponame
-            print "Search path inside repository : %s" % options.searchpath
-            print "Graph thumbnail size : %s" % options.thumbsize
-            print "Maximum dir count: %d" % options.maxdircount
+            print("Calculating subversion stat graphs")
+            print("Subversion log database : %s" % svndbpath)
+            print("Graphs will generated in : %s" % graphdir)
+            print("Repository Name : %s" % options.reponame)
+            print("Search path inside repository : %s" % options.searchpath)
+            print("Graph thumbnail size : %s" % options.thumbsize)
+            print("Maximum dir count: %d" % options.maxdircount)
             if(options.template == None):
-                print "using default html template"
+                print("using default html template")
             else:
-                print "using template : %s" % options.template
+                print("using template : %s" % options.template)
             if (options.lastrev == None):
-                print "end in last revision the database has"
+                print("end in last revision the database has")
             else:
-                print "end in %s revision" % options.lastrev
+                print("end in %s revision" % options.lastrev)
             if (options.firstrev == None):
-                print "start from first revision the database has"
+                print("start from first revision the database has")
             else:
-                print "start from %s revision" % options.firstrev
+                print("start from %s revision" % options.firstrev)
 
         if(options.enablelogging == True):
             logfile = os.path.join(graphdir, 'svnplot.log')
@@ -699,7 +704,7 @@ def RunMain():
                                 format='%(asctime)s %(levelname)s %(message)s',
                                 filename=logfile,
                                 filemode='w')
-            print "Debug Logging to file %s" % logfile
+            print("Debug Logging to file %s" % logfile)
 
         svnstats = SVNStats(svndbpath, options.firstrev, options.lastrev)
         svnplot = SVNPlot(svnstats, dpi=options.dpi, template=options.template)

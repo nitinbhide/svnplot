@@ -19,12 +19,13 @@ import sys
 import os
 import logging
 import traceback
-#from optparse import OptionParser
 
-import svnlogiter
-from svnlogclient import makeunicode
-from configoptparse import ConfigOptionParser
-from svnlogdb import SVNLogDB
+import six
+
+from . import svnlogiter
+from .svnlogclient import makeunicode
+from .configoptparse import ConfigOptionParser
+from .svnlogdb import SVNLogDB
 
 BINARYFILEXT = ['doc', 'xls', 'ppt', 'docx', 'xlsx', 'pptx', 'dot', 'dotx', 'ods', 'odm', 'odt', 'ott', 'pdf',
                 'o', 'a', 'obj', 'lib', 'dll', 'so', 'exe',
@@ -68,10 +69,10 @@ class SVNLog2Sqlite:
                     self.ConvertRevs(startrevno, endrevno, bUpdLineCount)
                     # every thing is ok. Commit the changes.
                     self.db.commit()
-            except Exception, expinst:
+            except Exception as expinst:
                 logging.exception("Found Error")
                 self.svnexception_handler(expinst)
-                print "Trying again (%d)" % (trycount + 1)
+                print("Trying again (%d)" % (trycount + 1))
 
         self.closedb()
 
@@ -83,7 +84,7 @@ class SVNLog2Sqlite:
         decide to continue or exit on the svn exception.
         '''
         self.db.rollback()
-        print "Found Error. Rolled back recent changes"
+        print("Found Error. Rolled back recent changes")
         # print "Error type %s" % type(expinst)
         if(isinstance(expinst, AssertionError)):
             exit(1)
@@ -158,7 +159,7 @@ class SVNLog2Sqlite:
                     "Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
 
             if(self.verbose == False):
-                print "Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno)
+                print("Number revisions converted : %d (Rev no : %d)" % (revcount, lastrevno))
 
     def __createRevFileListForDir(self, revno, dirname):
         '''
@@ -203,9 +204,9 @@ class SVNLog2Sqlite:
         self.initdb()
         try:
             self.__updateLineCountData()
-        except Exception, expinst:
+        except Exception as expinst:
             logging.exception("Error %s" % expinst)
-            print "Error %s" % expinst
+            print("Error %s" % expinst)
         self.closedb()
 
     def __updateLineCountData(self):
@@ -231,7 +232,7 @@ class SVNLog2Sqlite:
     def printVerbose(self, msg):
         logging.info(msg)
         if(self.verbose == True):
-            print msg
+            print(msg)
 
 
 def getLogfileName(sqlitedbpath):
@@ -271,12 +272,12 @@ def getquotedurl(url):
     svn repo url specified on the command line can contain specs, special etc. We
     have to quote them to that svn log client works on a valid url.
     '''
-    import urllib
-    import urlparse
-    urlparams = list(urlparse.urlsplit(url, 'http'))
-    urlparams[2] = urllib.quote(urlparams[2])
+    from six.moves import urllib
 
-    return(urlparse.urlunsplit(urlparams))
+    urlparams = list(urllib.parse.urlsplit(url, 'http'))
+    urlparams[2] = urllib.parse.quote(urlparams[2])
+
+    return(urllib.parse.urlunsplit(urlparams))
 
 
 def RunMain():
@@ -302,7 +303,7 @@ def RunMain():
     (options, args) = parser.parse_args()
 
     if(len(args) < 2):
-        print "Invalid number of arguments. Use svnlog2sqlite.py --help to see the details."
+        print("Invalid number of arguments. Use svnlog2sqlite.py --help to see the details.")
     else:
         svnrepopath = args[0]
         sqlitedbpath = args[1]
@@ -319,16 +320,16 @@ def RunMain():
 
         svnrepopath = getquotedurl(svnrepopath)
 
-        print "Updating the subversion log"
-        print "Repository : " + svnrepopath
-        print "SVN Log database filepath : %s" % sqlitedbpath
-        print "Extract Changed Line Count : %s" % options.updlinecount
+        print("Updating the subversion log")
+        print("Repository : " + svnrepopath)
+        print("SVN Log database filepath : %s" % sqlitedbpath)
+        print("Extract Changed Line Count : %s" % options.updlinecount)
         if(not options.updlinecount):
-            print "\t\tplease use -l option. if you want to extract linecount information."
+            print("\t\tplease use -l option. if you want to extract linecount information.")
         if(svnrevstartdate):
-            print "Repository startdate: %s" % (svnrevstartdate)
+            print("Repository startdate: %s" % (svnrevstartdate))
         if(svnrevenddate):
-            print "Repository enddate: %s" % (svnrevenddate)
+            print("Repository enddate: %s" % (svnrevenddate))
 
         if(options.enablelogging == True):
             logfile = getLogfileName(sqlitedbpath)
@@ -336,7 +337,7 @@ def RunMain():
                                 format='%(asctime)s %(levelname)s %(message)s',
                                 filename=logfile,
                                 filemode='w')
-            print "Debug Logging to file %s" % logfile
+            print("Debug Logging to file %s" % logfile)
 
         filediff = options.filediff
         conv = None

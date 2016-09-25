@@ -54,7 +54,7 @@ def getTemperatureAtTime(curTime, lastTime, lastTemp, coolingRate):
             hrsSinceLastTime = 0.0
         tempFactor = -(coolingRate * hrsSinceLastTime)
         temperature = lastTemp * exp(tempFactor)
-    except Exception, expinst:
+    except Exception as expinst:
         logging.debug("Error %s" % expinst)
         temperature = 0.0
 
@@ -127,12 +127,12 @@ class SVNNetworkBase(NX.Graph):
         try:
             self._getDeletedFilesList()
             self._addRevisionsSlow()
-            print "Initial nodes in graph : %d" % self.number_of_nodes()
-            print "Initial edges in graph : %d" % self.number_of_edges()
+            print("Initial nodes in graph : %d" % self.number_of_nodes())
+            print("Initial edges in graph : %d" % self.number_of_edges())
             self._postProcessGraph()
 
-            print "Final nodes in graph : %d" % self.number_of_nodes()
-            print "Final edges in graph : %d" % self.number_of_edges()
+            print("Final nodes in graph : %d" % self.number_of_nodes())
+            print("Final edges in graph : %d" % self.number_of_edges())
         except:
             raise
         finally:
@@ -146,7 +146,7 @@ class SVNNetworkBase(NX.Graph):
         cur.execute(sqlquery)
 
         for changedpath in cur:
-            print "found deleted path %s" % changedpath
+            print("found deleted path %s" % changedpath)
             self._deletedFiles.add(changedpath)
         cur.close()
 
@@ -251,9 +251,9 @@ class SVNNetworkBase(NX.Graph):
             self, v=None, distance=weigthed)
 
         for authnode in self.getNodes(SVNNetworkAuthorNode):
-            if(self._degcen.has_key(authnode) == False):
+            if((authnode in self._degcen) == False):
                 self._degcen[authnode] = []
-            if(self._closeness.has_key(authnode) == False):
+            if((authnode in self._closeness) == False):
                 self._closeness[authnode] = []
             self._degcen[authnode].append((date, degcentrality[authnode]))
             self._closeness[authnode].append((date, closecentrality[authnode]))
@@ -359,7 +359,7 @@ class SVNNetworkBase(NX.Graph):
             prevrev = currev
             revcount = revcount + 1
             if(revcount % 500 == 0):
-                print "Connections %d added" % revcount
+                print("Connections %d added" % revcount)
 # if( revcount >= 500):
 # break
         del self.revfilelist
@@ -398,7 +398,7 @@ class SVNNetworkBase(NX.Graph):
 
     def filterOnCores(self, mincorenum):
         kcores = NX.find_cores(self)
-        core_items = kcores.items()
+        core_items = list(kcores.items())
         nodes = [
             node for (node, corenum) in core_items if corenum < mincorenum]
         self.remove_nodes_from(nodes)
@@ -429,7 +429,7 @@ class SVNNetworkBase(NX.Graph):
         '''
         centralityGraph = self.__class__()
         edgeBetwness = NX.edge_betweenness(self)
-        for edge, betwnness in edgeBetwness.items():
+        for edge, betwnness in list(edgeBetwness.items()):
             u = edge[0]
             v = edge[1]
             centralityGraph.add_edge(u, v, betwnness)
@@ -497,17 +497,17 @@ class SVNAuthorNetwork(SVNNetworkBase):
         SVNNetworkBase.remove_nodes_from(self, nodes)
         # removes nodes from centrality data dictionay as well.
         for node in nodes:
-            if(self._closeness.has_key(node)):
+            if(node in self._closeness):
                 del self._closeness[node]
-            if(self._degcen.has_key(node)):
+            if(node in self._degcen):
                 del self._degcen[node]
 
     def _sortMetrics(self):
         logging.debug("From SVNAuthorNetwork._sortMetrics")
         # sort the metrics data as per the dates. So that graphs are correct
-        for node in self._closeness.keys():
+        for node in list(self._closeness.keys()):
             self._closeness[node].sort(key=operator.itemgetter(0))
-        for node in self._degcen.keys():
+        for node in list(self._degcen.keys()):
             self._degcen[node].sort(key=operator.itemgetter(0))
 
     def _addEdgeRevFile(self, currev):
@@ -571,10 +571,10 @@ class SVNAuthorNetwork(SVNNetworkBase):
 
     def printAuthorCentrality(self, centralityType, centralityfunc):
         logging.debug("From SVNAuthorNetwork.printAuthorCentrality")
-        print "----------- Author Centrality Data ------------------"
+        print("----------- Author Centrality Data ------------------")
         centrality = centralityfunc(self)
         for node in self.getNodes(SVNNetworkAuthorNode):
-            print "%s Centrality (%s) : %f" % (centralityType, node.name(), centrality[node])
+            print("%s Centrality (%s) : %f" % (centralityType, node.name(), centrality[node]))
 
     def SaveCentralityGraphs(self):
         logging.debug("From SVNAuthorNetwork.SaveCentralityGraphs")
@@ -583,14 +583,14 @@ class SVNAuthorNetwork(SVNNetworkBase):
 
     def SaveGraph(self, filename):
         logging.debug("From SVNAuthorNetwork.SaveGraph")
-        print "saving auhtor network graph to %s" % filename
+        print("saving auhtor network graph to %s" % filename)
         plt.clf()
         #
         dt1 = datetime.datetime.now()
         pos = NX.pydot_layout(self)
         #pos = NX.spring_layout(self, dim=2, iterations=10)
         dt2 = datetime.datetime.now()
-        print "time of layout=%s" % (dt2 - dt1)
+        print("time of layout=%s" % (dt2 - dt1))
         plt.figure(figsize=(8.0, 8.0))
         nodeimgs = NX.draw_networkx_nodes(
             self, pos, with_labels=False, node_size=10)
@@ -610,11 +610,11 @@ class SVNAuthorNetwork(SVNNetworkBase):
         self._drawAuthorNodes(pos)
         plt.savefig(filename + '.svg', dpi=100, format="svg")
         plt.savefig(filename + '.png', dpi=100, format="png")
-        print "Saved ..."
+        print("Saved ...")
 
     def SaveCentralityGraph(self, filename, centrality):
         logging.debug("From SVNAuthorNetwork.SaveCentralityGraph")
-        print "Saving centrality graph %s" % filename
+        print("Saving centrality graph %s" % filename)
         plt.clf()
         fig = plt.figure()
         axs = fig.add_subplot(111)
@@ -636,7 +636,7 @@ class SVNAuthorNetwork(SVNNetworkBase):
         axs.legend(authors, loc="upper right", prop=legendfont)
         fig.autofmt_xdate()
         plt.savefig(filename, dpi=100, format='png')
-        print "Saved ..."
+        print("Saved ...")
 
 
 class SVNFileNetwork(SVNNetworkBase):
@@ -672,13 +672,13 @@ class SVNFileNetwork(SVNNetworkBase):
         # sort the edges based on betweeness centrality in reverse order
         # (highest first)
         edgelist = [(edge[0], edge[1], betwcen)
-                    for edge, betwcen in edgeBetwness.items()]
+                    for edge, betwcen in list(edgeBetwness.items())]
         return(edgelist)
 
     def _filterEdgesBetwnness(self):
         logging.debug("filtering edges based on edge betweenness")
-        print "filtering edges based on edge betweenness"
-        print "current edgecount %d" % self.number_of_edges()
+        print("filtering edges based on edge betweenness")
+        print("current edgecount %d" % self.number_of_edges())
         # Fiter edges based on edge_betweenness centrality
         graphs = NX.connected_component_subgraphs(self)
 
@@ -690,7 +690,7 @@ class SVNFileNetwork(SVNNetworkBase):
                 avgbetwn = average(betwnarr)
                 stddevbetwn = std(betwnarr)
                 maxBetwn = avgbetwn + stddevbetwn
-                print "maxbetweenness centrality %f" % maxBetwn
+                print("maxbetweenness centrality %f" % maxBetwn)
                 edgesToRemove = edgesToRemove + \
                     [(node1, node2)
                      for node1, node2, betwcen in edgelist if betwcen > maxBetwn]
@@ -712,14 +712,14 @@ class SVNFileNetwork(SVNNetworkBase):
         cur.execute("select count(*),changedpath from SVNLogDetailVw where changedpath like '%s%%'\
             group by changedpath" % self._searchpath)
         for count, changedpath in cur:
-            if(self._fileNodes.has_key(changedpath) == True):
+            if((changedpath in self._fileNodes) == True):
                 self._fileNodes[changedpath].commitCount = count
 
         cur.close()
 
     def KeepLargestConnected(self):
         logging.debug("From SVNFileNetwork.KeepLargestConnected")
-        print "keeping only larget connected subgraph"
+        print("keeping only larget connected subgraph")
         graphs = NX.connected_component_subgraphs(self)
         largestconnected = graphs[0]
         # remove the nodes not the largest connected graph. Essentially making
@@ -727,8 +727,8 @@ class SVNFileNetwork(SVNNetworkBase):
         nodesForRemoval = [
             node for node in self.nodes_iter() if largestconnected.has_node(node) == False]
         self.remove_nodes_from(nodesForRemoval)
-        print "Nodes removed : %d" % len(nodesForRemoval)
-        print "finished larget connected subgraph"
+        print("Nodes removed : %d" % len(nodesForRemoval))
+        print("finished larget connected subgraph")
 
     def SaveJsonTreemapData(self, filename, minNodeCount=10):
         '''Save the data as treemap. First level is made of 'connected subgraphs'. Second level
@@ -736,7 +736,7 @@ class SVNFileNetwork(SVNNetworkBase):
         '''
         logging.debug("From SVNFileNetwork.SaveJsonTreemapData")
 
-        print "writing json treemap data to %s" % filename
+        print("writing json treemap data to %s" % filename)
         graphs = NX.connected_component_subgraphs(self)
 
         root = treemapdata.TreemapNode("Root")
@@ -745,7 +745,7 @@ class SVNFileNetwork(SVNNetworkBase):
         for idx in range(0, len(graphs)):
             subgraph = graphs[idx]
             if(subgraph.number_of_nodes() > minNodeCount):
-                print "subgraph %d Node count = %d" % (idx + 1, subgraph.number_of_nodes())
+                print("subgraph %d Node count = %d" % (idx + 1, subgraph.number_of_nodes()))
                 for node in subgraph.nodes_iter():
                     nodepath = node.name()
                     # replace the search path at the start of the filepath ONLY. Do not replace
@@ -762,11 +762,11 @@ class SVNFileNetwork(SVNNetworkBase):
         outfile = open(filename, "w")
         root.writejson(outfile, 'commitcount', 'centrality')
         outfile.close()
-        print "finished jsondata output"
+        print("finished jsondata output")
 
     def SaveConnected(self, filename, minNodeCount=10, savefunc=lambda g, fname: g.SaveGraph(fname)):
         logging.debug("From SVNFileNetwork.SaveConnected")
-        print "saving connected subgraphs"
+        print("saving connected subgraphs")
         fname, ext = os.path.splitext(filename)
         graphs = NX.connected_component_subgraphs(self)
 
@@ -774,37 +774,37 @@ class SVNFileNetwork(SVNNetworkBase):
             subgraph = graphs[idx]
             if(subgraph.number_of_nodes() >= minNodeCount):
                 savefunc(subgraph, "%s%d%s" % (fname, idx + 1, ext))
-        print "Saved ..."
+        print("Saved ...")
 
     def PrintGraphStat(self):
         logging.debug("From SVNFileNetwork.PrintGraphStat")
-        print "%s" % '-' * 40
-        print "Graph Radius : %f" % NX.radius(self)
-        print "Graph Diameter : %f" % NX.diameter(self)
+        print("%s" % '-' * 40)
+        print("Graph Radius : %f" % NX.radius(self))
+        print("Graph Diameter : %f" % NX.diameter(self))
 
         weighted = True
         closenessdict = NX.closeness_centrality(self, distance=weighted)
-        print "%s" % '-' * 40
-        print "All nodes in graph"
+        print("%s" % '-' * 40)
+        print("All nodes in graph")
 
         nodeinfolist = [(node, closeness)
-                        for node, closeness in closenessdict.items()]
+                        for node, closeness in list(closenessdict.items())]
         # sort the node infolist by closeness number
         nodeinfolist = sorted(
             nodeinfolist, key=operator.itemgetter(1), reverse=True)
         for node, closeness in nodeinfolist:
-            print "\t%s : %f" % (node.name(), closeness)
-        print "%s" % '-' * 40
+            print("\t%s : %f" % (node.name(), closeness))
+        print("%s" % '-' * 40)
 
     def SaveGraph(self, filename):
         logging.debug("From SVNFileNetwork.SaveGraph")
 
-        print "saving the file network graph to %s" % filename
+        print("saving the file network graph to %s" % filename)
         plt.clf()
         #pos = NX.spring_layout(self, dim=2, iterations=20)
         logging.info("starting layout using pydot_layout")
         pos = NX.pydot_layout(self, prog='neato')
-        print "finished layout"
+        print("finished layout")
         logging.info("finished layout using pydot_layout")
         plt.figure(figsize=(8.0, 8.0))
         NX.draw_networkx_nodes(self, pos, node_size=10)
@@ -823,19 +823,19 @@ class SVNFileNetwork(SVNNetworkBase):
 
         plt.savefig(filename, dpi=100, format="png")
         self.PrintGraphStat()
-        print "Saved ..."
+        print("Saved ...")
 
     def SaveMST(self, filename):
         logging.debug("From SVNFileNetwork.SaveMST")
 
         mstGraph = self._getMSTGraph()
 
-        print "saving MST of the file network graph to %s" % filename
+        print("saving MST of the file network graph to %s" % filename)
         plt.clf()
         #pos = NX.spring_layout(self, dim=2, iterations=20)
         logging.info("starting layout using pydot_layout")
         pos = NX.pydot_layout(mstGraph, prog='neato')
-        print "finished layout"
+        print("finished layout")
         logging.info("finished layout using pydot_layout")
         plt.figure(figsize=(8.0, 8.0))
 
@@ -857,11 +857,11 @@ class SVNFileNetwork(SVNNetworkBase):
         plt.setp(ax.get_xticklabels(), visible=False)
 
         plt.savefig(filename, dpi=100, format="png")
-        print "Saved MST..."
-        print "saving MST treemap"
+        print("Saved MST...")
+        print("saving MST treemap")
         jsfilename, ext = os.path.splitext(filename)
         jsfilename = jsfilename + '.js'
-        print "treemap filename %s" % jsfilename
+        print("treemap filename %s" % jsfilename)
         outfile = open(jsfilename, "w")
         self.treemapNodeDict['Root'].writejson(
             outfile, 'closeness', 'betweenness')
@@ -869,24 +869,24 @@ class SVNFileNetwork(SVNNetworkBase):
 
 
 def GenerateAuthorNet(repodbpath, searchpath, repoUrl):
-    print "Updating SVN Author Net"
+    print("Updating SVN Author Net")
     svnauthnet = SVNAuthorNetwork(repodbpath, searchpath, repoUrl=repoUrl)
     svnauthnet.UpdateGraph()
     svnauthnet.printAuthorCentrality("Degree", NX.degree_centrality)
     svnauthnet.printAuthorCentrality("Closeness", NX.closeness_centrality)
     svnauthnet.SaveCentralityGraphs()
     svnauthnet.SaveGraph("svnnet")
-    print "Finished generating SVN Author Net"
+    print("Finished generating SVN Author Net")
 
 
 def GenerateFileNet(repodbpath, searchpath):
-    print "Updating SVN Filenet"
+    print("Updating SVN Filenet")
     svnfilenet = SVNFileNetwork(repodbpath, searchpath)
     svnfilenet.UpdateGraph()
     svnfilenet.SaveConnected("svnfilenet.png")
     #svnfilenet.SaveConnected("svnfilenetmst.png", savefunc=lambda g,fname:g.SaveMST(fname))
     svnfilenet.PrintGraphStat()
-    print "Finished generating SVN file Net"
+    print("Finished generating SVN file Net")
 # svnfilenet.SaveGraph("svnfilenet(large).png")
 
 
@@ -910,18 +910,18 @@ def RunMain():
         (options, args) = parser.parse_args()
 
         if(len(args) < 3):
-            print "Invalid number of arguments. Use svnnetwork.py --help to see the details."
-            print "svnnetwork.py has large number of dependencies. You have to install following packages"
-            print "\tmatplotlib"
-            print "\tnetworkx"
-            print "\tpydot"
-            print "These can be installed using easy_install"
-            print "However GraphViz (http://graphviz.org) toolkit has to be downloaded and installed seperately"
+            print("Invalid number of arguments. Use svnnetwork.py --help to see the details.")
+            print("svnnetwork.py has large number of dependencies. You have to install following packages")
+            print("\tmatplotlib")
+            print("\tnetworkx")
+            print("\tpydot")
+            print("These can be installed using easy_install")
+            print("However GraphViz (http://graphviz.org) toolkit has to be downloaded and installed seperately")
 
         if not options.author_net and not options.file_net:
             options.all_net = True
 
-        print "NOTE : network graph analysis functions take time. Have patience !!!"
+        print("NOTE : network graph analysis functions take time. Have patience !!!")
         if options.all_net:
             GenerateAuthorNet(args[0], args[1], args[2])
             GenerateFileNet(args[0], args[1])
