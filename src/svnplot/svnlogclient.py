@@ -17,7 +17,7 @@ import os
 import string
 
 from six.moves import urllib
-   
+
 import getpass
 import traceback
 import types
@@ -83,7 +83,7 @@ def getDiffLineCountDict(diff_log):
     return(diffCountDict)
 
 
-class SVNLogClient:
+class SVNLogClient(object):
 
     def __init__(self, svnrepourl, binaryext=[], username=None, password=None):
         self.svnrooturl = None
@@ -397,7 +397,7 @@ class SVNLogClient:
     def getInfo(self, path, revno=None):
         '''Gets the information about the given path ONLY from the repository.
         Hence recurse flag is set to False.
-        '''        
+        '''
         if(revno == None):
             rev = pysvn.Revision(pysvn.opt_revision_kind.head)
         else:
@@ -461,7 +461,7 @@ class SVNLogClient:
 
     def __isTextMimeType(self, fmimetype):
         '''
-        check if the mime-type is a text mime-type based on the standard svn text file logic.        
+        check if the mime-type is a text mime-type based on the standard svn text file logic.
         '''
         textMimeType = False
         if(fmimetype.startswith('text/') or fmimetype == 'image/x-xbitmap' or fmimetype == 'image/x-xpixmap'):
@@ -598,7 +598,7 @@ class SVNLogClient:
         self.svnrooturl = urllib.parse.unquote(self.svnrooturl)
         return(self.svnrooturl)
 
-    def getUrl(self, path):        
+    def getUrl(self, path):
         url = self.svnrepourl
         if(path.strip() != ""):
             # remember 'path' can be a unicode string
