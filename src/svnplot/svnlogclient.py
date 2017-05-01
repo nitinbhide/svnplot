@@ -35,7 +35,7 @@ except:
     print("Please download and install it from http://pysvn.tigris.org/project_downloads.html")
 
 SVN_HEADER_ENCODING = 'utf-8'
-
+PRINTABLE_CHARSET = set(string.printable)
 
 def getDiffLineCountDict(diff_log):
     diff_log = makeunicode(diff_log)
@@ -481,19 +481,31 @@ class SVNLogClient(object):
         url = self.getUrl(filepath)
         rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
 
-        proplist = self.svnclient.proplist(url, revision=rev)
-        if(len(proplist) > 0):
-            assert(len(proplist) == 1)
-            path, propdict = proplist[0]
-            if('svn:mime-type' in propdict):
-                fmimetype = propdict['svn:mime-type']
-                # print "found mime-type file: %s mimetype : %s" % (filepath,
-                # fmimetype)
-                if(self.__isTextMimeType(fmimetype) == False):
-                    # mime type is not a 'text' mime type.
-                    binary = True
-
+        try:
+            proplist = self.svnclient.proplist(url, revision=rev)
+            if(len(proplist) > 0):
+                assert(len(proplist) == 1)
+                path, propdict = proplist[0]
+                if('svn:mime-type' in propdict):
+                    fmimetype = propdict['svn:mime-type']
+                    # print "found mime-type file: %s mimetype : %s" % (filepath,
+                    # fmimetype)
+                    if(self.__isTextMimeType(fmimetype) == False):
+                        # mime type is not a 'text' mime type.
+                        binary = True
+        except Exception as exp:
+            #if proplist generates an error like 'unknown node kind', we try
+            #extracting the file and then check contents to see if it is binary
+            binary = self.__isBinaryFile2(url, revno)
         return(binary)
+
+    def __isBinaryFile2(self, file_url, revno):
+        rev = pysvn.Revision(pysvn.opt_revision_kind.number, revno)
+        import pdb
+        pdb.set_trace()
+        contents = self.svnclient.cat(file_url, revision=rev)
+        contents = contents[:1024]
+        return all([ch in PRINTABLE_CHARSET for ch in contents])
 
     def isBinaryFile(self, filepath, revno):
         assert(filepath is not None)
@@ -603,10 +615,12 @@ class SVNLogClient(object):
         if(path.strip() != ""):
             # remember 'path' can be a unicode string
             try:
+                old_path = path
                 path = makeunicode(path)
             except:
                 # not possible to encode path as unicode. Probably an latin-1 character with value > 127
                 # keep path as it is.
+                logging.warning('could not convert path to unicode %s' % old_path)
                 pass
             # there are some characters which are valid pathname characters in unix but not in windows
             # or vice-versa. Hence 'quote' the path and then convert it to url
@@ -615,7 +629,8 @@ class SVNLogClient(object):
             # so we have to 'encode' the path
             if six.PY2:
                 path = path.encode('utf-8')
-            url = self.getRootUrl() + urllib.request.pathname2url(path)
+            pathurl = urllib.request.pathname2url(path)
+            url = self.getRootUrl()+pathurl
         return(url)
 
     def isRepoUrlSameAsRoot(self):
